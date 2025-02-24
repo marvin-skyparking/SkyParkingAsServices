@@ -3,6 +3,7 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
 import { AllowNull } from 'sequelize-typescript';
+import LocationLot from './location_lot.model';
 
 export enum PropertyType {
   Apartment = 'Apartment',
@@ -155,3 +156,6 @@ LocationArea.init(
     timestamps: false
   }
 );
+
+
+export default LocationArea;

@@ -68,7 +68,6 @@ export async function getSecretKeyByClientId(
     if (!partner) {
       return null;
     }
-
     return partner.secret_key; // Assuming the 'secret_key' column exists in the Partner model
   } catch (error) {
     console.error('Error fetching secret key:', error);

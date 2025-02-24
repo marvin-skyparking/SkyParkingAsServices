@@ -1,4 +1,5 @@
 import { LocationArea } from '../models/location_area.model';
+import LocationLot from '../models/location_lot.model';
 
 /**
  * Get all location areas with selected fields
@@ -44,25 +45,32 @@ export async function getNearbyLocations(
   latitude: number,
   longitude: number,
   radius: number
-) {
+): Promise<any[]> {
+  // No need to return `LocationAreaWithLots`
   try {
-    const locations = await LocationArea.findAll();
+    const locations = await LocationArea.findAll({
+      include: [
+        {
+          model: LocationLot,
+          as: "lots", // Must match `hasMany` alias in LocationArea
+          required: false, // Allows locations without lots
+        },
+      ],
+    });
 
-    // Filter locations within the given radius
     const nearbyLocations = locations.filter((location) => {
       let coordinate;
       try {
-        // Ensure the coordinate is an object
         coordinate =
           typeof location.coordinate === 'string'
-            ? JSON.parse(location.coordinate) // Parse if it's a string
-            : location.coordinate; // Use as is if already an object
+            ? JSON.parse(location.coordinate)
+            : location.coordinate;
       } catch (error) {
         console.error(
-          `Error parsing coordinate for location ${location.location_code}:`,
+          `Error parsing coordinate for ${location.location_code}:`,
           error
         );
-        return false; // Skip this location if parsing fails
+        return false;
       }
 
       if (

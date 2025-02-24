@@ -1,5 +1,16 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
+import LocationArea from './location_area.model';
+
+export interface LocationAreaWithLots extends Model {
+  id: number;
+  location_code: string;
+  location_name: string;
+  address: string;
+  coordinate: string | { latitude: number; longitude: number };
+  category: string;
+  lots: LocationLot[]; // Ensure this property exists
+}
 
 interface LocationLotAttributes {
   id: number;
@@ -96,4 +107,18 @@ LocationLot.init(
   }
 );
 
+// ✅ Define association here after both models are defined
+LocationLot.belongsTo(LocationArea, {
+    foreignKey: "location_code",
+    targetKey: "location_code",
+    as: "LocationArea",
+  });
+  
+  LocationArea.hasMany(LocationLot, {
+    foreignKey: "location_code",
+    sourceKey: "location_code",
+    as: "lots",
+  });
+
+  
 export default LocationLot;
