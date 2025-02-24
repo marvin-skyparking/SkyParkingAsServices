@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "root",
+    "password": "50p4y5ky0v0!",
+    "database": "db_skyccc",
+    "host": "8.215.44.147",
+    "dialect": "mysql"
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "database_test",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}

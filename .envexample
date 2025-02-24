@@ -1,0 +1,10 @@
+NODE_ENV = developement
+APP_URL= http://localhost:9000
+PORT= 9000
+DB_DEV = sky-membership
+USERNAME_DB_DEV = root
+PASSWORD_DB_DEV = ''
+ENABLE_SWAGGER = true
+SENTRY_URI =
+JWT_SECRET = skyparking
+BAYARIND_DEV_URL = https://snaptest.bayarind.id

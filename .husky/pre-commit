@@ -1,0 +1,4 @@
+yarn prettier:format
+yarn lint:build
+yarn test
+git add $(git diff --name-only --staged)

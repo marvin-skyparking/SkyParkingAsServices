@@ -1,0 +1,527 @@
+[
+    {
+        "Id": 1,
+        "Code": "004SK",
+        "Name": "SKY UNIVERSITAS PELITA HARAPAN"
+    },
+    {
+        "Id": 2,
+        "Code": "007SK",
+        "Name": "SKY ZONA 3 SILOAM KARAWACI"
+    },
+    {
+        "Id": 3,
+        "Code": "00MSK",
+        "Name": "SKY PLUIT VILLAGE"
+    },
+    {
+        "Id": 4,
+        "Code": "01ASK",
+        "Name": "SKY MALL LIPPO CIKARANG"
+    },
+    {
+        "Id": 5,
+        "Code": "01BSK",
+        "Name": "SKY CITYWALK CIKARANG"
+    },
+    {
+        "Id": 6,
+        "Code": "00QSK",
+        "Name": "SKY PALEMBANG ICON"
+    },
+    {
+        "Id": 7,
+        "Code": "000SK",
+        "Name": "SKY PALEMBANG SQUARE"
+    },
+    {
+        "Id": 8,
+        "Code": "01PSK",
+        "Name": "SKY LIPPO PLAZA JAMBI"
+    },
+    {
+        "Id": 9,
+        "Code": "00KSK",
+        "Name": "SKY LIPPO PLAZA LUBUK LINGGAU"
+    },
+    {
+        "Id": 10,
+        "Code": "05YSK",
+        "Name": "SKY CENTRAL PARK MEIKARTA"
+    },
+    {
+        "Id": 11,
+        "Code": "01YSK",
+        "Name": "SKY SILOAM LIPPO CIKARANG"
+    },
+    {
+        "Id": 12,
+        "Code": "00RSK",
+        "Name": "SKY TAMINI SQUARE"
+    },
+    {
+        "Id": 13,
+        "Code": "00ASK",
+        "Name": "SKY LIPPO MALL KEMANG"
+    },
+    {
+        "Id": 14,
+        "Code": "002SK",
+        "Name": "SKY CYBERPARK KARAWACI"
+    },
+    {
+        "Id": 15,
+        "Code": "003SK",
+        "Name": "SKY KARAWACI OFFICE PARK"
+    },
+    {
+        "Id": 16,
+        "Code": "012SK",
+        "Name": "SKY PLAZA SEMANGGI"
+    },
+    {
+        "Id": 17,
+        "Code": "05NSK",
+        "Name": "SKY SILOAM TB SIMATUPANG"
+    },
+    {
+        "Id": 18,
+        "Code": "00MFL",
+        "Name": "SKY PLUIT VILLAGE FL"
+    },
+    {
+        "Id": 19,
+        "Code": "02ASK",
+        "Name": "SKY DEPOK TOWN SQUARE"
+    },
+    {
+        "Id": 20,
+        "Code": "00XSK",
+        "Name": "SKY PLAZA MEDAN FAIR"
+    },
+    {
+        "Id": 21,
+        "Code": "00TSK",
+        "Name": "SKY BANDUNG INDAH PLAZA"
+    },
+    {
+        "Id": 22,
+        "Code": "00USK",
+        "Name": "SKY ISTANA PLAZA"
+    },
+    {
+        "Id": 23,
+        "Code": "017SK",
+        "Name": "SKY LIPPO PLAZA EKALOKASARI"
+    },
+    {
+        "Id": 24,
+        "Code": "00CSK",
+        "Name": "SKY LIPPO PLAZA KEBOEN RAYA"
+    },
+    {
+        "Id": 25,
+        "Code": "018SK",
+        "Name": "SKY BELLANOVA COUNTRY MALL"
+    },
+    {
+        "Id": 26,
+        "Code": "00PSK",
+        "Name": "SKY GAJAH MADA PLAZA"
+    },
+    {
+        "Id": 27,
+        "Code": "019SK",
+        "Name": "SKY CIBUBUR JUNCTION"
+    },
+    {
+        "Id": 28,
+        "Code": "00NSK",
+        "Name": "SKY LIPPO PLAZA KRAMAT JATI"
+    },
+    {
+        "Id": 29,
+        "Code": "00WSK",
+        "Name": "SKY LIPPO MALL KUTA"
+    },
+    {
+        "Id": 30,
+        "Code": "00VSK",
+        "Name": "SKY LIPPO PLAZA SUNSET"
+    },
+    {
+        "Id": 31,
+        "Code": "00DSK",
+        "Name": "SKY LIPPO PLAZA JOGJA"
+    },
+    {
+        "Id": 32,
+        "Code": "01LSK",
+        "Name": "SKY CITY OF TOMORROW"
+    },
+    {
+        "Id": 33,
+        "Code": "01MSK",
+        "Name": "SKY LIPPO PLAZA SIDOARJO"
+    },
+    {
+        "Id": 34,
+        "Code": "05SSK",
+        "Name": "SKY CENTRAL PLAZA LAMPUNG"
+    },
+    {
+        "Id": 35,
+        "Code": "01SSK",
+        "Name": "SKY MALANG TOWN SQUARE"
+    },
+    {
+        "Id": 36,
+        "Code": "01RSK",
+        "Name": "SKY LIPPO PLAZA BATU"
+    },
+    {
+        "Id": 37,
+        "Code": "05OSK",
+        "Name": "SKY PLAZA MADIUN"
+    },
+    {
+        "Id": 38,
+        "Code": "01QSK",
+        "Name": "SKY KEDIRI TOWN SQUARE"
+    },
+    {
+        "Id": 39,
+        "Code": "02DSK",
+        "Name": "SKY LIPPO PLAZA KENDARI"
+    },
+    {
+        "Id": 40,
+        "Code": "01KSK",
+        "Name": "SKY LIPPO PLAZA JEMBER"
+    },
+    {
+        "Id": 41,
+        "Code": "01USK",
+        "Name": "SKY GTC MAKASSAR"
+    },
+    {
+        "Id": 42,
+        "Code": "05ZSK",
+        "Name": "SKY SENAYAN PARK"
+    },
+    {
+        "Id": 43,
+        "Code": "06BSK",
+        "Name": "SKY AEON SENTUL"
+    },
+    {
+        "Id": 44,
+        "Code": "06ASK",
+        "Name": "SKY CBD NIAGA SENTUL"
+    },
+    {
+        "Id": 45,
+        "Code": "05KSK",
+        "Name": "SKY LIPPO PLAZA KUPANG"
+    },
+    {
+        "Id": 46,
+        "Code": "901SK",
+        "Name": "SKY BCA FORESTA"
+    },
+    {
+        "Id": 47,
+        "Code": "01JSK",
+        "Name": "SKY PARKING TRIVIUM TERRACE"
+    },
+    {
+        "Id": 48,
+        "Code": "001OC",
+        "Name": "ORANGE COUNTY"
+    },
+    {
+        "Id": 49,
+        "Code": "013SK",
+        "Name": "SKY PARKING SILOAM HOSPITAL MRCCC"
+    },
+    {
+        "Id": 50,
+        "Code": "00FSK",
+        "Name": "SKY PARKING BERITA SATU PLAZA"
+    },
+    {
+        "Id": 51,
+        "Code": "014SK",
+        "Name": "SKY BEVERLY"
+    },
+    {
+        "Id": 52,
+        "Code": "00ESK",
+        "Name": "SKY PARKING LIPPO KUNINGAN"
+    },
+    {
+        "Id": 53,
+        "Code": "01VSK",
+        "Name": "SKY PARKING SILOAM HOSPITAL MAKASSAR"
+    },
+    {
+        "Id": 54,
+        "Code": "05QSK",
+        "Name": "SKY OT BUILDING"
+    },
+    {
+        "Id": 55,
+        "Code": "00000",
+        "Name": "SKY HYPERMART KARAWACI"
+    },
+    {
+        "Id": 56,
+        "Code": "00001",
+        "Name": "SKY LIPPO THAMRIN"
+    },
+    {
+        "Id": 57,
+        "Code": "00JSK",
+        "Name": "PALLAIS DE EUROPE"
+    },
+    {
+        "Id": 58,
+        "Code": "05TSK",
+        "Name": "RS.MAYAPADA MODERNLAND"
+    },
+    {
+        "Id": 59,
+        "Code": "05WSK",
+        "Name": "MR. DIY PINANG CILEDUG\t"
+    },
+    {
+        "Id": 61,
+        "Code": "00002",
+        "Name": "CROWN COURT APARTEMEN"
+    },
+    {
+        "Id": 62,
+        "Code": "00003",
+        "Name": "DISTRICT 1 MEIKARTA"
+    },
+    {
+        "Id": 63,
+        "Code": "02CSK",
+        "Name": "GRAND MALL BEKASI"
+    },
+    {
+        "Id": 64,
+        "Code": "009SK",
+        "Name": "SKY MAXBOXX LIPPO VILLAGE"
+    },
+    {
+        "Id": 65,
+        "Code": "005SK",
+        "Name": "SKY ZONA 2 HELI"
+    },
+    {
+        "Id": 66,
+        "Code": "BJ006SK",
+        "Name": "SKY BENTON JUNCTION"
+    },
+    {
+        "Id": 68,
+        "Code": "19LSK",
+        "Name": "Living Plaza Puri"
+    },
+    {
+        "Id": 69,
+        "Code": "08SKY",
+        "Name": "SKY ARYADUTA"
+    },
+    {
+        "Id": 70,
+        "Code": "ELVSK",
+        "Name": "SKY CITYWALK ELVEE"
+    },
+    {
+        "Id": 71,
+        "Code": "06SKY",
+        "Name": "SKY IMPERIAL CLUB GOLF"
+    },
+    {
+        "Id": 72,
+        "Code": "GL006SK",
+        "Name": "SKY GRAHA NOBU"
+    },
+    {
+        "Id": 73,
+        "Code": "15SHK",
+        "Name": "SKY SILOAM HOSPITAL KELAPA DUA"
+    },
+    {
+        "Id": 74,
+        "Code": "006SK",
+        "Name": "SKY VILLA PERMATA"
+    },
+    {
+        "Id": 75,
+        "Code": "05VSK",
+        "Name": "SKY HYPERMART KARAWACI"
+    },
+    {
+        "Id": 76,
+        "Code": "TEST01",
+        "Name": "LOKASI TESTING"
+    },
+    {
+        "Id": 77,
+        "Code": "YKTSK",
+        "Name": "SKY YUKATA SUITES APARTEMENT"
+    },
+    {
+        "Id": 78,
+        "Code": "015SK",
+        "Name": "SKY METROPOLIS TOWN SQUARE"
+    },
+    {
+        "Id": 79,
+        "Code": "016SK",
+        "Name": "SKY MALL WTC MATAHARI"
+    },
+    {
+        "Id": 80,
+        "Code": "001SK",
+        "Name": "SKY LIPPO MALL PURI"
+    },
+    {
+        "Id": 81,
+        "Code": "0OSKY",
+        "Name": "SKY SILOAM HOSPITAL KEBON JERUK"
+    },
+    {
+        "Id": 82,
+        "Code": "10TSK",
+        "Name": "SKY THAMRIN"
+    },
+    {
+        "Id": 83,
+        "Code": "OU014SK",
+        "Name": "SKY OUE TOWER SUDIRMAN"
+    },
+    {
+        "Id": 84,
+        "Code": "06NSK",
+        "Name": "Nine Residence"
+    },
+    {
+        "Id": 85,
+        "Code": "050SK",
+        "Name": "SKY LIPPO PLAZA MADIUN"
+    },
+    {
+        "Id": 86,
+        "Code": "06KSK",
+        "Name": "SKY SILOAM HOSPITAL KUPANG"
+    },
+    {
+        "Id": 87,
+        "Code": "07USK",
+        "Name": "SKY RS UKI CAWANG"
+    },
+    {
+        "Id": 88,
+        "Code": "08USK",
+        "Name": "SKY UKI PASCASARJANA DIPONOGORO"
+    },
+    {
+        "Id": 89,
+        "Code": "18BSK",
+        "Name": "SKY SILOAM HOSPITAL BANJARMASIN"
+    },
+    {
+        "Id": 95,
+        "Code": "07KSK",
+        "Name": "SKY KOMODO LABUAN BAJO"
+    },
+    {
+        "Id": 96,
+        "Code": "08KSK",
+        "Name": "SKY LIPPO PLAZA BAUBAU"
+    },
+    {
+        "Id": 97,
+        "Code": "19BSK",
+        "Name": "SKY LIPPO PLAZA PALANGKARAYA"
+    },
+    {
+        "Id": 98,
+        "Code": "AJBSK",
+        "Name": "SKY LIPPO PLAZA JAKABARING"
+    },
+    {
+        "Id": 99,
+        "Code": "17BSK",
+        "Name": "SKY SILOAM HOSPITAL BALIKPAPAN"
+    },
+    {
+        "Id": 100,
+        "Code": "05SKY",
+        "Name": "SKY BLU PLAZA"
+    },
+    {
+        "Id": 101,
+        "Code": "1IBSK",
+        "Name": "SKY UNION THAMRIN CIKARANG"
+    },
+    {
+        "Id": 102,
+        "Code": "1CBSK",
+        "Name": "SKY CENTRAL LIPPO CIKARANG"
+    },
+    {
+        "Id": 103,
+        "Code": "04BSK",
+        "Name": "SKY EASTERN GREEN"
+    },
+    {
+        "Id": 104,
+        "Code": "1EBSK",
+        "Name": "SKY RUKO MENTENG LIPPO CIKARANG"
+    },
+    {
+        "Id": 105,
+        "Code": "1DBSK",
+        "Name": "SKY RUKO EASTON"
+    },
+    {
+        "Id": 106,
+        "Code": "0CCSK",
+        "Name": "SKY CROWN CROOT"
+    },
+    {
+        "Id": 107,
+        "Code": "1GBSK",
+        "Name": "SKY RUKO ROBSON"
+    },
+    {
+        "Id": 108,
+        "Code": "0010C",
+        "Name": "SKY ORANGE COUNTY"
+    },
+    {
+        "Id": 109,
+        "Code": "1HBSK",
+        "Name": "SKY RUKO ROXY CIKARANG"
+    },
+    {
+        "Id": 110,
+        "Code": "05USK",
+        "Name": "SKY DISTRIC 1 SDH"
+    },
+    {
+        "Id": 111,
+        "Code": "09NSK",
+        "Name": "SKY DISTRIC 1 NEWTON"
+    },
+    {
+        "Id": 112,
+        "Code": "0TMSK",
+        "Name": "SKY DISTRIC 1 RIVERLAKE"
+    }
+]

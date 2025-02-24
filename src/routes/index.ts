@@ -1,0 +1,15 @@
+import express from 'express';
+import partnerRoute from './partner.routes';
+import lotRoute from './lot_management.routes';
+const router = express.Router();
+
+// router.use('/customer', member_customer);
+// router.use('/auth', authRouter);
+// router.use('/location', locationrouter);
+// router.use('/product', productRouter);
+// router.use('/productPurchase', purchaseProduct);
+
+router.use('/partner', partnerRoute);
+router.use('/realtime', lotRoute);
+
+export default router;
