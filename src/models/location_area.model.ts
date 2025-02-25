@@ -157,5 +157,4 @@ LocationArea.init(
   }
 );
 
-
 export default LocationArea;

@@ -44,7 +44,7 @@ export async function verifyAsymmetricSignature(
   try {
     // Fetch the secret key from the database
     const secret_key = await getClientSecret(client_id);
-    console.log(secret_key)
+    console.log(secret_key);
     if (!secret_key) {
       console.error('Invalid client_id:', secret_key);
       return false;

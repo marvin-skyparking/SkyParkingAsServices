@@ -109,16 +109,15 @@ LocationLot.init(
 
 // ✅ Define association here after both models are defined
 LocationLot.belongsTo(LocationArea, {
-    foreignKey: "location_code",
-    targetKey: "location_code",
-    as: "LocationArea",
-  });
-  
-  LocationArea.hasMany(LocationLot, {
-    foreignKey: "location_code",
-    sourceKey: "location_code",
-    as: "lots",
-  });
+  foreignKey: 'location_code',
+  targetKey: 'location_code',
+  as: 'LocationArea'
+});
 
-  
+LocationArea.hasMany(LocationLot, {
+  foreignKey: 'location_code',
+  sourceKey: 'location_code',
+  as: 'lots'
+});
+
 export default LocationLot;

@@ -1,8 +1,6 @@
 import express, { Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import indexRoutes from './routes';
-// import swaggerUi from 'swagger-ui-express';
-// import swaggerSpec from './configs/swagger';
 import cors from 'cors';
 
 // Initialize express app
@@ -12,9 +10,6 @@ const app = express().disable('x-powered-by');
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:9001',
-  'http://localhost:9002',
-  'https://apipaymentservice.skyparking.online',
-  '*'
 ];
 
 const corsOptions = {

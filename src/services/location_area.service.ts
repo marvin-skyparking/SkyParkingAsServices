@@ -52,10 +52,10 @@ export async function getNearbyLocations(
       include: [
         {
           model: LocationLot,
-          as: "lots", // Must match `hasMany` alias in LocationArea
-          required: false, // Allows locations without lots
-        },
-      ],
+          as: 'lots', // Must match `hasMany` alias in LocationArea
+          required: false // Allows locations without lots
+        }
+      ]
     });
 
     const nearbyLocations = locations.filter((location) => {

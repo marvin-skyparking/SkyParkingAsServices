@@ -93,6 +93,7 @@ export async function getNearbyLocationsController(
       timestamp?: string;
     };
 
+    console.log(req.headers)
     const { latitude, longitude, radius } = req.body;
 
     if (!client_id || !signature || !timestamp) {
@@ -121,10 +122,15 @@ export async function getNearbyLocationsController(
       signature,
       stringToSign
     );
+
     if (!isValidSignature) {
       return res
         .status(403)
-        .json({ Status: false, ResponseCode:"403400", Message: 'Forbidden: Invalid signature' });
+        .json({
+          Status: false,
+          ResponseCode: '403400',
+          Message: 'Forbidden: Invalid signature'
+        });
     }
 
     const lat = Number(latitude);
@@ -166,6 +172,10 @@ export async function getNearbyLocationsController(
     console.error('Error fetching nearby locations:', error);
     return res
       .status(500)
-      .json({ Status: false, ResponseCode:"500500" ,Message: 'General Error' });
+      .json({
+        Status: false,
+        ResponseCode: '500500',
+        Message: 'General Error'
+      });
   }
 }
