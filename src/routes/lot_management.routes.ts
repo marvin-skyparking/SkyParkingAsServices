@@ -7,6 +7,6 @@ import {
 const lotRoute = express.Router();
 
 lotRoute.post('/update-lot', updateLot);
-lotRoute.get('/location', getLocationByCodeController);
+lotRoute.get('/location/:location_code', getLocationByCodeController);
 
 export default lotRoute;

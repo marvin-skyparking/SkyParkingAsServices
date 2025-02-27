@@ -28,7 +28,7 @@ export async function updateLot(req: Request, res: Response) {
 
 export async function getLocationByCodeController(req: Request, res: Response) {
   try {
-    const { location_code } = req.body;
+    const { location_code } = req.params;
 
     if (!location_code) {
       return res.status(400).json({
