@@ -99,3 +99,25 @@ export async function getNearbyLocations(
     throw new Error('Failed to fetch nearby locations');
   }
 }
+
+export async function getLocationsByCode(
+  location_code: string
+): Promise<any[]> {
+  try {
+    const locations = await LocationArea.findAll({
+      where: { location_code },
+      include: [
+        {
+          model: LocationLot,
+          as: 'lots', // Must match `hasMany` alias in LocationArea
+          required: false // Allows locations without lots
+        }
+      ]
+    });
+
+    return locations;
+  } catch (error) {
+    console.error('Error fetching locations by code:', error);
+    throw new Error('Failed to fetch locations by code');
+  }
+}
