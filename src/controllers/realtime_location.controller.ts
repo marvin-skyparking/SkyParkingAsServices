@@ -48,30 +48,31 @@ export async function getLocationByCodeController(req: Request, res: Response) {
       });
     }
 
-    const formattedLocations = locations.map(location => ({
+    const formattedLocations = locations.map((location) => ({
       location_code: location.location_code,
       location_name: location.location_name,
       address: location.address,
       coordinate: location.coordinate,
       category: location.category,
       total_lot: location.total_lot,
-      lots: location.lots.map((lot: { 
-        location_name: string; 
-        lot_name: string; 
-        vehicle_type: string; 
-        max_lot: number; 
-        used_lot: number; 
-        available_lot: number; 
-      }) => ({
-        location_name: lot.location_name,
-        lot_name: lot.lot_name,
-        vehicle_type: lot.vehicle_type,
-        max_lot: lot.max_lot,
-        used_lot: lot.used_lot,
-        available_lot: lot.available_lot
-      }))
+      lots: location.lots.map(
+        (lot: {
+          location_name: string;
+          lot_name: string;
+          vehicle_type: string;
+          max_lot: number;
+          used_lot: number;
+          available_lot: number;
+        }) => ({
+          location_name: lot.location_name,
+          lot_name: lot.lot_name,
+          vehicle_type: lot.vehicle_type,
+          max_lot: lot.max_lot,
+          used_lot: lot.used_lot,
+          available_lot: lot.available_lot
+        })
+      )
     }));
-    
 
     return res.status(200).json({
       Status: true,
