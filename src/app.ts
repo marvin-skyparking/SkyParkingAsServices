@@ -7,7 +7,11 @@ import cors from 'cors';
 const app = express().disable('x-powered-by');
 
 // CORS options to allow requests from localhost:9000
-const allowedOrigins = ['http://localhost:3000', 'http://localhost:9001','https://dev-occ.skyparking.online'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:9001',
+  'https://dev-occ.skyparking.online'
+];
 
 const corsOptions = {
   origin: (

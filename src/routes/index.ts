@@ -1,6 +1,7 @@
 import express from 'express';
 import partnerRoute from './partner.routes';
 import lotRoute from './lot_management.routes';
+import innAppRoute from './inapp.route';
 const router = express.Router();
 
 // router.use('/customer', member_customer);
@@ -11,5 +12,6 @@ const router = express.Router();
 
 router.use('/partner', partnerRoute);
 router.use('/realtime', lotRoute);
+router.use('/parking', innAppRoute);
 
 export default router;

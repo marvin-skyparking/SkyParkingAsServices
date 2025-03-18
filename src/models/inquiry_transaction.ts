@@ -1,0 +1,123 @@
+import { DataTypes, Model, Optional } from 'sequelize';
+import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
+
+interface InquiryTransactionAttributes {
+  Id: bigint;
+  CompanyName?: string;
+  NMID?: string;
+  StoreCode?: string;
+  TransactionNo?: string;
+  ReferenceNo?: string;
+  ProjectCategoryId?: number;
+  ProjectCategoryName?: string;
+  DataSend?: string;
+  DataResponse?: string;
+  DataDetailResponse?: string;
+  CreatedOn?: Date;
+  CreatedBy?: string;
+  UpdatedOn?: Date;
+  UpdatedBy?: string;
+}
+
+// Define optional attributes
+type InquiryTransactionCreationAttributes = Optional<
+  InquiryTransactionAttributes,
+  'Id'
+>;
+
+class InquiryTransaction
+  extends Model<
+    InquiryTransactionAttributes,
+    InquiryTransactionCreationAttributes
+  >
+  implements InquiryTransactionAttributes
+{
+  public Id!: bigint;
+  public CompanyName?: string;
+  public NMID?: string;
+  public StoreCode?: string;
+  public TransactionNo?: string;
+  public ReferenceNo?: string;
+  public ProjectCategoryId?: number;
+  public ProjectCategoryName?: string;
+  public DataSend?: string;
+  public DataResponse?: string;
+  public DataDetailResponse?: string;
+  public CreatedOn?: Date;
+  public CreatedBy?: string;
+  public UpdatedOn?: Date;
+  public UpdatedBy?: string;
+}
+
+InquiryTransaction.init(
+  {
+    Id: {
+      type: DataTypes.BIGINT.UNSIGNED,
+      autoIncrement: true,
+      primaryKey: true
+    },
+    CompanyName: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    NMID: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    StoreCode: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    TransactionNo: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    ReferenceNo: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    ProjectCategoryId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true
+    },
+    ProjectCategoryName: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    DataSend: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    DataResponse: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    DataDetailResponse: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    CreatedOn: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    CreatedBy: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    UpdatedOn: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    UpdatedBy: {
+      type: DataTypes.STRING(50),
+      allowNull: true
+    }
+  },
+  {
+    sequelize,
+    tableName: 'InquiryTransaction',
+    timestamps: false
+  }
+);
+
+export default InquiryTransaction;

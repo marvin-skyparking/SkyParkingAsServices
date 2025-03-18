@@ -99,3 +99,5 @@ export function generateRandomNumberFromPlate(plateNumber: string): string {
   // Combine numeric part and random part
   return numericPart + randomPart;
 }
+
+export const inTime = moment().format('YYYY-MM-DD HH:mm:ss');
