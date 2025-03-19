@@ -1,7 +1,7 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
 
-interface InquiryTransactionMappingAttributes {
+interface PartnerMappingAttributes {
   Id: number;
   CompanyName?: string;
   MPAN?: string;
@@ -21,17 +21,14 @@ interface InquiryTransactionMappingAttributes {
 }
 
 // Define optional attributes
-type InquiryTransactionMappingCreationAttributes = Optional<
-  InquiryTransactionMappingAttributes,
+type PartnerMappingCreationAttributes = Optional<
+  PartnerMappingAttributes,
   'Id'
 >;
 
-class InquiryTransactionMapping
-  extends Model<
-    InquiryTransactionMappingAttributes,
-    InquiryTransactionMappingCreationAttributes
-  >
-  implements InquiryTransactionMappingAttributes
+class PartnerMapping
+  extends Model<PartnerMappingAttributes, PartnerMappingCreationAttributes>
+  implements PartnerMappingAttributes
 {
   public Id!: number;
   public CompanyName?: string;
@@ -51,7 +48,7 @@ class InquiryTransactionMapping
   public UpdatedDate?: Date;
 }
 
-InquiryTransactionMapping.init(
+PartnerMapping.init(
   {
     Id: {
       type: DataTypes.INTEGER.UNSIGNED,
@@ -121,9 +118,9 @@ InquiryTransactionMapping.init(
   },
   {
     sequelize,
-    tableName: 'InquiryTransactionMapping',
+    tableName: 'PartnerMapping',
     timestamps: false
   }
 );
 
-export default InquiryTransactionMapping;
+export default PartnerMapping;

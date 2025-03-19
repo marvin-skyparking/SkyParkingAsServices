@@ -1,4 +1,4 @@
-import InquiryTransactionMapping from '../models/inquiry_transaction_mapping.model';
+import InquiryTransactionMapping from '../models/partner_mapping.model';
 
 /**
  * Create a new InquiryTransactionMapping record.

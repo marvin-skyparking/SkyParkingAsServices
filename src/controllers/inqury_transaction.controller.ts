@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import InquiryTransactionMapping from '../models/inquiry_transaction_mapping.model';
+import InquiryTransactionMapping from '../models/partner_mapping.model';
 import { decryptPayload, generateSignature } from '../utils/encrypt.utils';
 import { findInquiryTransactionMapping } from '../services/inquiry_transaction_mapping.service';
 import {
