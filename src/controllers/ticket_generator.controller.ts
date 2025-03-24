@@ -27,6 +27,7 @@ export async function createTicketHandler(req: Request, res: Response) {
       referenceNo: ticket.reference_no,
       tarif: ticket.tarif,
       status: ticket.status,
+      grace_period: ticket.grace_period,
       url_ticket: ticket.url_ticket,
       storeID: 'ID2023262331937',
       locationCode: '007SK',
