@@ -83,7 +83,7 @@ TicketGenerator.init(
       allowNull: false
     },
     reference_no: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING,
       allowNull: true
     },
     created_at: {
