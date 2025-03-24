@@ -25,6 +25,7 @@ export async function createTicketHandler(req: Request, res: Response) {
       messageDetail: 'The ticket was generated successfully.',
       transactionNo: ticket.transactionNo,
       referenceNo: ticket.reference_no,
+      url_ticket: ticket.url_ticket,
       storeID: 'ID2023262331937',
       locationCode: '007SK',
       subLocationCode: '007SK-1',

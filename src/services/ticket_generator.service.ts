@@ -23,7 +23,7 @@ export async function createTicket() {
     url_ticket: `https://devapps.skyparking.online/Ebilling?p1=ID2023262331937&p2=${transactionNo}`,
     tarif: 0,
     vehicle_type: 'MOBIL',
-    reference_no: generateReferenceNo(),
+    reference_no: generateReferenceNo(24),
     grace_period: 5, // Default 15 minutes
     inTime: moment().toDate(), // Current date-time
     status: 'UNPAID'
