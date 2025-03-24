@@ -57,8 +57,7 @@ export async function findInquiryTransactionMapping(
       Login,
       Password,
       NMID
-    },
-    logging: console.log // Logs the SQL query
+    }
   });
 
   return mapping; // Returns the record if found, otherwise null

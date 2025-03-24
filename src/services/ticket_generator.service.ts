@@ -1,5 +1,6 @@
 import TicketGenerator from '../models/ticket_generatore.model';
 import moment from 'moment';
+import { generateReferenceNo } from '../utils/helper.utils';
 
 /**
  * Generate a random transaction number
@@ -21,6 +22,8 @@ export async function createTicket() {
     transactionNo,
     url_ticket: `https://devapps.skyparking.online/Ebilling?p1=ID2023262331937&p2=${transactionNo}`,
     tarif: 0,
+    vehicle_type: 'MOBIL',
+    reference_no: generateReferenceNo(),
     grace_period: 5, // Default 15 minutes
     inTime: moment().toDate(), // Current date-time
     status: 'UNPAID'
@@ -65,13 +68,24 @@ export async function updateTarifIfExpired(transactionNo: string) {
 /**
  * Update ticket status
  */
-export async function updateTicketStatus(
-  transactionNo: string,
-  status: 'PAID' | 'UNPAID'
-) {
-  const ticket = await TicketGenerator.findOne({ where: { transactionNo } });
-  if (!ticket) throw new Error('Ticket not found');
+export async function updateTicketStatus(transactionNo: string) {
+  try {
+    const ticket = await TicketGenerator.findOne({ where: { transactionNo } });
 
-  await ticket.update({ status });
-  return ticket;
+    if (!ticket) {
+      throw new Error('Ticket not found');
+    }
+
+    // Set status to "PAID" and update outTime
+    const updateData = {
+      status: 'PAID' as const, // Explicitly define the type
+      outTime: new Date()
+    };
+
+    await ticket.update(updateData);
+    return ticket;
+  } catch (error: any) {
+    console.error('Error updating ticket status:', error);
+    throw new Error(error.message || 'Failed to update ticket status');
+  }
 }

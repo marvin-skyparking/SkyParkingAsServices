@@ -63,3 +63,38 @@ export const generateSignature = (
   const rawString = `${login}${password}${storeID}${transactionNo}${secretKey}`;
   return crypto.createHash('md5').update(rawString).digest('hex');
 };
+
+export function generatePaymentSignature(
+  login: string,
+  password: string,
+  storeID: string,
+  transactionNo: string,
+  referenceNo: string,
+  amount: string,
+  paymentStatus: string,
+  paymentReferenceNo: string,
+  paymentDate: string,
+  partnerID: string,
+  retrievalReferenceNo: string,
+  approvalCode: string,
+  SECRET_KEY: string
+): string {
+  // Concatenating all parameters into a single string
+  const dataString =
+    login +
+    password +
+    storeID +
+    transactionNo +
+    referenceNo +
+    amount +
+    paymentStatus +
+    paymentReferenceNo +
+    paymentDate +
+    partnerID +
+    retrievalReferenceNo +
+    approvalCode +
+    SECRET_KEY;
+
+  // Generating MD5 hash
+  return crypto.createHash('md5').update(dataString).digest('hex');
+}

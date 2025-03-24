@@ -101,3 +101,15 @@ export function generateRandomNumberFromPlate(plateNumber: string): string {
 }
 
 export const inTime = moment().format('YYYY-MM-DD HH:mm:ss');
+
+export function generateReferenceNo(length = 24): string {
+  const characters = '0123456789ABCDEF';
+  let result = '';
+
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters[randomIndex];
+  }
+
+  return result;
+}

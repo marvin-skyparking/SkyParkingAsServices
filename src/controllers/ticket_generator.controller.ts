@@ -4,7 +4,11 @@ import {
   findTicket,
   updateTicketStatus
 } from '../services/ticket_generator.service';
-import { encryptPayload, generateSignature } from '../utils/encrypt.utils';
+import {
+  encryptPayload,
+  generatePaymentSignature,
+  generateSignature
+} from '../utils/encrypt.utils';
 import { findInquiryTransactionMapping } from '../services/inquiry_transaction_mapping.service';
 
 /**
@@ -13,7 +17,23 @@ import { findInquiryTransactionMapping } from '../services/inquiry_transaction_m
 export async function createTicketHandler(req: Request, res: Response) {
   try {
     const ticket = await createTicket();
-    return res.json({ success: true, data: ticket });
+
+    const response = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'The ticket was generated successfully.',
+      transactionNo: ticket.transactionNo,
+      referenceNo: ticket.reference_no,
+      storeID: 'ID2023262331937',
+      locationCode: '007SK',
+      subLocationCode: '007SK-1',
+      gateInCode: '007SK-1-PM-GATE1A',
+      vehicleType: 'MOBIL',
+      productName: 'MOBIL REGULAR',
+      inTime: ticket.inTime
+    };
+    return res.json({ success: true, data: response });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -51,7 +71,7 @@ export async function updateTicketStatusHandler(req: Request, res: Response) {
       return res.status(400).json({ success: false, error: 'Invalid status' });
     }
 
-    const updatedTicket = await updateTicketStatus(transactionNo, status);
+    const updatedTicket = await updateTicketStatus(transactionNo);
     return res.json({ success: true, data: updatedTicket });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
@@ -99,4 +119,93 @@ export async function sigantureKey(req: Request, res: Response) {
     data: encrypted_data,
     secret: secretKey.SecretKey
   });
+}
+
+export async function getPaymentSignature(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  try {
+    const {
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      partnerID,
+      retrievalReferenceNo,
+      approvalCode
+    } = req.body;
+
+    if (
+      !login ||
+      !password ||
+      !storeID ||
+      !transactionNo ||
+      !referenceNo ||
+      !amount ||
+      !paymentStatus ||
+      !paymentReferenceNo ||
+      !paymentDate ||
+      !partnerID ||
+      !retrievalReferenceNo ||
+      !approvalCode
+    ) {
+      return res.status(400).json({
+        responseCode: '400400',
+        responseMessage: 'All fields are required'
+      });
+    }
+
+    const secretKeyData = await findInquiryTransactionMapping(
+      login,
+      password,
+      storeID
+    );
+    if (!secretKeyData || !secretKeyData.SecretKey) {
+      return res.status(401).json({
+        responseCode: '401402',
+        responseMessage: 'Invalid Credential'
+      });
+    }
+
+    const secretKey = secretKeyData.SecretKey;
+
+    // Generate the signature
+    const signature = generatePaymentSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      partnerID,
+      retrievalReferenceNo,
+      approvalCode,
+      secretKey
+    );
+
+    // Encrypt entire request body + signature
+    const payload = { ...req.body, signature };
+    const encryptedData = encryptPayload(payload, secretKey);
+
+    return res.status(200).json({
+      responseCode: '200200',
+      responseMessage: 'Success',
+      signature: signature,
+      data: encryptedData
+    });
+  } catch (error) {
+    console.error('Error generating payment signature:', error);
+    return res
+      .status(500)
+      .json({ responseCode: '500500', responseMessage: 'Server error' });
+  }
 }

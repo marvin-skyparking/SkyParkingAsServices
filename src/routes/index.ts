@@ -1,7 +1,8 @@
 import express from 'express';
 import partnerRoute from './partner.routes';
 import lotRoute from './lot_management.routes';
-import innAppRoute from './inapp.route';
+import innAppRoute from './inapp.routes';
+
 const router = express.Router();
 
 // router.use('/customer', member_customer);

@@ -10,6 +10,8 @@ interface TicketGeneratorAttributes {
   outTime?: Date | null;
   status: 'PAID' | 'UNPAID';
   url_ticket?: string | null;
+  vehicle_type: 'MOBIL' | 'MOTOR';
+  reference_no: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -32,6 +34,8 @@ class TicketGenerator
   public inTime!: Date;
   public outTime!: Date | null;
   public status!: 'PAID' | 'UNPAID';
+  public vehicle_type!: 'MOBIL' | 'MOTOR';
+  public reference_no!: string;
   public url_ticket!: string | null;
   public created_at!: Date;
   public updated_at!: Date;
@@ -72,6 +76,14 @@ TicketGenerator.init(
     },
     url_ticket: {
       type: DataTypes.TEXT,
+      allowNull: true
+    },
+    vehicle_type: {
+      type: DataTypes.ENUM('MOBIL', 'MOTOR'),
+      allowNull: false
+    },
+    reference_no: {
+      type: DataTypes.DATE,
       allowNull: true
     },
     created_at: {
