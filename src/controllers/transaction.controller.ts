@@ -102,14 +102,16 @@ export const processInquiryTransaction = async (
         responseStatus: 'Success',
         responseCode: '211000',
         responseDescription: 'Transaction Success',
-        messageDetail: 'Parking is still free.',
+        messageDetail: 'Ticket is valid, Parking is still free.',
         data: {
           transactionNo: data_ticket.transactionNo,
           inTime: formattedInTime,
           duration: 0,
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
-          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          outTime: data_ticket.outTime
+            ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
           gracePeriod: data_ticket.grace_period,
           location: 'SKY PLUIT VILLAGE',
           paymentStatus: 'FREE'
@@ -128,7 +130,9 @@ export const processInquiryTransaction = async (
           duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
           tariff: update_tarif.tarif,
           vehicleType: update_tarif.vehicle_type,
-          outTime: moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          outTime: update_tarif.outTime
+            ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
           gracePeriod: update_tarif.grace_period,
           location: 'SKY PLUIT VILLAGE',
           paymentStatus: update_tarif.status

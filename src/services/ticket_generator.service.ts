@@ -8,7 +8,7 @@ import { generateReferenceNo } from '../utils/helper.utils';
 function generateTransactionNo(): string {
   const utcDate = moment().tz('UTC').format('YYYYMMDD'); // Get correct UTC date
   const randomPart = Math.floor(
-    100000000000 + Math.random() * 900000000000
+    10000000000 + Math.random() * 900000000000
   ).toString();
   return `${utcDate}${randomPart}F007SK`;
 }
