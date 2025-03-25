@@ -34,16 +34,16 @@ export const processInquiryTransaction = async (
   try {
     const { data } = req.body;
     if (!data)
-      return res.status(400).json({ error: 'Encrypted data is required' });
+      return res.status(200).json({ error: 'Encrypted data is required' });
 
     const decryptedObject = decryptPayload(data);
     if (!decryptedObject)
-      return res.status(400).json({ error: 'Failed to decrypt data' });
+      return res.status(200).json({ error: 'Failed to decrypt data' });
 
     const { login, password, storeID, transactionNo, signature } =
       decryptedObject;
     if (![login, password, storeID, transactionNo, signature].every(Boolean))
-      return res.status(400).json({ error: 'Invalid data format' });
+      return res.status(200).json({ error: 'Invalid data format' });
 
     const validate_credential = await findInquiryTransactionMapping(
       login,
@@ -51,7 +51,7 @@ export const processInquiryTransaction = async (
       storeID
     );
     if (!validate_credential)
-      return res.status(401).json({
+      return res.status(200).json({
         responseCode: '401402',
         responseMessage: 'Invalid Credential'
       });
@@ -65,7 +65,7 @@ export const processInquiryTransaction = async (
     );
     if (signature.toLowerCase() !== expectedSignature.toLowerCase())
       return res
-        .status(401)
+        .status(200)
         .json({ responseCode: '401400', responseMessage: 'Invalid Signature' });
 
     const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
@@ -78,13 +78,13 @@ export const processInquiryTransaction = async (
 
     const data_ticket = await findTicket(transactionNo);
     if (!data_ticket)
-      return res.status(404).json({
+      return res.status(200).json({
         responseCode: '404401',
         responseMessage: 'Invalid Transaction'
       });
 
     if (data_ticket.status === 'PAID')
-      return res.status(400).json({
+      return res.status(200).json({
         responseCode: '400400',
         responseMessage: 'Ticket already paid'
       });
