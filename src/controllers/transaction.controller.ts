@@ -51,12 +51,10 @@ export const processInquiryTransaction = async (
       storeID
     );
     if (!validate_credential)
-      return res
-        .status(401)
-        .json({
-          responseCode: '401402',
-          responseMessage: 'Invalid Credential'
-        });
+      return res.status(401).json({
+        responseCode: '401402',
+        responseMessage: 'Invalid Credential'
+      });
 
     const expectedSignature = generateSignature(
       login,
@@ -80,20 +78,16 @@ export const processInquiryTransaction = async (
 
     const data_ticket = await findTicket(transactionNo);
     if (!data_ticket)
-      return res
-        .status(404)
-        .json({
-          responseCode: '404401',
-          responseMessage: 'Invalid Transaction'
-        });
+      return res.status(404).json({
+        responseCode: '404401',
+        responseMessage: 'Invalid Transaction'
+      });
 
     if (data_ticket.status === 'PAID')
-      return res
-        .status(400)
-        .json({
-          responseCode: '400400',
-          responseMessage: 'Ticket already paid'
-        });
+      return res.status(400).json({
+        responseCode: '400400',
+        responseMessage: 'Ticket already paid'
+      });
 
     const inTime = moment(data_ticket.inTime);
     const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
