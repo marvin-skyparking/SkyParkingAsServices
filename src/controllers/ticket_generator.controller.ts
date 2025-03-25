@@ -107,6 +107,8 @@ export async function sigantureKey(req: Request, res: Response) {
     secretKey.SecretKey || ''
   );
 
+  const GibberishKey = secretKey.GibberishKey ?? '';
+
   const data = {
     login,
     password,
@@ -115,7 +117,7 @@ export async function sigantureKey(req: Request, res: Response) {
     signature
   };
 
-  const encrypted_data = encryptPayload(data, secretKey.SecretKey);
+  const encrypted_data = encryptPayload(data);
 
   return res.json({
     success: true,
@@ -198,7 +200,7 @@ export async function getPaymentSignature(
 
     // Encrypt entire request body + signature
     const payload = { ...req.body, signature };
-    const encryptedData = encryptPayload(payload, secretKey);
+    const encryptedData = encryptPayload(payload);
 
     return res.status(200).json({
       responseCode: '200200',

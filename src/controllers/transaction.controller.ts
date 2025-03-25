@@ -22,6 +22,7 @@ import {
   getRolesByPartnerId
 } from '../services/partner_mapping.service';
 import PartnerMapping from '../models/partner_mapping.model';
+import { createInquiryTransaction } from '../services/inquiry_transaction.service';
 
 /**
  * Process Inquiry Transaction
@@ -31,152 +32,133 @@ export const processInquiryTransaction = async (
   res: Response
 ) => {
   try {
-    const { data } = req.body; // Encrypted data from request
-
-    if (!data) {
+    const { data } = req.body;
+    if (!data)
       return res.status(400).json({ error: 'Encrypted data is required' });
-    }
 
-    // Fetch secret key from `inquiry_transaction_mapping`
-    const mapping = await PartnerMapping.findOne();
-    if (!mapping || !mapping.SecretKey) {
-      return res
-        .status(404)
-        .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
-    }
-
-    const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
-
-    // Decrypt AES data
-    const decryptedObject = decryptPayload(data, SecretKey);
-
-    if (!decryptedObject) {
+    const decryptedObject = decryptPayload(data);
+    if (!decryptedObject)
       return res.status(400).json({ error: 'Failed to decrypt data' });
-    }
 
     const { login, password, storeID, transactionNo, signature } =
       decryptedObject;
+    if (![login, password, storeID, transactionNo, signature].every(Boolean))
+      return res.status(400).json({ error: 'Invalid data format' });
 
-    if (!login || !password || !storeID || !transactionNo || !signature) {
-      return res.status(400).json({ error: 'Invalid decrypted data format' });
-    }
+    const validate_credential = await findInquiryTransactionMapping(
+      login,
+      password,
+      storeID
+    );
+    if (!validate_credential)
+      return res
+        .status(401)
+        .json({
+          responseCode: '401402',
+          responseMessage: 'Invalid Credential'
+        });
 
-    // Generate signature
     const expectedSignature = generateSignature(
       login,
       password,
       storeID,
       transactionNo,
-      SecretKey
+      validate_credential.SecretKey || ''
     );
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase())
+      return res
+        .status(401)
+        .json({ responseCode: '401400', responseMessage: 'Invalid Signature' });
 
-    console.log(expectedSignature);
-
-    // Ensure both signatures are lowercase for comparison
-    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
-      return res.status(401).json({
-        responseCode: '401400',
-        responseMessage: 'Invalid Signature'
-      });
-    }
-
-    const validate_credential = await findInquiryTransactionMapping(
-      decryptedObject.login,
-      decryptedObject.password,
-      decryptedObject.storeID
-    );
-
-    console.log(validate_credential);
-
-    if (!validate_credential) {
-      return res.status(401).json({
-        responseCode: '401402',
-        responseMessage: 'Invalid Credential'
-      });
-    }
-
-    const check_role = await getRolesByPartnerId(validate_credential.Id);
-
-    const hasPaymentAccess = check_role.some(
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
       (role) => role.access_type === 'INQUIRY'
     );
+    if (!hasAccess)
+      return res
+        .status(401)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
 
-    if (!hasPaymentAccess) {
-      return res.status(401).json({
-        responseCode: '401401',
-        responseMessage: 'You Not Allowed To Access This Feature'
-      });
-    }
-
-    const data_ticket = await findTicket(decryptedObject.transactionNo);
-
-    if (!data_ticket) {
-      return res.status(404).json({
-        responseCode: '404401',
-        responseMessage: 'Invalid Transaction'
-      });
-    }
-
-    if (data_ticket.status === 'PAID') {
-      return res.status(400).json({
-        responseCode: '400400',
-        responseMessage: 'Tiket Sudah di Bayar'
-      });
-    }
-
-    if (data_ticket.inTime) {
-      const inTime = moment(data_ticket.inTime);
-      const gracePeriodEnd = inTime.add(
-        data_ticket.grace_period || 5,
-        'minutes'
-      ); // Default 5 minutes if undefined
-
-      if (moment().isBefore(gracePeriodEnd)) {
-        return res.json({
-          responseStatus: 'Success',
-          responseCode: '211000',
-          responseDescription: 'Transaction Success',
-          messageDetail: 'Tiket valid, biaya parkir Anda masih gratis.',
-          data: {
-            transactionNo: data_ticket.transactionNo,
-            transactionStatus: 'VALID',
-            inTime: data_ticket.inTime,
-            duration: 0,
-            tariff: data_ticket.tarif,
-            vehicleType: 'MOTOR',
-            outTime: data_ticket.outTime,
-            gracePeriod: data_ticket.grace_period,
-            location: 'SKY PLUIT VILLAGE',
-            paymentStatus: 'FREE'
-          }
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket)
+      return res
+        .status(404)
+        .json({
+          responseCode: '404401',
+          responseMessage: 'Invalid Transaction'
         });
-      } else if (moment().isAfter(gracePeriodEnd)) {
-        const update_tarif = await updateTarifIfExpired(
-          data_ticket.transactionNo
-        );
-        const succes_payload = {
-          responseStatus: 'Success',
-          responseCode: '211000',
-          responseDescription: 'Transaction Success',
-          messageDetail: 'Tiket valid, biaya parkir Anda masih gratis.',
-          data: {
-            transactionNo: update_tarif.transactionNo,
-            transactionStatus: 'VALID',
-            inTime: update_tarif.inTime,
-            duration: 0,
-            tariff: update_tarif.tarif,
-            vehicleType: 'MOTOR',
-            outTime: update_tarif.outTime,
-            gracePeriod: update_tarif.grace_period,
-            location: 'SKY PLUIT VILLAGE',
-            paymentStatus: update_tarif.status
-          }
-        };
-        return res.json(succes_payload); // Respond with the decrypted object directly
-      }
+
+    if (data_ticket.status === 'PAID')
+      return res
+        .status(400)
+        .json({
+          responseCode: '400400',
+          responseMessage: 'Ticket already paid'
+        });
+
+    const inTime = moment(data_ticket.inTime);
+    const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
+    const gracePeriodEnd = inTime
+      .clone()
+      .add(data_ticket.grace_period || 5, 'minutes');
+
+    let responsePayload;
+
+    if (moment().isBefore(gracePeriodEnd)) {
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Parking is still free.',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          inTime: formattedInTime,
+          duration: 0,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          gracePeriod: data_ticket.grace_period,
+          location: 'SKY PLUIT VILLAGE',
+          paymentStatus: 'FREE'
+        }
+      };
+    } else {
+      const update_tarif = await updateTarifIfExpired(transactionNo);
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Please proceed with payment.',
+        data: {
+          transactionNo: update_tarif.transactionNo,
+          inTime: formattedInTime,
+          duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
+          tariff: update_tarif.tarif,
+          vehicleType: update_tarif.vehicle_type,
+          outTime: moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          gracePeriod: update_tarif.grace_period,
+          location: 'SKY PLUIT VILLAGE',
+          paymentStatus: update_tarif.status
+        }
+      };
     }
+
+    // ✅ Insert InquiryTransaction Record
+    await createInquiryTransaction({
+      StoreCode: '007SK',
+      TransactionNo: transactionNo,
+      NMID: '007SK',
+      CompanyName: validate_credential.CompanyName || '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(decryptedObject), // Store request payload
+      DataResponse: JSON.stringify(responsePayload), // Store response payload
+      CreatedOn: moment().toDate(),
+      CreatedBy: login
+    });
+
+    return res.json(responsePayload);
   } catch (error) {
-    console.error('Error processing inquiry transaction:', error);
+    console.error('Error processing transaction:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -203,7 +185,7 @@ export const processPaymentTransaction = async (
     const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
 
     // Decrypt AES data
-    const decryptedObject = decryptPayload(data, SecretKey);
+    const decryptedObject = decryptPayload(data);
 
     if (!decryptedObject) {
       return res.status(400).json({ error: 'Failed to decrypt data' });

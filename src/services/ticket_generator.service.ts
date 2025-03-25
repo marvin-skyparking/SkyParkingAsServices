@@ -6,12 +6,12 @@ import { generateReferenceNo } from '../utils/helper.utils';
  * Generate a random transaction number
  */
 function generateTransactionNo(): string {
+  const utcDate = moment().tz('UTC').format('YYYYMMDD'); // Get correct UTC date
   const randomPart = Math.floor(
     100000000000 + Math.random() * 900000000000
   ).toString();
-  return `${randomPart}F007SK`;
+  return `${utcDate}${randomPart}F007SK`;
 }
-
 /**
  * Create a new TicketGenerator entry
  */

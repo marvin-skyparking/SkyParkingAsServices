@@ -7,17 +7,14 @@ import CryptoJS from 'crypto-js';
  * @param secretKey - Secret key used for decryption
  * @returns Decrypted object
  */
-export const encryptPayload = (
-  data: Record<string, any>,
-  secretKey: string
-): string => {
+export const encryptPayload = (data: Record<string, any>): string => {
   try {
     const jsonString = JSON.stringify(data);
 
     // Ensure secretKey is properly encoded
     const encrypted = CryptoJS.AES.encrypt(
       CryptoJS.enc.Utf8.parse(jsonString),
-      secretKey
+      'PARTNER_KEY'
     ).toString();
 
     return encrypted;
@@ -28,11 +25,10 @@ export const encryptPayload = (
 };
 
 export const decryptPayload = (
-  encryptedData: string,
-  secretKey: string
+  encryptedData: string
 ): Record<string, any> | null => {
   try {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, secretKey);
+    const bytes = CryptoJS.AES.decrypt(encryptedData, 'PARTNER_KEY');
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
     if (!decrypted) throw new Error('Decryption failed: Empty result');
@@ -43,7 +39,6 @@ export const decryptPayload = (
     return null;
   }
 };
-
 /**
  * Generate MD5 Signature
  * @param login - User login
