@@ -41,6 +41,5 @@ export async function getAllPayments() {
   } catch (error) {
     console.error('Error fetching payments:', error);
     throw new Error('Database query failed');
-    throw new Error('Database query failed');
   }
 }

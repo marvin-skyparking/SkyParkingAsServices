@@ -62,3 +62,17 @@ export async function findInquiryTransactionMapping(
 
   return mapping; // Returns the record if found, otherwise null
 }
+
+export async function findInquiryTransactionMappingPartner(
+  Login: string,
+  Password: string
+) {
+  const mapping = await InquiryTransactionMapping.findOne({
+    where: {
+      Login,
+      Password
+    }
+  });
+
+  return mapping; // Returns the record if found, otherwise null
+}

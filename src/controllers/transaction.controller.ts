@@ -5,7 +5,10 @@ import {
   generatePaymentSignature,
   generateSignature
 } from '../utils/encrypt.utils';
-import { findInquiryTransactionMapping } from '../services/inquiry_transaction_mapping.service';
+import {
+  findInquiryTransactionMapping,
+  findInquiryTransactionMappingPartner
+} from '../services/inquiry_transaction_mapping.service';
 import {
   findTicket,
   updateTarifIfExpired,
@@ -224,10 +227,9 @@ export const processPaymentTransaction = async (
     }
 
     // Fetch SecretKey from DB
-    const secretKeyData = await findInquiryTransactionMapping(
+    const secretKeyData = await findInquiryTransactionMappingPartner(
       login,
-      password,
-      storeID
+      password
     );
 
     if (!secretKeyData || !secretKeyData.SecretKey) {
@@ -242,7 +244,7 @@ export const processPaymentTransaction = async (
     const expectedSignature = generatePaymentSignature(
       login,
       password,
-      storeID,
+      secretKeyData.NMID ?? '',
       transactionNo,
       referenceNo,
       amount,
