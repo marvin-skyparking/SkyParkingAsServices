@@ -150,23 +150,27 @@ export async function getPaymentSignature(
       approvalCode
     } = req.body;
 
-    if (
-      !login ||
-      !password ||
-      !storeID ||
-      !transactionNo ||
-      !referenceNo ||
-      !amount ||
-      !paymentStatus ||
-      !paymentReferenceNo ||
-      !paymentDate ||
-      !partnerID ||
-      !retrievalReferenceNo ||
-      !approvalCode
-    ) {
+    const requiredFields = [
+      'login',
+      'password',
+      'storeID',
+      'transactionNo',
+      'referenceNo',
+      'amount',
+      'paymentStatus',
+      'paymentReferenceNo',
+      'paymentDate',
+      'partnerID',
+      'retrievalReferenceNo',
+      'approvalCode'
+    ];
+
+    const missingFields = requiredFields.filter((field) => !req.body[field]);
+
+    if (missingFields.length) {
       return res.status(400).json({
         responseCode: '400400',
-        responseMessage: 'All fields are required'
+        responseMessage: `Missing fields: ${missingFields.join(', ')}`
       });
     }
 
