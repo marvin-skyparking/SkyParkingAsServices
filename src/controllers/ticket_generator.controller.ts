@@ -9,7 +9,10 @@ import {
   generatePaymentSignature,
   generateSignature
 } from '../utils/encrypt.utils';
-import { findInquiryTransactionMapping } from '../services/inquiry_transaction_mapping.service';
+import {
+  findInquiryTransactionMapping,
+  findInquiryTransactionMappingPartner
+} from '../services/inquiry_transaction_mapping.service';
 
 /**
  * Create a new ticket
@@ -167,10 +170,9 @@ export async function getPaymentSignature(
       });
     }
 
-    const secretKeyData = await findInquiryTransactionMapping(
+    const secretKeyData = await findInquiryTransactionMappingPartner(
       login,
-      password,
-      storeID
+      password
     );
     if (!secretKeyData || !secretKeyData.SecretKey) {
       return res.status(401).json({
@@ -185,7 +187,7 @@ export async function getPaymentSignature(
     const signature = generatePaymentSignature(
       login,
       password,
-      storeID,
+      secretKeyData.NMID ?? '',
       transactionNo,
       referenceNo,
       amount,

@@ -175,15 +175,15 @@ export const processPaymentTransaction = async (
       return res.status(400).json({ error: 'Encrypted data is required' });
     }
 
-    // Fetch secret key from `inquiry_transaction_mapping`
-    const mapping = await PartnerMapping.findOne();
-    if (!mapping || !mapping.SecretKey) {
-      return res
-        .status(404)
-        .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
-    }
+    // // Fetch secret key from `inquiry_transaction_mapping`
+    // const mapping = await PartnerMapping.findOne();
+    // if (!mapping || !mapping.SecretKey) {
+    //   return res
+    //     .status(404)
+    //     .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
+    // }
 
-    const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
+    // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
 
     // Decrypt AES data
     const decryptedObject = decryptPayload(data);
@@ -233,9 +233,9 @@ export const processPaymentTransaction = async (
     );
 
     if (!secretKeyData || !secretKeyData.SecretKey) {
-      return res.status(401).json({
+      return res.status(200).json({
         responseCode: '401402',
-        responseMessage: 'Invalid Credential'
+        responseMessage: 'Invalids Credential'
       });
     }
 
@@ -265,20 +265,7 @@ export const processPaymentTransaction = async (
       });
     }
 
-    const validate_credential = await findInquiryTransactionMapping(
-      decryptedObject.login,
-      decryptedObject.password,
-      decryptedObject.storeID
-    );
-
-    if (!validate_credential) {
-      return res.status(401).json({
-        responseCode: '401402',
-        responseMessage: 'Invalid Credential'
-      });
-    }
-
-    const check_role = await getRolesByPartnerId(validate_credential.Id);
+    const check_role = await getRolesByPartnerId(secretKeyData.Id);
 
     const hasPaymentAccess = check_role.some(
       (role) => role.access_type === 'PAYMENT'
