@@ -2,11 +2,15 @@ import { Request, Response } from 'express';
 import InquiryTransactionMapping from '../models/partner_mapping.model';
 import {
   decryptPayload,
+  DecryptTotPOST,
+  EncryptTotPOST,
   generatePaymentSignature,
-  generateSignature
+  generateSignature,
+  RealdecryptPayload
 } from '../utils/encrypt.utils';
 import {
   findInquiryTransactionMapping,
+  findInquiryTransactionMappingByNMID,
   findInquiryTransactionMappingPartner
 } from '../services/inquiry_transaction_mapping.service';
 import {
@@ -26,10 +30,407 @@ import {
 } from '../services/partner_mapping.service';
 import PartnerMapping from '../models/partner_mapping.model';
 import { createInquiryTransaction } from '../services/inquiry_transaction.service';
+import { ERROR_MESSAGES } from '../constant/INAPP.errormessage';
+import {
+  defaultTransactionData,
+  TransactionData
+} from '../models/inquiry_transaction';
+import axios from 'axios';
+import axiosRetry from 'axios-retry';
+import Sentry from '../utils/sentry.utils';
 
 /**
  * Process Inquiry Transaction
  */
+
+axiosRetry(axios, {
+  retries: 3, // Number of retries
+  retryDelay: (retryCount) => retryCount * 1000, // Exponential backoff (1s, 2s, 3s)
+  retryCondition: (error: any) => {
+    // Retry only on network errors or 5xx server errors
+    return error.response?.status >= 500 || error.code === 'ECONNABORTED';
+  }
+});
+
+//Inquiry Partner - NOBU
+export async function Inquiry_Transaction(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    //Get Value Data
+    const { data } = req.body;
+
+    // Check if data is provided
+    if (!data) {
+      const missing_encrypted_data = 'Missing encrypted data';
+      // Capture the error in Sentry with request details
+      Sentry.captureException(new Error(missing_encrypted_data), {
+        extra: {
+          requestBody: data, // Include full request body
+          headers: req.headers, // Include request headers
+          ip: req.ip // Capture client IP
+        }
+      });
+
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      const INVALID_ENCRYPTION = 'INVALID ENCRYPATION DATA';
+      // Capture the error in Sentry with request details
+      Sentry.captureException(new Error(INVALID_ENCRYPTION), {
+        extra: {
+          requestBody: data, // Include full request body
+          headers: req.headers, // Include request headers
+          ip: req.ip // Capture client IP
+        }
+      });
+
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
+    }
+
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
+
+    //return res.status(200).json(decryptedObject);
+    if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_FIELDS,
+        data: defaultTransactionData()
+      });
+    }
+
+    const validate_credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!validate_credential)
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    const expectedSignature = generateSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      validate_credential.SecretKey || ''
+    );
+
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase())
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    const find_location = await findInquiryTransactionMappingByNMID(
+      decryptedObject.storeID
+    );
+
+    if (!find_location)
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_LOCATION,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasAccess)
+      return res
+        .status(200)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    const access_post = await getRolesByPartnerId(find_location.Id);
+
+    // Filter the result based on role_name and access_type
+    const inquiryAccess = access_post.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    const postAccess = (await getRolesByPartnerId(find_location.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!postAccess)
+      return res
+        .status(200)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    const data_signature = {
+      login: find_location.Login ?? '',
+      password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
+      transactionNo: decryptedObject.transactionNo ?? ''
+    };
+
+    //Signature
+    const create_signature = await generateSignature(
+      data_signature.login,
+      data_signature.password,
+      data_signature.storeID,
+      data_signature.transactionNo,
+      find_location.SecretKey ?? ''
+    );
+
+    const data_send = {
+      login: find_location.Login ?? '',
+      password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
+      transactionNo: decryptedObject.transactionNo ?? '',
+      signature: create_signature
+    };
+
+    const encrypted_data = await EncryptTotPOST(
+      data_send,
+      find_location.GibberishKey ?? ''
+    );
+
+    if (!inquiryAccess?.url_access) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_LOCATION,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const response = await axios.post(inquiryAccess.url_access, {
+      data: encrypted_data
+    });
+
+    const cleanJsonString = response.data.replace(
+      /[\u0000-\u001F\u007F-\u009F]/g,
+      ''
+    );
+    const parsedData = JSON.parse(cleanJsonString);
+
+    const data_final = await DecryptTotPOST(
+      parsedData.data,
+      find_location.GibberishKey ?? ''
+    );
+
+    const insert_data = {
+      CompanyName: find_location.CompanyName ?? '',
+      NMID: find_location.NMID ?? '',
+      StoreCode: transactionNo.toString().slice(-5), // Ensure string type
+      TransactionNo: transactionNo ?? '',
+      RefernceNo: null,
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(data_send), // Convert to string
+      DataResponse: JSON.stringify(data_final), // Convert to string if needed
+      DataDetailResponse: JSON.stringify(data_final?.data), // Convert to string if needed
+      CreatedOn: new Date(), // Use Date object
+      UpdatedOn: new Date(), // Use Date object
+      CreatedBy: find_location.CompanyName ?? '',
+      UpdatedBy: find_location.CompanyName ?? ''
+    };
+
+    //Harus Dipantaui
+    const data_inquiry_insert = await createInquiryTransaction(insert_data);
+
+    return res.status(200).json(data_final);
+  } catch (error: any) {
+    console.error('Error processing transaction:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+//Partrner Pay Confirmation
+export async function Payment_Confirmation(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    //Get Value Data
+    const { data } = req.body;
+
+    // Check if data is provided
+    if (!data) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
+    }
+
+    const {
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      partnerID,
+      retrievalReferenceNo,
+      approvalCode,
+      signature
+    } = decryptedObject;
+
+    //return res.status(200).json(decryptedObject);
+    if (
+      ![
+        login,
+        password,
+        storeID,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        partnerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].every(Boolean)
+    ) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_FIELDS,
+        data: defaultTransactionData()
+      });
+    }
+
+    // Credential Payment Partner
+    const validate_credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!validate_credential)
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    //Payment Signature
+    const expectedSignature = generatePaymentSignature(
+      login,
+      password,
+      validate_credential.NMID || '',
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      partnerID,
+      retrievalReferenceNo,
+      approvalCode,
+      validate_credential.SecretKey || ''
+    );
+
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase())
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    const find_location = await findInquiryTransactionMappingByNMID(
+      decryptedObject.storeID
+    );
+
+    if (!find_location)
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_LOCATION,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+    if (!hasAccess)
+      return res
+        .status(200)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    // const access_post = await getRolesByPartnerId(find_location.Id);
+    // // Filter the result based on role_name and access_type
+    // // const paymentAccess = access_post.find(
+    // //   (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
+    // // );
+
+    const paymentAccess = (await getRolesByPartnerId(find_location.Id)).some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+
+    if (!paymentAccess)
+      return res
+        .status(200)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    const data_signature = {
+      login: find_location.Login ?? '',
+      password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
+      transactionNo: decryptedObject.transactionNo ?? ''
+    };
+
+    //Signature
+    const create_signature = await generatePaymentSignature(
+      data_signature.login,
+      data_signature.password,
+      data_signature.storeID,
+      data_signature.transactionNo,
+      decryptedObject.referenceNo ?? '',
+      decryptedObject.amount ?? '',
+      decryptedObject.paymentStatus ?? '',
+      decryptedObject.paymentReferenceNo ?? '',
+      decryptedObject.paymentDate ?? '',
+      decryptedObject.partnerID ?? '',
+      decryptedObject.retrievalReferenceNo ?? '',
+      decryptedObject.approvalCode ?? '',
+      find_location.SecretKey ?? ''
+    );
+
+    // Data yang akan dikirim ke post untuk konfirmasi pembayaran
+    const data_send = {
+      login: find_location.Login ?? '',
+      password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
+      transactionNo: decryptedObject.transactionNo ?? '',
+      referenceNo: decryptedObject.referenceNo ?? '',
+      amount: decryptedObject.amount ?? '',
+      paymentStatus: decryptedObject.paymentStatus ?? '',
+      paymentReferenceNo: decryptedObject.paymentReferenceNo ?? '',
+      paymentDate: decryptedObject.paymentDate ?? '',
+      partnerID: decryptedObject.partnerID ?? '',
+      retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
+      approvalCode: decryptedObject.approvalCode ?? '',
+      signature: create_signature
+    };
+
+    // Harus ditest Realtest
+    return res.status(200).json({
+      responseCode: '000000',
+      responseMessage: 'Success',
+      data: data_send
+    });
+  } catch (error: any) {
+    console.error('Error processing transaction:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
 export const processInquiryTransaction = async (
   req: Request,
   res: Response

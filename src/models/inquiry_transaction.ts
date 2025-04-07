@@ -1,6 +1,38 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
 
+export function defaultTransactionData(
+  transactionNo: string | null = '',
+  transactionStatus: string = 'INVALID',
+  paymentStatus: string = 'UNPAID'
+): TransactionData {
+  return {
+    transactionNo: transactionNo || '',
+    transactionStatus,
+    inTime: '',
+    duration: null,
+    tariff: null,
+    vehicleType: '',
+    outTime: '',
+    gracePeriod: null,
+    location: '',
+    paymentStatus
+  };
+}
+
+export interface TransactionData {
+  transactionNo: string;
+  transactionStatus: string;
+  inTime: string;
+  duration: number | null;
+  tariff: number | null;
+  vehicleType: string;
+  outTime: string;
+  gracePeriod: number | null;
+  location: string;
+  paymentStatus: string;
+}
+
 interface InquiryTransactionAttributes {
   Id: bigint;
   CompanyName?: string;

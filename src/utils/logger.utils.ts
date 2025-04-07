@@ -18,7 +18,8 @@ const error = async (error: any, message: string) => {
   console.log(message);
   console.log(error);
   if (SENTRY_LOGGING) {
-    await sentryUtils.send(error);
+    // await sentryUtils.send(error);
+    sentryUtils.captureException(error);
   }
 };
 

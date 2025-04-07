@@ -76,3 +76,13 @@ export async function findInquiryTransactionMappingPartner(
 
   return mapping; // Returns the record if found, otherwise null
 }
+
+export async function findInquiryTransactionMappingByNMID(NMID: string) {
+  const mapping = await InquiryTransactionMapping.findOne({
+    where: {
+      NMID
+    }
+  });
+
+  return mapping;
+}

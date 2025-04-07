@@ -8,13 +8,14 @@ Sentry.init({
   environment: process.env.NODE_ENV || 'development' // Optional: Set environment
 });
 
+export default Sentry;
 // Function to send errors to Sentry
-const send = async (error: any) => {
-  Sentry.captureException(error);
-};
+// const send = async (error: any) => {
+//   Sentry.captureException(error);
+// };
 
-export default {
-  send: send,
-  errorHandler: Sentry.Handlers.errorHandler(),
-  requestHandler: Sentry.Handlers.requestHandler()
-};
+// export default {
+//   send: send,
+//   errorHandler: Sentry.Handlers.errorHandler(),
+//   requestHandler: Sentry.Handlers.requestHandler()
+// };

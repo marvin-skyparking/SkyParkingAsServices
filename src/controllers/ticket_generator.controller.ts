@@ -88,11 +88,7 @@ export async function updateTicketStatusHandler(req: Request, res: Response) {
 export async function sigantureKey(req: Request, res: Response) {
   const { login, password, storeID, transactionNo } = req.body;
 
-  const secretKey = await findInquiryTransactionMapping(
-    login,
-    password,
-    storeID
-  );
+  const secretKey = await findInquiryTransactionMappingPartner(login, password);
 
   if (!secretKey || !secretKey.SecretKey) {
     return res.status(401).json({

@@ -1,5 +1,7 @@
 import express from 'express';
 import {
+  Inquiry_Transaction,
+  Payment_Confirmation,
   processInquiryTransaction,
   processPaymentTransaction
 } from '../controllers/transaction.controller';
@@ -11,6 +13,11 @@ import {
 
 const innAppRoute = express.Router();
 
+//Real IN APP
+innAppRoute.post('/Partner/InquiryTransaction', Inquiry_Transaction);
+innAppRoute.post('/Partner/PaymentConfirmation', Payment_Confirmation);
+
+//Simulator
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
 innAppRoute.post('/Signature-Payment', getPaymentSignature);
 innAppRoute.post('/GenerateTicket', createTicketHandler);
