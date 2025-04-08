@@ -20,6 +20,25 @@ export function defaultTransactionData(
   };
 }
 
+export function defaultTransactionDataPaid(
+  transactionNo: string | null = '',
+  transactionStatus: string = 'VALID',
+  paymentStatus: string = 'PAID'
+): TransactionData {
+  return {
+    transactionNo: transactionNo || '',
+    transactionStatus,
+    inTime: '',
+    duration: null,
+    tariff: null,
+    vehicleType: '',
+    outTime: '',
+    gracePeriod: null,
+    location: '',
+    paymentStatus
+  };
+}
+
 export interface TransactionData {
   transactionNo: string;
   transactionStatus: string;

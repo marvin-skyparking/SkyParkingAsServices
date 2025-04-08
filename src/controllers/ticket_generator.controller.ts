@@ -141,7 +141,7 @@ export async function getPaymentSignature(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      partnerID,
+      issuerID,
       retrievalReferenceNo,
       approvalCode
     } = req.body;
@@ -156,7 +156,7 @@ export async function getPaymentSignature(
       'paymentStatus',
       'paymentReferenceNo',
       'paymentDate',
-      'partnerID',
+      'issuerID',
       'retrievalReferenceNo',
       'approvalCode'
     ];
@@ -194,7 +194,7 @@ export async function getPaymentSignature(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      partnerID,
+      issuerID,
       retrievalReferenceNo,
       approvalCode,
       secretKey

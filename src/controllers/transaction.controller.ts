@@ -33,6 +33,7 @@ import { createInquiryTransaction } from '../services/inquiry_transaction.servic
 import { ERROR_MESSAGES } from '../constant/INAPP.errormessage';
 import {
   defaultTransactionData,
+  defaultTransactionDataPaid,
   TransactionData
 } from '../models/inquiry_transaction';
 import axios from 'axios';
@@ -280,7 +281,7 @@ export async function Payment_Confirmation(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      partnerID,
+      issuerID,
       retrievalReferenceNo,
       approvalCode,
       signature
@@ -298,7 +299,7 @@ export async function Payment_Confirmation(
         paymentStatus,
         paymentReferenceNo,
         paymentDate,
-        partnerID,
+        issuerID,
         retrievalReferenceNo,
         approvalCode,
         signature
@@ -333,7 +334,7 @@ export async function Payment_Confirmation(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      partnerID,
+      issuerID,
       retrievalReferenceNo,
       approvalCode,
       validate_credential.SecretKey || ''
@@ -396,11 +397,75 @@ export async function Payment_Confirmation(
       decryptedObject.paymentStatus ?? '',
       decryptedObject.paymentReferenceNo ?? '',
       decryptedObject.paymentDate ?? '',
-      decryptedObject.partnerID ?? '',
+      decryptedObject.issuerID ?? '',
       decryptedObject.retrievalReferenceNo ?? '',
       decryptedObject.approvalCode ?? '',
       find_location.SecretKey ?? ''
     );
+
+    // Flow Re Check Transaction
+    const create_signature_inquiry = await generateSignature(
+      find_location.Login ?? '',
+      find_location.Password ?? '',
+      find_location.NMID ?? '',
+      data_signature.transactionNo,
+      find_location.SecretKey ?? ''
+    );
+
+    const data_send_recheck = {
+      login: find_location.Login ?? '',
+      password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
+      transactionNo: decryptedObject.transactionNo ?? '',
+      signature: create_signature_inquiry
+    };
+    // Filter the result based on role_name and access_type
+    const access_post = await getRolesByPartnerId(find_location.Id);
+
+    const inquiryAccess = access_post.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    const postAccess = (await getRolesByPartnerId(find_location.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!postAccess)
+      return res
+        .status(200)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    const encrypted_data = await EncryptTotPOST(
+      data_send_recheck,
+      find_location.GibberishKey ?? ''
+    );
+
+    if (!inquiryAccess?.url_access) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_LOCATION,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const response = await axios.post(inquiryAccess.url_access, {
+      data: encrypted_data
+    });
+
+    const cleanJsonString = response.data.replace(
+      /[\u0000-\u001F\u007F-\u009F]/g,
+      ''
+    );
+    const parsedData = JSON.parse(cleanJsonString);
+
+    const data_inquiry = await DecryptTotPOST(
+      parsedData.data,
+      find_location.GibberishKey ?? ''
+    );
+
+    if (data_inquiry?.data.paymentStatus == 'PAID') {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.BILL_AREADY_PAID,
+        data: data_inquiry.data
+      });
+    }
 
     // Data yang akan dikirim ke post untuk konfirmasi pembayaran
     const data_send = {
@@ -423,11 +488,16 @@ export async function Payment_Confirmation(
     return res.status(200).json({
       responseCode: '000000',
       responseMessage: 'Success',
-      data: data_send
+      data: data_inquiry?.data
     });
   } catch (error: any) {
     console.error('Error processing transaction:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    return res
+      .status(200)
+      .json({
+        responseCode: '500500',
+        responseMessage: 'General Server Error'
+      });
   }
 }
 

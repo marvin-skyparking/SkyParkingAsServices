@@ -41,5 +41,11 @@ export const ERROR_MESSAGES = {
     responseCode: '211000',
     responseDescription: 'Transaction Success',
     messageDetail: 'Tiket valid, biaya parkir Anda masih gratis.'
+  },
+  BILL_AREADY_PAID: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail: 'Bill already paid'
   }
 };

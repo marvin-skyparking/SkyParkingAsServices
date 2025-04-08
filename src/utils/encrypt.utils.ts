@@ -178,7 +178,7 @@ export function generatePaymentSignature(
   paymentStatus: string,
   paymentReferenceNo: string,
   paymentDate: string,
-  partnerID: string,
+  issuerID: string,
   retrievalReferenceNo: string,
   approvalCode: string,
   SECRET_KEY: string
@@ -194,7 +194,7 @@ export function generatePaymentSignature(
     paymentStatus +
     paymentReferenceNo +
     paymentDate +
-    partnerID +
+    issuerID +
     retrievalReferenceNo +
     approvalCode +
     SECRET_KEY;
