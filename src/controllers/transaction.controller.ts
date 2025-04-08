@@ -492,12 +492,10 @@ export async function Payment_Confirmation(
     });
   } catch (error: any) {
     console.error('Error processing transaction:', error);
-    return res
-      .status(200)
-      .json({
-        responseCode: '500500',
-        responseMessage: 'General Server Error'
-      });
+    return res.status(200).json({
+      responseCode: '500500',
+      responseMessage: 'General Server Error'
+    });
   }
 }
 
