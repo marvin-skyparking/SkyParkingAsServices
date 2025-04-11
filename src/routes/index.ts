@@ -4,7 +4,7 @@ import lotRoute from './lot_management.routes';
 import innAppRoute from './inapp.routes';
 import healthRoute from './connection_health.routes';
 
-const router = express.Router();
+const router: express.Router = express.Router();
 
 // router.use('/customer', member_customer);
 // router.use('/auth', authRouter);
