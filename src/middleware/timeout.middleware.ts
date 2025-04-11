@@ -4,7 +4,12 @@ export function haltOnTimeout(req: Request, res: Response, next: NextFunction) {
   if (!(req as any).timedout) next();
 }
 
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+export async function errorHandler(
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   if (err?.timeout && !res.headersSent) {
     console.warn('Timeout error caught:', err.message);
     return res.status(200).json({
@@ -24,6 +29,4 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   }
 
   next();
-};
-
-export default errorHandler;
+}
