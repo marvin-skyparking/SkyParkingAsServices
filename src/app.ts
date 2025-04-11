@@ -8,6 +8,7 @@ import bodyParser from 'body-parser';
 import indexRoutes from './routes';
 import cors from 'cors';
 import timeout from 'connect-timeout'; // ✅ Make sure this is imported
+import errorHandler from './middleware/timeout.middleware';
 
 const app = express().disable('x-powered-by');
 
@@ -38,37 +39,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Handling Timeout
-app.use(timeout('30s'));
-app.use((req: Request, res: Response, next: NextFunction) => {
-  if ((req as any).timedout) return;
-  next();
-});
-
+app.use(timeout('30ms'));
 //Routes Flow
 app.use('/v1', indexRoutes);
-
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  if (err?.timeout && !res.headersSent) {
-    console.warn('Timeout error caught:', err.message);
-    return res.status(200).json({
-      responseStatus: 'Failed',
-      responseCode: '211002',
-      responseDescription: 'Request timed out',
-      messageDetail: 'Connection to the API Timeout'
-    });
-  }
-
-  if (!res.headersSent) {
-    return res.status(200).json({
-      responseStatus: 'Failed',
-      responseCode: '500500',
-      message: 'General server error'
-    });
-  }
-
-  next();
-};
-
 app.use(errorHandler);
 
 export default app;
