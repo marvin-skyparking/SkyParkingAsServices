@@ -545,6 +545,7 @@ export async function Payment_Confirmation(
       paymentDate: decryptedObject.paymentDate ?? '',
       partnerID: decryptedObject.issuerID ?? '',
       retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
+      referenceTransactionNo: data_payment?.data.referenceTransactionNo ?? '',
       approvalCode: decryptedObject.approvalCode ?? '',
       ProjectCategoryId: 14,
       ProjectCategoryName: 'Parking',
@@ -587,7 +588,7 @@ export const processInquiryTransaction = async (
     if (!data)
       return res.status(200).json({ error: 'Encrypted data is required' });
 
-    const decryptedObject = decryptPayload(data);
+    const decryptedObject = RealdecryptPayload(data);
     if (!decryptedObject)
       return res.status(200).json({ error: 'Failed to decrypt data' });
 
@@ -596,15 +597,14 @@ export const processInquiryTransaction = async (
     if (![login, password, storeID, transactionNo, signature].every(Boolean))
       return res.status(200).json({ error: 'Invalid data format' });
 
-    const validate_credential = await findInquiryTransactionMapping(
+    const validate_credential = await findInquiryTransactionMappingPartner(
       login,
-      password,
-      storeID
+      password
     );
     if (!validate_credential)
       return res.status(200).json({
         responseCode: '401402',
-        responseMessage: 'Invalid Credential'
+        responseMessage: 'Invalid Credential - Partner'
       });
 
     const expectedSignature = generateSignature(
@@ -720,7 +720,7 @@ export const processPaymentTransaction = async (
     const { data } = req.body; // Encrypted data from request
 
     if (!data) {
-      return res.status(400).json({ error: 'Encrypted data is required' });
+      return res.status(200).json({ error: 'Encrypted data is required' });
     }
 
     // // Fetch secret key from `inquiry_transaction_mapping`
@@ -734,10 +734,10 @@ export const processPaymentTransaction = async (
     // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
 
     // Decrypt AES data
-    const decryptedObject = decryptPayload(data);
+    const decryptedObject = RealdecryptPayload(data);
 
     if (!decryptedObject) {
-      return res.status(400).json({ error: 'Failed to decrypt data' });
+      return res.status(200).json({ error: 'Failed to decrypt data' });
     }
 
     const {
@@ -745,33 +745,39 @@ export const processPaymentTransaction = async (
       password,
       storeID,
       transactionNo,
-      signature,
       referenceNo,
       amount,
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      partnerID,
+      issuerID,
       retrievalReferenceNo,
-      approvalCode
+      approvalCode,
+      signature
     } = decryptedObject;
 
+    //return res.status(200).json(decryptedObject);
     if (
-      !login ||
-      !password ||
-      !storeID ||
-      !transactionNo ||
-      !signature ||
-      !referenceNo ||
-      !amount ||
-      !paymentStatus ||
-      !paymentReferenceNo ||
-      !paymentDate ||
-      !partnerID ||
-      !retrievalReferenceNo ||
-      !approvalCode
+      ![
+        login,
+        password,
+        storeID,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        issuerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].every(Boolean)
     ) {
-      return res.status(400).json({ error: 'Invalid decrypted data format' });
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_FIELDS,
+        data: defaultTransactionData()
+      });
     }
 
     // Fetch SecretKey from DB
@@ -799,7 +805,7 @@ export const processPaymentTransaction = async (
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      partnerID,
+      issuerID,
       retrievalReferenceNo,
       approvalCode,
       SecretKeys
@@ -807,7 +813,7 @@ export const processPaymentTransaction = async (
 
     // Ensure both signatures are lowercase for comparison
     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
-      return res.status(401).json({
+      return res.status(200).json({
         responseCode: '401400',
         responseMessage: 'Invalid Signature'
       });
@@ -820,7 +826,7 @@ export const processPaymentTransaction = async (
     );
 
     if (!hasPaymentAccess) {
-      return res.status(401).json({
+      return res.status(200).json({
         responseCode: '401401',
         responseMessage: 'You Not Allowed To Access This Feature'
       });
@@ -828,24 +834,24 @@ export const processPaymentTransaction = async (
     const data_ticket = await findTicket(decryptedObject.transactionNo);
 
     if (!data_ticket) {
-      return res.status(404).json({
-        responseCode: '404401',
-        responseMessage: 'Invalid Transaction'
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_TRANSACTION,
+        data: data_ticket
       });
     }
 
     if (decryptedObject.amount != data_ticket.dataValues.tarif) {
-      return res.status(400).json({
-        responseCode: '400401',
-        responseMessage: 'Tarif Invalid'
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_AMOUNT,
+        data: data_ticket
       });
     }
 
     const update_ticket = await updateTicketStatus(transactionNo);
 
     if (!update_ticket) {
-      return res.status(400).json({
-        responseCode: '404401',
+      return res.status(200).json({
+        responseCode: '500200',
         responseMessage: 'Failure Update Transaction'
       });
     }

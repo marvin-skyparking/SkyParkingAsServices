@@ -53,5 +53,11 @@ export const ERROR_MESSAGES = {
     responseCode: '211001',
     responseDescription: 'Invalid Transaction',
     messageDetail: 'Invalid Amount, Please Inquiry your bill again'
+  },
+  INVALID_TRANSACTION: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail: 'The ticket is invalid'
   }
 };
