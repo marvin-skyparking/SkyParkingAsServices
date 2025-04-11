@@ -9,7 +9,10 @@ import {
 } from '../services/signature.service';
 import { getSecretKeyByClientId } from '../services/partner.service';
 
-export async function generateSignatureSimulator(req: Request, res: Response) {
+export async function generateSignatureSimulator(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const client_id = req.headers['client_id'] as string;
     const secret_key = req.headers['secret_key'] as string;
@@ -41,7 +44,10 @@ export async function generateSignatureSimulator(req: Request, res: Response) {
   }
 }
 
-export async function getAllLocationsController(req: Request, res: Response) {
+export async function getAllLocationsController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { client_id, signature, timestamp } = req.headers as {
       client_id?: string;
@@ -85,7 +91,7 @@ export async function getAllLocationsController(req: Request, res: Response) {
 export async function getNearbyLocationsController(
   req: Request,
   res: Response
-) {
+): Promise<any> {
   try {
     const { client_id, signature, timestamp } = req.headers as {
       client_id?: string;

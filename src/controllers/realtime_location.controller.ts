@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { updateLotStatus } from '../services/location_lot.service';
 import { getLocationsByCode } from '../services/location_area.service';
 
-export async function updateLot(req: Request, res: Response) {
+export async function updateLot(req: Request, res: Response): Promise<any> {
   try {
     const { id, locationCode, action } = req.body;
 
@@ -26,7 +26,10 @@ export async function updateLot(req: Request, res: Response) {
   }
 }
 
-export async function getLocationByCodeController(req: Request, res: Response) {
+export async function getLocationByCodeController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { location_code } = req.params;
 

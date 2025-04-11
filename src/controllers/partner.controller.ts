@@ -10,7 +10,10 @@ import {
 /**
  * Create a new partner
  */
-export async function createPartnerController(req: Request, res: Response) {
+export async function createPartnerController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { nama_partner } = req.body;
     if (!nama_partner) {
@@ -27,7 +30,10 @@ export async function createPartnerController(req: Request, res: Response) {
 /**
  * Get all partners
  */
-export async function getAllPartnersController(req: Request, res: Response) {
+export async function getAllPartnersController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const partners = await getAllPartners();
     return res.status(200).json(partners);
@@ -39,7 +45,10 @@ export async function getAllPartnersController(req: Request, res: Response) {
 /**
  * Get a single partner by ID
  */
-export async function getPartnerByIdController(req: Request, res: Response) {
+export async function getPartnerByIdController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { id } = req.params;
     const partner = await getPartnerById(id);
@@ -56,7 +65,10 @@ export async function getPartnerByIdController(req: Request, res: Response) {
 /**
  * Update a partner (only allows updating nama_partner or last_login)
  */
-export async function updatePartnerController(req: Request, res: Response) {
+export async function updatePartnerController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { id } = req.params;
     const { nama_partner, last_login } = req.body;
@@ -74,7 +86,10 @@ export async function updatePartnerController(req: Request, res: Response) {
 /**
  * Delete a partner by ID
  */
-export async function deletePartnerController(req: Request, res: Response) {
+export async function deletePartnerController(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { id } = req.params;
     await deletePartner(id);

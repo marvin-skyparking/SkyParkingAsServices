@@ -17,7 +17,10 @@ import {
 /**
  * Create a new ticket
  */
-export async function createTicketHandler(req: Request, res: Response) {
+export async function createTicketHandler(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const ticket = await createTicket();
 
@@ -49,7 +52,10 @@ export async function createTicketHandler(req: Request, res: Response) {
 /**
  * Get a ticket by transaction number
  */
-export async function getTicketHandler(req: Request, res: Response) {
+export async function getTicketHandler(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { transactionNo } = req.params;
     const ticket = await findTicket(transactionNo);
@@ -69,7 +75,10 @@ export async function getTicketHandler(req: Request, res: Response) {
 /**
  * Update ticket status
  */
-export async function updateTicketStatusHandler(req: Request, res: Response) {
+export async function updateTicketStatusHandler(
+  req: Request,
+  res: Response
+): Promise<any> {
   try {
     const { transactionNo } = req.params;
     const { status } = req.body;
@@ -85,7 +94,7 @@ export async function updateTicketStatusHandler(req: Request, res: Response) {
   }
 }
 
-export async function sigantureKey(req: Request, res: Response) {
+export async function sigantureKey(req: Request, res: Response): Promise<any> {
   const { login, password, storeID, transactionNo } = req.body;
 
   const secretKey = await findInquiryTransactionMappingPartner(login, password);

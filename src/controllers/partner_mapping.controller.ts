@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import * as PartnerRoleMappingService from '../services/partner_mapping.service';
 
-export async function createRole(req: Request, res: Response) {
+export async function createRole(req: Request, res: Response): Promise<any> {
   try {
     const { id_partner, role_name, access_type, url_access } = req.body;
 
@@ -23,7 +23,7 @@ export async function createRole(req: Request, res: Response) {
   }
 }
 
-export async function getRoles(req: Request, res: Response) {
+export async function getRoles(req: Request, res: Response): Promise<any> {
   try {
     const roles = await PartnerRoleMappingService.getAllRoles();
     return res.status(200).json(roles);
@@ -49,7 +49,7 @@ export async function getRoleById(req: Request, res: Response) {
   }
 }
 
-export async function updateRole(req: Request, res: Response) {
+export async function updateRole(req: Request, res: Response): Promise<any> {
   try {
     const { id } = req.params;
     const updatedRole = await PartnerRoleMappingService.updateRole(
@@ -68,7 +68,7 @@ export async function updateRole(req: Request, res: Response) {
   }
 }
 
-export async function deleteRole(req: Request, res: Response) {
+export async function deleteRole(req: Request, res: Response): Promise<any> {
   try {
     const { id } = req.params;
     const deleted = await PartnerRoleMappingService.deleteRole(Number(id));

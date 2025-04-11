@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { getHealthStatus } from '../services/check_server_health';
 
-export async function healthCheckController(req: Request, res: Response) {
+export async function healthCheckController(
+  req: Request,
+  res: Response
+): Promise<any> {
   function getFormattedTimestamp(): string {
     const now = new Date();
     const yyyy = now.getFullYear();
