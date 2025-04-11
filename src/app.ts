@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
-import indexRoutes from './routes';
+import indexRoutes from './routes/index'; // explicitly point to the file
 import cors from 'cors';
 import timeout from 'connect-timeout'; // ✅ Make sure this is imported
 
