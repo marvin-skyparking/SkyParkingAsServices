@@ -9,7 +9,7 @@ export async function errorHandler(
   req: Request,
   res: Response,
   next: NextFunction
-) {
+): Promise<any> {
   if (err?.timeout && !res.headersSent) {
     console.warn('Timeout error caught:', err.message);
     return res.status(200).json({
