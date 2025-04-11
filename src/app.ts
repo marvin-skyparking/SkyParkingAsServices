@@ -1,4 +1,9 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, {
+  Request,
+  Response,
+  NextFunction,
+  ErrorRequestHandler
+} from 'express';
 import bodyParser from 'body-parser';
 import indexRoutes from './routes';
 import cors from 'cors';
@@ -42,8 +47,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 //Routes Flow
 app.use('/v1', indexRoutes);
 
-// Function to Handling Timeout
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   if (err?.timeout && !res.headersSent) {
     console.warn('Timeout error caught:', err.message);
     return res.status(200).json({
@@ -63,6 +67,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   }
 
   next();
-});
+};
+
+app.use(errorHandler);
 
 export default app;
