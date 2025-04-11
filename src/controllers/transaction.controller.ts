@@ -365,19 +365,7 @@ export async function Payment_Confirmation(
         .json({ responseCode: '401401', responseMessage: 'Access Denied' });
 
     // const access_post = await getRolesByPartnerId(find_location.Id);
-    // // Filter the result based on role_name and access_type
-    // // const paymentAccess = access_post.find(
-    // //   (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
-    // // );
-
-    const paymentAccess = (await getRolesByPartnerId(find_location.Id)).some(
-      (role) => role.access_type === 'PAYMENT'
-    );
-
-    if (!paymentAccess)
-      return res
-        .status(200)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+    // Filter the result based on role_name and access_type
 
     const data_signature = {
       login: find_location.Login ?? '',
@@ -460,12 +448,20 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
-    if (data_inquiry?.data.paymentStatus == 'PAID') {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.BILL_AREADY_PAID,
-        data: data_inquiry.data
-      });
-    }
+    // //Validasi PAYMENT AMOUNT dan Status
+    // if (data_inquiry?.data.paymentStatus == 'PAID') {
+    //   return res.status(200).json({
+    //     ...ERROR_MESSAGES.BILL_AREADY_PAID,
+    //     data: data_inquiry.data
+    //   });
+    // }
+
+    // if (data_inquiry?.data.tariff != decryptedObject.amount) {
+    //   return res.status(200).json({
+    //     ...ERROR_MESSAGES.BILL_AREADY_PAID,
+    //     data: data_inquiry?.data
+    //   });
+    // }
 
     // Data yang akan dikirim ke post untuk konfirmasi pembayaran
     const data_send = {
@@ -478,17 +474,49 @@ export async function Payment_Confirmation(
       paymentStatus: decryptedObject.paymentStatus ?? '',
       paymentReferenceNo: decryptedObject.paymentReferenceNo ?? '',
       paymentDate: decryptedObject.paymentDate ?? '',
-      partnerID: decryptedObject.partnerID ?? '',
+      issuerID: decryptedObject.issuerID ?? '',
       retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
       approvalCode: decryptedObject.approvalCode ?? '',
       signature: create_signature
     };
 
+    const encrypted_data_pay = await EncryptTotPOST(
+      data_send,
+      find_location.GibberishKey ?? ''
+    );
+
+    const paymentAccess = access_post.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
+    );
+
+    if (!paymentAccess)
+      return res
+        .status(200)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    const response_confirm_pay = await axios.post(paymentAccess.url_access, {
+      data: encrypted_data_pay
+    });
+
+    const cleanJsonStringPay = response_confirm_pay.data.replace(
+      /[\u0000-\u001F\u007F-\u009F]/g,
+      ''
+    );
+
+    const parsedDataPay = JSON.parse(cleanJsonStringPay);
+
+    const data_payment = await DecryptTotPOST(
+      parsedDataPay.data,
+      find_location.GibberishKey ?? ''
+    );
+
+    console.log(data_payment);
+
     // Harus ditest Realtest
     return res.status(200).json({
       responseCode: '000000',
       responseMessage: 'Success',
-      data: data_inquiry?.data
+      data: data_payment?.data
     });
   } catch (error: any) {
     console.error('Error processing transaction:', error);
@@ -499,6 +527,7 @@ export async function Payment_Confirmation(
   }
 }
 
+// For simulator purpose
 export const processInquiryTransaction = async (
   req: Request,
   res: Response

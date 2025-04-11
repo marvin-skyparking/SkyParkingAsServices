@@ -47,5 +47,11 @@ export const ERROR_MESSAGES = {
     responseCode: '211001',
     responseDescription: 'Invalid Transaction',
     messageDetail: 'Bill already paid'
+  },
+  INVALID_AMOUNT: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail: 'Invalid Amount, Please Inquiry your bill again'
   }
 };
