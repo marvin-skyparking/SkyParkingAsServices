@@ -579,10 +579,10 @@ export async function Payment_Confirmation(
 }
 
 // For simulator purpose
-export const processInquiryTransaction = async (
+export async function processInquiryTransaction(
   req: Request,
   res: Response
-) => {
+): Promise<any> {
   try {
     const { data } = req.body;
     if (!data)
@@ -710,12 +710,12 @@ export const processInquiryTransaction = async (
     console.error('Error processing transaction:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
-};
+}
 
-export const processPaymentTransaction = async (
+export async function processPaymentTransaction(
   req: Request,
   res: Response
-) => {
+): Promise<any> {
   try {
     const { data } = req.body; // Encrypted data from request
 
@@ -879,4 +879,4 @@ export const processPaymentTransaction = async (
     console.error('Error processing inquiry transaction:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
-};
+}
