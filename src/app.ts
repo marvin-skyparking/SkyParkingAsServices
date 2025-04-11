@@ -1,12 +1,11 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
 import indexRoutes from './routes';
 import cors from 'cors';
+import timeout from 'connect-timeout'; // ✅ Make sure this is imported
 
-// Initialize express app
 const app = express().disable('x-powered-by');
 
-// CORS options to allow requests from localhost:9000
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:9001',
@@ -19,34 +18,51 @@ const corsOptions = {
     origin: string | undefined,
     callback: (error: Error | null, success?: boolean) => void
   ) => {
-    // Check if the origin is in the allowed origins list or if it's undefined (for non-browser requests)
     if (allowedOrigins.indexOf(origin!) !== -1 || !origin) {
-      callback(null, true); // Allow the request
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS')); // Deny the request
+      callback(new Error('Not allowed by CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
-  // Removed allowedHeaders
 };
 
-app.use(cors(corsOptions)); // Use the defined CORS options
-app.use(express.json());
-
-// Initialize Swagger
-// const enableSwagger = process.env.ENABLE_SWAGGER === 'true';
-
-// if (enableSwagger) {
-//   // Serve Swagger API documentation
-//   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-// }
-
-// Middleware
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// User routes (Example)
+// Handling Timeout
+app.use(timeout('30s'));
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if ((req as any).timedout) return;
+  next();
+});
+
+//Routes Flow
 app.use('/v1', indexRoutes);
+
+// Function to Handling Timeout
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err?.timeout && !res.headersSent) {
+    console.warn('Timeout error caught:', err.message);
+    return res.status(200).json({
+      responseStatus: 'Failed',
+      responseCode: '211002',
+      responseDescription: 'Request timed out',
+      messageDetail: 'Connection to the API Timeout'
+    });
+  }
+
+  if (!res.headersSent) {
+    return res.status(200).json({
+      responseStatus: 'Failed',
+      responseCode: '500500',
+      message: 'General server error'
+    });
+  }
+
+  next();
+});
 
 export default app;

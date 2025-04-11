@@ -58,10 +58,11 @@ export async function Inquiry_Transaction(
   req: Request,
   res: Response
 ): Promise<any> {
+  if ((req as any).timedout) return;
   try {
+    if ((req as any).timedout) return;
     //Get Value Data
     const { data } = req.body;
-
     // Check if data is provided
     if (!data) {
       const missing_encrypted_data = 'Missing encrypted data';
@@ -238,7 +239,17 @@ export async function Inquiry_Transaction(
     //Harus Dipantaui
     const data_inquiry_insert = await createInquiryTransaction(insert_data);
 
-    return res.status(200).json(data_final);
+    const res_final = {
+      responseStatus: data_final?.responseStatus,
+      responseCode:
+        data_final?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseMessage: data_final?.responseMessage,
+      responseDescription: data_final?.responseDescription,
+      messageDetail: data_final?.messageDetail,
+      data: data_final?.data
+    };
+
+    return res.status(200).json(res_final);
   } catch (error: any) {
     console.error('Error processing transaction:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
@@ -250,7 +261,9 @@ export async function Payment_Confirmation(
   req: Request,
   res: Response
 ): Promise<any> {
+  if ((req as any).timedout) return;
   try {
+    if ((req as any).timedout) return;
     //Get Value Data
     const { data } = req.body;
 
@@ -448,20 +461,20 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
-    // //Validasi PAYMENT AMOUNT dan Status
-    // if (data_inquiry?.data.paymentStatus == 'PAID') {
-    //   return res.status(200).json({
-    //     ...ERROR_MESSAGES.BILL_AREADY_PAID,
-    //     data: data_inquiry.data
-    //   });
-    // }
+    //Validasi PAYMENT AMOUNT dan Status
+    if (data_inquiry?.data.paymentStatus == 'PAID') {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.BILL_AREADY_PAID,
+        data: data_inquiry.data
+      });
+    }
 
-    // if (data_inquiry?.data.tariff != decryptedObject.amount) {
-    //   return res.status(200).json({
-    //     ...ERROR_MESSAGES.BILL_AREADY_PAID,
-    //     data: data_inquiry?.data
-    //   });
-    // }
+    if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.BILL_AREADY_PAID,
+        data: data_inquiry?.data
+      });
+    }
 
     // Data yang akan dikirim ke post untuk konfirmasi pembayaran
     const data_send = {
@@ -510,14 +523,51 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
-    console.log(data_payment);
-
-    // Harus ditest Realtest
-    return res.status(200).json({
-      responseCode: '000000',
-      responseMessage: 'Success',
+    const res_final = {
+      responseStatus: data_payment?.responseStatus,
+      responseCode:
+        data_payment?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseMessage: data_payment?.responseMessage,
+      responseDescription: data_payment?.responseDescription,
+      messageDetail: data_payment?.messageDetail,
       data: data_payment?.data
-    });
+    };
+
+    const insert_data = {
+      NMID: transactionNo.toString().slice(-5),
+      StoreCode: transactionNo.toString().slice(-5), // Ensure string type
+      referenceNo: decryptedObject.referenceNo ?? '',
+      transactionNo: decryptedObject.transactionNo ?? '',
+      RefernceNo: decryptedObject.referenceNo ?? '',
+      amount: decryptedObject.amount ?? '',
+      paymentStatus: decryptedObject.paymentStatus ?? '',
+      paymentReferenceNo: decryptedObject.paymentReferenceNo ?? '',
+      paymentDate: decryptedObject.paymentDate ?? '',
+      partnerID: decryptedObject.issuerID ?? '',
+      retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
+      approvalCode: decryptedObject.approvalCode ?? '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(data_send), // Convert to string
+      DataResponse: JSON.stringify(data_payment), // Convert to string if needed
+      DataDetailResponse: JSON.stringify(data_payment?.data), // Convert to string if needed
+      DataReceived: JSON.stringify(decryptedObject), // Convert to string
+      MerchantDataRequest: JSON.stringify(decryptedObject), // Convert to string
+      MerchantDataResponse: JSON.stringify(res_final), // Convert to string
+      POSTDataRequest: JSON.stringify(data_send), // Convert to string
+      POSTDataResponse: JSON.stringify(data_payment), // Convert to string
+      CreatedOn: new Date(), // Use Date object
+      UpdatedOn: new Date(), // Use Date object
+      CreatedBy: find_location.Login ?? '',
+      UpdatedBy: find_location.Login ?? ''
+    };
+
+    //Harus Dipantaui
+    const payment_confirmation_insert =
+      await createPaymentTransaction(insert_data);
+
+    // Final Response
+    return res.status(200).json(res_final);
   } catch (error: any) {
     console.error('Error processing transaction:', error);
     return res.status(200).json({

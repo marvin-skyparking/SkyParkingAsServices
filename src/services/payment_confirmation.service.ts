@@ -1,7 +1,8 @@
 import PaymentConfirmation from '../models/payment_transaction'; // Import the Sequelize model
 
-export async function createPaymentTransaction(data: {
-  storeCode: string;
+interface CreatePaymentDTO {
+  NMID?: string;
+  StoreCode: string;
   transactionNo: string;
   referenceNo: string;
   amount: number;
@@ -11,19 +12,32 @@ export async function createPaymentTransaction(data: {
   partnerID: string;
   retrievalReferenceNo: string;
   approvalCode: string;
-  createdBy: string;
-}) {
+  referenceTransactionNo?: string;
+  DataReceived?: string;
+  DataSend?: string;
+  DataResponse?: string;
+  DataDetailResponse?: string;
+  CreatedBy: string;
+  UpdatedOn?: Date;
+  UpdatedBy?: string;
+  MerchantDataRequest?: string;
+  MerchantDataResponse?: string;
+  POSTDataRequest?: string;
+  POSTDataResponse?: string;
+}
+
+export const createPaymentTransaction = async (data: CreatePaymentDTO) => {
   try {
     const payment = await PaymentConfirmation.create({
       ...data,
-      createdOn: new Date() // Add createdOn with the current date
+      CreatedOn: new Date()
     });
     return payment;
   } catch (error) {
     console.error('Error creating payment transaction:', error);
     throw new Error('Database query failed');
   }
-}
+};
 
 export async function getPaymentTransactionById(id: number) {
   try {
