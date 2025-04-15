@@ -464,7 +464,12 @@ export async function Payment_Confirmation(
     //Validasi PAYMENT AMOUNT dan Status
     if (data_inquiry?.data.paymentStatus == 'PAID') {
       return res.status(200).json({
-        ...ERROR_MESSAGES.BILL_AREADY_PAID,
+        responseStatus: data_inquiry?.responseStatus,
+        responseCode:
+          data_inquiry?.responseStatus === 'Failed' ? '211001' : '211000',
+        responseMessage: data_inquiry?.responseMessage,
+        responseDescription: data_inquiry?.responseDescription,
+        messageDetail: data_inquiry?.messageDetail,
         data: data_inquiry.data
       });
     }
