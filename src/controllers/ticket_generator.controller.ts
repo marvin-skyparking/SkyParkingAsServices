@@ -128,10 +128,10 @@ export async function sigantureKey(req: Request, res: Response): Promise<any> {
   const encrypted_data = encryptPayload(data);
 
   return res.json({
-    success: true,
-    clear_data: data,
-    data: encrypted_data,
-    secret: secretKey.SecretKey
+    responseCode: '200200',
+    responseMessage: 'Success',
+    signature: signature,
+    data: encrypted_data
   });
 }
 
