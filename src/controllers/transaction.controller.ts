@@ -471,7 +471,7 @@ export async function Payment_Confirmation(
 
     if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
       return res.status(200).json({
-        ...ERROR_MESSAGES.BILL_AREADY_PAID,
+        ...ERROR_MESSAGES.INVALID_AMOUNT,
         data: data_inquiry?.data
       });
     }
