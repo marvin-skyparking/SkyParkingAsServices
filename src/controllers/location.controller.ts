@@ -53,13 +53,13 @@ export async function getAllLocationsController(
   res: Response
 ): Promise<any> {
   try {
-    const { client_key, signature, timestamp } = req.headers as {
-      client_key?: string;
+    const { partner_key, signature, timestamp } = req.headers as {
+      partner_key?: string;
       signature?: string;
       timestamp?: string;
     };
 
-    if (!client_key || !signature || !timestamp) {
+    if (!partner_key || !signature || !timestamp) {
       return res.status(200).json({
         responseStatus: 'FAILED',
         responseCode: '401400',
@@ -68,11 +68,11 @@ export async function getAllLocationsController(
     }
 
     // Create the string to sign (matching what was signed by the client)
-    const stringToSign = `${client_key}|${timestamp}`;
+    const stringToSign = `${partner_key}|${timestamp}`;
 
     // Verify the signature against the stored secret_key
     const isValidSignature = await verifyAsymmetricSignature(
-      client_key,
+      partner_key,
       signature,
       stringToSign
     );
@@ -108,8 +108,8 @@ export async function getNearbyLocationsController(
   res: Response
 ): Promise<any> {
   try {
-    const { client_key, signature, timestamp } = req.headers as {
-      client_key?: string;
+    const { partner_key, signature, timestamp } = req.headers as {
+      partner_key?: string;
       signature?: string;
       timestamp?: string;
     };
@@ -117,7 +117,7 @@ export async function getNearbyLocationsController(
     console.log(req.headers);
     const { latitude, longitude, radius, category } = req.body;
 
-    if (!client_key || !signature || !timestamp) {
+    if (!partner_key || !signature || !timestamp) {
       return res.status(200).json({
         responseStatus: 'FAILED',
         responseCode: '401400',
@@ -133,18 +133,18 @@ export async function getNearbyLocationsController(
       });
     }
 
-    const secret_key = await getSecretKeyByClientId(client_key);
+    const secret_key = await getSecretKeyByClientId(partner_key);
     if (!secret_key) {
       return res.status(200).json({
         responseStatus: 'FAILED',
         responseCode: '401401',
-        responseMessage: 'Unauthorized, Invalid client_key'
+        responseMessage: 'Unauthorized, Invalid partner_key'
       });
     }
 
-    const stringToSign = `${client_key}|${timestamp}`;
+    const stringToSign = `${partner_key}|${timestamp}`;
     const isValidSignature = await verifyAsymmetricSignature(
-      client_key,
+      partner_key,
       signature,
       stringToSign
     );
