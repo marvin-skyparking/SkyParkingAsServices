@@ -31,7 +31,8 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['client_key']
 };
 
 app.use(cors(corsOptions));
@@ -42,6 +43,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(timeout('30s'));
 //Routes Flow
 app.use('/v1', indexRoutes);
-// app.use(errorHandler);
+app.use(errorHandler);
 
 export default app;
