@@ -24,7 +24,7 @@ export function signAsymmetricSignature(
   stringToSign: string
 ): string {
   try {
-    const hmac = crypto.createHmac('sha256', secret_key);
+    const hmac = crypto.createHmac('sha512', secret_key);
     hmac.update(stringToSign);
     return hmac.digest('base64');
   } catch (error) {

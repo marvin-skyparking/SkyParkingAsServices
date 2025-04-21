@@ -41,6 +41,8 @@ interface LocationAreaAttributes {
   vendor: string;
   region: Region;
   total_lot: number;
+  total_lot_mobil: number;
+  total_lot_motor: number;
   Create_by: number;
   Update_by: number;
   created_at: Date;
@@ -69,6 +71,8 @@ export class LocationArea
   public vendor!: string;
   public region!: Region;
   public total_lot!: number;
+  public total_lot_mobil!: number;
+  public total_lot_motor!: number;
   public Create_by!: number;
   public Update_by!: number;
   public created_at!: Date;
@@ -127,6 +131,16 @@ LocationArea.init(
       allowNull: false
     },
     total_lot: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    total_lot_mobil: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    total_lot_motor: {
       type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: 0

@@ -23,7 +23,7 @@ export async function errorHandler(
   if (!res.headersSent) {
     return res.status(200).json({
       responseStatus: 'Failed',
-      responseCode: '500500',
+      responseCode: '500501',
       message: 'General server error'
     });
   }

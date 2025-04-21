@@ -44,16 +44,16 @@ function haversineDistance(
 export async function getNearbyLocations(
   latitude: number,
   longitude: number,
-  radius: number
+  radius: number,
+  category?: string // make optional
 ): Promise<any[]> {
-  // No need to return `LocationAreaWithLots`
   try {
     const locations = await LocationArea.findAll({
       include: [
         {
           model: LocationLot,
-          as: 'lots', // Must match `hasMany` alias in LocationArea
-          required: false // Allows locations without lots
+          as: 'lots',
+          required: false
         }
       ]
     });
@@ -90,7 +90,13 @@ export async function getNearbyLocations(
         coordinate.latitude,
         coordinate.longitude
       );
-      return distance <= radius;
+
+      const withinRadius = distance <= radius;
+      const matchesCategory = category
+        ? location.category?.toLowerCase() === category.toLowerCase()
+        : true;
+
+      return withinRadius && matchesCategory;
     });
 
     return nearbyLocations;
