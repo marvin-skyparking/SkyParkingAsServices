@@ -67,6 +67,7 @@ export async function getAllLocationsController(
       });
     }
 
+    console.log(req.headers);
     // Create the string to sign (matching what was signed by the client)
     const stringToSign = `${clientkey}|${timestamp}`;
 
