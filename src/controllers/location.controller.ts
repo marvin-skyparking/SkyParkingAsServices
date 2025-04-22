@@ -19,10 +19,10 @@ export async function generateSignatureSimulator(
 ): Promise<any> {
   try {
     const clientkey = req.headers['clientkey'] as string;
-    const secret_key = req.headers['secret_key'] as string;
+    const secretkey = req.headers['secret_key'] as string;
     const timestamp = req.headers['timestamp'] as string; // Using 'timestamp' header
 
-    if (!clientkey || !secret_key || !timestamp) {
+    if (!clientkey || !secretkey || !timestamp) {
       return res
         .status(400)
         .json({ success: false, message: 'Missing required headers' });
@@ -32,7 +32,7 @@ export async function generateSignatureSimulator(
     const stringToSign = `${clientkey}|${timestamp}`;
 
     // Generate signature using secret_key
-    const signature = signAsymmetricSignature(secret_key, stringToSign);
+    const signature = signAsymmetricSignature(secretkey, stringToSign);
 
     return res.status(200).json({
       success: true,
