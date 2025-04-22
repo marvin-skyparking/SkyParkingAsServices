@@ -19,9 +19,10 @@ export async function generateSignatureSimulator(
 ): Promise<any> {
   try {
     const clientkey = req.headers['clientkey'] as string;
-    const secretkey = req.headers['secret_key'] as string;
+    const secretkey = req.headers['secretkey'] as string;
     const timestamp = req.headers['timestamp'] as string; // Using 'timestamp' header
 
+    console.log(req.headers);
     if (!clientkey || !secretkey || !timestamp) {
       return res
         .status(400)
@@ -67,7 +68,6 @@ export async function getAllLocationsController(
       });
     }
 
-    console.log(req.headers);
     // Create the string to sign (matching what was signed by the client)
     const stringToSign = `${clientkey}|${timestamp}`;
 
