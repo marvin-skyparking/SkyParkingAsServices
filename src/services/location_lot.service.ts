@@ -2,7 +2,7 @@ import sequelize from '../configs/database'; // Ensure this imports your Sequeli
 import LocationLot from '../models/location_lot.model';
 
 export async function updateLotStatus(
-  id: number,
+  lot_name: string,
   locationCode: string,
   action: 'in' | 'out'
 ) {
@@ -11,7 +11,7 @@ export async function updateLotStatus(
   try {
     // Find the location lot by location_id and location_code
     const lot = await LocationLot.findOne({
-      where: { id: id, location_code: locationCode },
+      where: { lot_name: lot_name, location_code: locationCode },
       transaction // Include transaction in find query (optional)
     });
 

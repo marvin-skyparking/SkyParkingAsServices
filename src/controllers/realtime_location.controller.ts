@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { updateLotStatus } from '../services/location_lot.service';
 import { getLocationsByCode } from '../services/location_area.service';
+import { verifyAsymmetricSignature } from '../services/signature.service';
+import { getSecretKeyByClientId } from '../services/partner.service';
 
 export async function updateLot(req: Request, res: Response): Promise<any> {
   try {
-    const { id, locationCode, action } = req.body;
+    const { locationCode, lot_name, action } = req.body;
 
     // Validate required fields
-    if (!id || !locationCode || !action) {
+    if (!lot_name || !locationCode || !action) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -18,7 +20,7 @@ export async function updateLot(req: Request, res: Response): Promise<any> {
     }
 
     // Call the service function
-    const result = await updateLotStatus(Number(id), locationCode, action);
+    const result = await updateLotStatus(lot_name, locationCode, action);
 
     return res.status(200).json(result);
   } catch (error: any) {
@@ -31,7 +33,37 @@ export async function getLocationByCodeController(
   res: Response
 ): Promise<any> {
   try {
+    const { clientkey, signature, timestamp } = req.headers as {
+      clientkey?: string;
+      signature?: string;
+      timestamp?: string;
+    };
+
+    if (!clientkey || !signature || !timestamp) {
+      return res.status(200).json({
+        responseStatus: 'FAILED',
+        responseCode: '401400',
+        responseMessage: 'Unauthorized, Missing credentials'
+      });
+    }
+
     const { location_code } = req.params;
+
+    const secret_key = await getSecretKeyByClientId(clientkey);
+    if (!secret_key) {
+      return res.status(200).json({
+        responseStatus: 'FAILED',
+        responseCode: '401401',
+        responseMessage: 'Unauthorized, Invalid clientkey'
+      });
+    }
+
+    const stringToSign = `${clientkey}|${timestamp}`;
+    const isValidSignature = await verifyAsymmetricSignature(
+      clientkey,
+      signature,
+      stringToSign
+    );
 
     if (!location_code) {
       return res.status(400).json({
