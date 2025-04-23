@@ -93,7 +93,17 @@ LocationLot.init(
     },
     available_lot: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      set(value) {
+        const maxLot = this.getDataValue('max_lot') ?? 0;
+        let val = typeof value === 'number' ? value : Number(value);
+
+        // If value is NaN or invalid, default to 0
+        if (isNaN(val)) val = 0;
+
+        // Clamp available_lot to max_lot
+        this.setDataValue('available_lot', val > maxLot ? maxLot : val);
+      }
     },
     created_at: {
       type: DataTypes.DATE,
