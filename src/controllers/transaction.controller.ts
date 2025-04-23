@@ -591,11 +591,17 @@ export async function processInquiryTransaction(
   try {
     const { data } = req.body;
     if (!data)
-      return res.status(200).json({ error: 'Encrypted data is required' });
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
 
     const decryptedObject = RealdecryptPayload(data);
     if (!decryptedObject)
-      return res.status(200).json({ error: 'Failed to decrypt data' });
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
 
     const { login, password, storeID, transactionNo, signature } =
       decryptedObject;

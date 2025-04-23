@@ -17,12 +17,12 @@ const innAppRoute = express.Router();
 
 //Real IN APP
 innAppRoute.post(
-  '/Partner/InquiryTransaction',
+  '/Partner/InquiryTariffREG',
   haltOnTimeout,
   Inquiry_Transaction
 );
 innAppRoute.post(
-  '/Partner/PaymentConfirmation',
+  '/Partner/PaymentConfrimationREG',
   haltOnTimeout,
   Payment_Confirmation
 );
@@ -31,7 +31,10 @@ innAppRoute.post(
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
 innAppRoute.post('/Signature-Payment', getPaymentSignature);
 innAppRoute.post('/GenerateTicket', createTicketHandler);
-innAppRoute.post('/InquiryTariffREG/', processInquiryTransaction);
-innAppRoute.post('/PaymentConfrimationREG/', processPaymentTransaction);
+innAppRoute.post('/Simulator/InquiryTariffREG/', processInquiryTransaction);
+innAppRoute.post(
+  '/Simulator/PaymentConfrimationREG/',
+  processPaymentTransaction
+);
 
 export default innAppRoute;

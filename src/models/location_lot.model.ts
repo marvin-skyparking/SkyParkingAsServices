@@ -81,7 +81,10 @@ LocationLot.init(
     used_lot: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      validate: {
+        min: 0
+      }
     },
     available_lot: {
       type: DataTypes.INTEGER,
