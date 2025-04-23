@@ -82,8 +82,13 @@ LocationLot.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-      validate: {
-        min: 0
+      set(value: unknown) {
+        // First, ensure `value` is a number, otherwise default to 0
+        let num = 0;
+        if (typeof value === 'number') {
+          num = value < 0 ? 0 : value;
+        }
+        this.setDataValue('used_lot', num);
       }
     },
     available_lot: {
