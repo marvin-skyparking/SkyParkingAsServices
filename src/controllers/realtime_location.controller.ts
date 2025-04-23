@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
 import { updateLotStatus } from '../services/location_lot.service';
 import { getLocationsByCode } from '../services/location_area.service';
-import { verifyAsymmetricSignature } from '../services/signature.service';
-import { getSecretKeyByClientId } from '../services/partner.service';
 
 export async function updateLot(req: Request, res: Response): Promise<any> {
   try {
@@ -13,16 +11,34 @@ export async function updateLot(req: Request, res: Response): Promise<any> {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    if (action !== 'in' && action !== 'out') {
+    if (action !== 'IN' && action !== 'OUT') {
       return res
         .status(400)
-        .json({ error: "Invalid action. Use 'in' or 'out'." });
+        .json({ error: "Invalid action. Use 'IN' or 'OUT'." });
     }
 
     // Call the service function
     const result = await updateLotStatus(lot_name, locationCode, action);
 
-    return res.status(200).json(result);
+    if ('responseStatus' in result) {
+      return res.status(200).json(result);
+    }
+
+    const final_message = {
+      responseStatus: 'SUCCESS',
+      responseCode: '211000',
+      responseMessage: `Success Update data ${action}`,
+      data: {
+        location_code: result.location_code,
+        location_name: result.location_name,
+        lot_name: result.lot_name,
+        vehicle_type: result.vehicle_type,
+        max_lot: result.max_lot,
+        used_lot: result.used_lot,
+        available_lot: result.available_lot
+      }
+    };
+    return res.status(200).json(final_message);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -33,53 +49,23 @@ export async function getLocationByCodeController(
   res: Response
 ): Promise<any> {
   try {
-    const { clientkey, signature, timestamp } = req.headers as {
-      clientkey?: string;
-      signature?: string;
-      timestamp?: string;
-    };
+    const { locationCode } = req.body;
 
-    if (!clientkey || !signature || !timestamp) {
-      return res.status(200).json({
-        responseStatus: 'FAILED',
-        responseCode: '401400',
-        responseMessage: 'Unauthorized, Missing credentials'
-      });
-    }
-
-    const { location_code } = req.params;
-
-    const secret_key = await getSecretKeyByClientId(clientkey);
-    if (!secret_key) {
-      return res.status(200).json({
-        responseStatus: 'FAILED',
-        responseCode: '401401',
-        responseMessage: 'Unauthorized, Invalid clientkey'
-      });
-    }
-
-    const stringToSign = `${clientkey}|${timestamp}`;
-    const isValidSignature = await verifyAsymmetricSignature(
-      clientkey,
-      signature,
-      stringToSign
-    );
-
-    if (!location_code) {
+    if (!locationCode) {
       return res.status(400).json({
-        Status: false,
-        ResponseCode: '400400',
-        Message: 'Missing required field: location_code'
+        responseStatus: 'FAILED',
+        ResponseCode: '400402',
+        responseMessage: 'Bad Parameters, locationCode is required'
       });
     }
 
-    const locations = await getLocationsByCode(location_code);
+    const locations = await getLocationsByCode(locationCode);
 
     if (!locations || locations.length === 0) {
       return res.status(404).json({
-        Status: false,
+        responseStatus: 'FAILED',
         ResponseCode: '404404',
-        Message: 'Location not found'
+        responseMessage: 'Location Service, Location Code not found'
       });
     }
 
@@ -110,9 +96,10 @@ export async function getLocationByCodeController(
     }));
 
     return res.status(200).json({
-      Status: true,
-      ResponseCode: '200110',
-      Data: formattedLocations
+      responseStatus: 'SUCCESS',
+      responseCode: '211000',
+      responseMessage: `Success Fetch Data`,
+      data: formattedLocations
     });
   } catch (error) {
     console.error('Error fetching location by code:', error);

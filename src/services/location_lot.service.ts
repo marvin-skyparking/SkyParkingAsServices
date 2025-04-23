@@ -4,7 +4,7 @@ import LocationLot from '../models/location_lot.model';
 export async function updateLotStatus(
   lot_name: string,
   locationCode: string,
-  action: 'in' | 'out'
+  action: 'IN' | 'OUT'
 ) {
   const transaction = await sequelize.transaction(); // Correct transaction handling
 
@@ -16,30 +16,38 @@ export async function updateLotStatus(
     });
 
     if (!lot) {
-      throw new Error('Location lot not found');
+      return {
+        responseStatus: 'FAILED',
+        responseCode: '404200',
+        responseMessage: 'Not Found, Lot Name not Found on Location'
+      };
     }
 
-    if (action === 'in') {
+    if (action === 'IN') {
       //   if (lot.available_lot <= 0) {
       //     throw new Error("No available lots");
       //   }
       lot.available_lot -= 1;
       lot.used_lot += 1;
-    } else if (action === 'out') {
+    } else if (action === 'OUT') {
       //   if (lot.used_lot <= 0) {
       //     throw new Error("No used lots to free up");
       //   }
       lot.available_lot += 1;
       lot.used_lot -= 1;
     } else {
-      throw new Error('Invalid action');
+      return {
+        responseStatus: 'FAILED',
+        responseCode: '400200',
+        responseMessage: 'Invalid Action, Should Be IN or OUT'
+      };
     }
 
     // Save updated values with transaction
     await lot.save({ transaction });
 
     await transaction.commit(); // Commit if successful
-    return { message: `Successfully updated lot for ${action}`, lot };
+    return lot;
   } catch (error: any) {
     await transaction.rollback(); // Rollback on error
     throw new Error(`Failed to update lot: ${error.message}`);
