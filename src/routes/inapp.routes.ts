@@ -4,7 +4,8 @@ import {
   Inquiry_Transaction,
   Payment_Confirmation,
   processInquiryTransaction,
-  processPaymentTransaction
+  processPaymentTransaction,
+  processPaymentTransactionPOST
 } from '../controllers/transaction.controller';
 import {
   createTicketHandler,
@@ -31,10 +32,21 @@ innAppRoute.post(
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
 innAppRoute.post('/Signature-Payment', getPaymentSignature);
 innAppRoute.post('/GenerateTicket', createTicketHandler);
-innAppRoute.post('/Simulator/InquiryTariffREG/', processInquiryTransaction);
 innAppRoute.post(
-  '/Simulator/PaymentConfrimationREG/',
+  '/POST/Simulator/InquiryTariffREG/',
+  processInquiryTransaction
+);
+innAppRoute.post(
+  '/Partner/Simulator/InquiryTariffREG/',
+  processInquiryTransaction
+);
+innAppRoute.post(
+  '/Partner/Simulator/PaymentConfrimationREG/',
   processPaymentTransaction
+);
+innAppRoute.post(
+  '/POST/Simulator/PaymentConfrimationREG/',
+  processPaymentTransactionPOST
 );
 
 export default innAppRoute;

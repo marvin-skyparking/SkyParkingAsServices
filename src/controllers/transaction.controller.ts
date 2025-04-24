@@ -936,3 +936,179 @@ export async function processPaymentTransaction(
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+export async function processPaymentTransactionPOST(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body; // Encrypted data from request
+
+    if (!data) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
+    }
+
+    // // Fetch secret key from `inquiry_transaction_mapping`
+    // const mapping = await PartnerMapping.findOne();
+    // if (!mapping || !mapping.SecretKey) {
+    //   return res
+    //     .status(404)
+    //     .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
+    // }
+
+    // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
+
+    // Decrypt AES data
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
+    }
+
+    const {
+      login,
+      password,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      signature
+    } = decryptedObject;
+
+    //return res.status(200).json(decryptedObject);
+    if (
+      ![
+        login,
+        password,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        issuerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].every(Boolean)
+    ) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_FIELDS,
+        data: defaultTransactionData()
+      });
+    }
+
+    // Fetch SecretKey from DB
+    const secretKeyData = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!secretKeyData || !secretKeyData.SecretKey) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const SecretKeys = secretKeyData.SecretKey;
+
+    const expectedSignature = generatePaymentSignature(
+      login,
+      password,
+      secretKeyData.NMID ?? '',
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      SecretKeys
+    );
+
+    // Ensure both signatures are lowercase for comparison
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const check_role = await getRolesByPartnerId(secretKeyData.Id);
+
+    const hasPaymentAccess = check_role.some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+
+    if (!hasPaymentAccess) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'You Not Allowed To Access This Feature'
+      });
+    }
+    const data_ticket = await findTicket(decryptedObject.transactionNo);
+
+    if (!data_ticket) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_TRANSACTION,
+        data: data_ticket
+      });
+    }
+
+    if (decryptedObject.amount != data_ticket.dataValues.tarif) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_AMOUNT,
+        data: data_ticket
+      });
+    }
+
+    const update_ticket = await updateTicketStatus(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        responseCode: '500200',
+        responseMessage: 'Failure Update Transaction'
+      });
+    }
+
+    const succes_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail:
+        update_ticket.tarif === 0
+          ? 'Tiket valid, biaya parkir Anda masih gratis.'
+          : 'Payment confirmation has been accepted and verified successfully',
+      data: {
+        referenceNo: decryptedObject.referenceNo,
+        referenceTransactionNo: decryptedObject.referenceTransactionNo,
+        amount: update_ticket.tarif,
+        paymentReferenceNo: decryptedObject.paymentReferenceNo,
+        paymentDate: new Date(),
+        issuerID: decryptedObject.issuerID,
+        retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
+        transactionNo: decryptedObject.transactionNo,
+        transactionStatus: 'VALID',
+        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
+      }
+    };
+    return res.json(succes_payload); // Respond with the decrypted object directly
+  } catch (error) {
+    console.error('Error processing inquiry transaction:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
