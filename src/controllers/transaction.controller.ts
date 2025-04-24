@@ -626,9 +626,10 @@ export async function processInquiryTransaction(
       validate_credential.SecretKey || ''
     );
     if (signature.toLowerCase() !== expectedSignature.toLowerCase())
-      return res
-        .status(200)
-        .json({ responseCode: '401400', responseMessage: 'Invalid Signature' });
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
 
     const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
       (role) => role.access_type === 'INQUIRY'
@@ -641,14 +642,49 @@ export async function processInquiryTransaction(
     const data_ticket = await findTicket(transactionNo);
     if (!data_ticket)
       return res.status(200).json({
-        responseCode: '404401',
-        responseMessage: 'Invalid Transaction'
+        responseStatus: 'Failed',
+        responseCode: '211001',
+        responseDescription: 'Invalid Transaction',
+        messageDetail: 'The ticket is invalid',
+        data: {
+          transactionNo: transactionNo,
+          transactionStatus: 'INVALID',
+          inTime: '',
+          duration: 0,
+          tariff: 0,
+          vehicleType: '',
+          outTime: '',
+          gracePeriod: 0,
+          location: '',
+          paymentStatus: 'UNPAID'
+        }
       });
 
     if (data_ticket.status === 'PAID')
       return res.status(200).json({
-        responseCode: '400400',
-        responseMessage: 'Ticket already paid'
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid and has been paid',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          transactionStatus: 'VALID',
+          inTime: data_ticket.inTime,
+          duration:
+            data_ticket.inTime && data_ticket.outTime
+              ? Math.floor(
+                  (new Date(data_ticket.outTime).getTime() -
+                    new Date(data_ticket.inTime).getTime()) /
+                    60000
+                )
+              : null,
+          tariff: 5000,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: data_ticket.outTime,
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'PAID'
+        }
       });
 
     const inTime = moment(data_ticket.inTime);
@@ -731,7 +767,10 @@ export async function processPaymentTransaction(
     const { data } = req.body; // Encrypted data from request
 
     if (!data) {
-      return res.status(200).json({ error: 'Encrypted data is required' });
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
     }
 
     // // Fetch secret key from `inquiry_transaction_mapping`
@@ -748,7 +787,10 @@ export async function processPaymentTransaction(
     const decryptedObject = RealdecryptPayload(data);
 
     if (!decryptedObject) {
-      return res.status(200).json({ error: 'Failed to decrypt data' });
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
     }
 
     const {
@@ -799,8 +841,8 @@ export async function processPaymentTransaction(
 
     if (!secretKeyData || !secretKeyData.SecretKey) {
       return res.status(200).json({
-        responseCode: '401402',
-        responseMessage: 'Invalids Credential'
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
       });
     }
 
@@ -825,8 +867,8 @@ export async function processPaymentTransaction(
     // Ensure both signatures are lowercase for comparison
     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
       return res.status(200).json({
-        responseCode: '401400',
-        responseMessage: 'Invalid Signature'
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
       });
     }
 
@@ -871,18 +913,21 @@ export async function processPaymentTransaction(
       responseStatus: 'Success',
       responseCode: '211000',
       responseDescription: 'Transaction Success',
-      messageDetail: 'Tiket valid, biaya parkir Anda masih gratis.',
+      messageDetail:
+        update_ticket.tarif === 0
+          ? 'Tiket valid, biaya parkir Anda masih gratis.'
+          : 'Payment confirmation has been accepted and verified successfully',
       data: {
-        transactionNo: update_ticket.transactionNo,
+        referenceNo: decryptedObject.referenceNo,
+        referenceTransactionNo: decryptedObject.referenceTransactionNo,
+        amount: update_ticket.tarif,
+        paymentReferenceNo: decryptedObject.paymentReferenceNo,
+        paymentDate: new Date(),
+        issuerID: decryptedObject.issuerID,
+        retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
+        transactionNo: decryptedObject.transactionNo,
         transactionStatus: 'VALID',
-        inTime: update_ticket.inTime,
-        duration: 0,
-        tariff: update_ticket.tarif,
-        vehicleType: 'MOTOR',
-        outTime: update_ticket.outTime,
-        gracePeriod: update_ticket.grace_period,
-        location: 'SKY PLUIT VILLAGE',
-        paymentStatus: update_ticket.status
+        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
       }
     };
     return res.json(succes_payload); // Respond with the decrypted object directly
