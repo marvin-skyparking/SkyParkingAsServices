@@ -31,8 +31,7 @@ const corsOptions = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-  allowedHeaders: ['client_key']
+  credentials: true
 };
 
 app.use(cors(corsOptions));
