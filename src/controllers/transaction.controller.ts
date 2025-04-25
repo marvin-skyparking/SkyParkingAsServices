@@ -678,7 +678,7 @@ export async function processInquiryTransaction(
                     60000
                 )
               : null,
-          tariff: 5000,
+          tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
           outTime: data_ticket.outTime,
           gracePeriod: data_ticket.grace_period,
