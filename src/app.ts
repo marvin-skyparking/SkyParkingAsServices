@@ -16,7 +16,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:9001',
   'https://dev-occ.skyparking.online',
-  'https://dev-injectmember.skyparking.online'
+  'https://dev-injectmember.skyparking.online',
+  'https://devtest01.skyparking.online'
 ];
 
 const corsOptions = {
