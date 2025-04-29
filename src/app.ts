@@ -17,7 +17,8 @@ const allowedOrigins = [
   'http://localhost:9001',
   'https://dev-occ.skyparking.online',
   'https://dev-injectmember.skyparking.online',
-  'https://devtest01.skyparking.online'
+  'https://devtest01.skyparking.online',
+  'https://sky-company-profile.vercel.app'
 ];
 
 const corsOptions = {
