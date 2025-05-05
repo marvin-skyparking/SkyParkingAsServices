@@ -3,6 +3,7 @@ import InquiryTransactionMapping from '../models/partner_mapping.model';
 import {
   decryptPayload,
   DecryptTotPOST,
+  EncryptResponse,
   EncryptTotPOST,
   generatePaymentSignature,
   generateSignature,
@@ -59,199 +60,183 @@ export async function Inquiry_Transaction(
   res: Response
 ): Promise<any> {
   if ((req as any).timedout) return;
-  try {
-    if ((req as any).timedout) return;
-    //Get Value Data
-    const { data } = req.body;
-    // Check if data is provided
-    if (!data) {
-      const missing_encrypted_data = 'Missing encrypted data';
-      // Capture the error in Sentry with request details
-      Sentry.captureException(new Error(missing_encrypted_data), {
-        extra: {
-          requestBody: data, // Include full request body
-          headers: req.headers, // Include request headers
-          ip: req.ip // Capture client IP
-        }
-      });
 
-      return res.status(200).json({
-        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-        data: defaultTransactionData()
+  const encryptAndRespond = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) payload.data = defaultTransactionData(transactionNo);
+    const encrypted = await EncryptTotPOST(payload, key);
+    return res.status(200).json({ data: encrypted });
+  };
+
+  try {
+    const { data } = req.body;
+    if (!data) {
+      Sentry.captureException(new Error('Missing encrypted data'), {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
       });
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        '',
+        undefined
+      );
     }
 
     const decryptedObject = RealdecryptPayload(data);
-
     if (!decryptedObject) {
-      const INVALID_ENCRYPTION = 'INVALID ENCRYPATION DATA';
-      // Capture the error in Sentry with request details
-      Sentry.captureException(new Error(INVALID_ENCRYPTION), {
-        extra: {
-          requestBody: data, // Include full request body
-          headers: req.headers, // Include request headers
-          ip: req.ip // Capture client IP
-        }
+      Sentry.captureException(new Error('INVALID ENCRYPTION DATA'), {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
       });
-
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-        data: defaultTransactionData()
-      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        'PARTNER_KEY'
+      );
     }
 
     const { login, password, storeID, transactionNo, signature } =
       decryptedObject;
-
-    //return res.status(200).json(decryptedObject);
     if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.MISSING_FIELDS,
-        data: defaultTransactionData()
-      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_FIELDS,
+        '',
+        transactionNo
+      );
     }
 
-    const validate_credential = await findInquiryTransactionMappingPartner(
+    const credential = await findInquiryTransactionMappingPartner(
       login,
       password
     );
+    if (!credential) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_CREDENTIAL,
+        '',
+        transactionNo
+      );
+    }
 
-    if (!validate_credential)
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-        data: defaultTransactionData(transactionNo)
-      });
-
-    const expectedSignature = generateSignature(
+    const expectedSig = generateSignature(
       login,
       password,
       storeID,
       transactionNo,
-      validate_credential.SecretKey || ''
+      credential.SecretKey ?? ''
     );
-
-    if (signature.toLowerCase() !== expectedSignature.toLowerCase())
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_SIGNATURE,
-        data: defaultTransactionData(transactionNo)
-      });
-
-    const find_location = await findInquiryTransactionMappingByNMID(
-      decryptedObject.storeID
-    );
-
-    if (!find_location)
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_LOCATION,
-        data: defaultTransactionData(transactionNo)
-      });
-
-    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
-      (role) => role.access_type === 'INQUIRY'
-    );
-    if (!hasAccess)
-      return res
-        .status(200)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
-
-    const access_post = await getRolesByPartnerId(find_location.Id);
-
-    // Filter the result based on role_name and access_type
-    const inquiryAccess = access_post.find(
-      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
-    );
-    const postAccess = (await getRolesByPartnerId(find_location.Id)).some(
-      (role) => role.access_type === 'INQUIRY'
-    );
-    if (!postAccess)
-      return res
-        .status(200)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
-
-    const data_signature = {
-      login: find_location.Login ?? '',
-      password: find_location.Password ?? '',
-      storeID: find_location.NMID ?? '',
-      transactionNo: decryptedObject.transactionNo ?? ''
-    };
-
-    //Signature
-    const create_signature = await generateSignature(
-      data_signature.login,
-      data_signature.password,
-      data_signature.storeID,
-      data_signature.transactionNo,
-      find_location.SecretKey ?? ''
-    );
-
-    const data_send = {
-      login: find_location.Login ?? '',
-      password: find_location.Password ?? '',
-      storeID: find_location.NMID ?? '',
-      transactionNo: decryptedObject.transactionNo ?? '',
-      signature: create_signature
-    };
-
-    const encrypted_data = await EncryptTotPOST(
-      data_send,
-      find_location.GibberishKey ?? ''
-    );
-
-    if (!inquiryAccess?.url_access) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_LOCATION,
-        data: defaultTransactionData(transactionNo)
-      });
+    if (signature.toLowerCase() !== expectedSig.toLowerCase()) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_SIGNATURE,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
     }
 
-    const response = await axios.post(inquiryAccess.url_access, {
-      data: encrypted_data
+    const location = await findInquiryTransactionMappingByNMID(storeID);
+    if (!location) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_LOCATION,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const roles = await getRolesByPartnerId(credential.Id);
+    const hasInquiryAccess = roles.some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasInquiryAccess) {
+      return encryptAndRespond(
+        { responseCode: '401401', responseMessage: 'Access Denied' },
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const locationRoles = await getRolesByPartnerId(location.Id);
+    const postRole = locationRoles.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    if (!postRole || !postRole.url_access) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_LOCATION,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const signatureData = {
+      login: location.Login ?? '',
+      password: location.Password ?? '',
+      storeID: location.NMID ?? '',
+      transactionNo
+    };
+
+    const remoteSignature = generateSignature(
+      signatureData.login,
+      signatureData.password,
+      signatureData.storeID,
+      transactionNo,
+      location.SecretKey ?? ''
+    );
+
+    const requestPayload = {
+      ...signatureData,
+      signature: remoteSignature
+    };
+
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      location.GibberishKey ?? ''
+    );
+    const apiResponse = await axios.post(postRole.url_access, {
+      data: encryptedRequest
     });
 
-    const cleanJsonString = response.data.replace(
+    const cleanString = apiResponse.data.replace(
       /[\u0000-\u001F\u007F-\u009F]/g,
       ''
     );
-    const parsedData = JSON.parse(cleanJsonString);
-
-    const data_final = await DecryptTotPOST(
+    const parsedData = JSON.parse(cleanString);
+    const finalData = await DecryptTotPOST(
       parsedData.data,
-      find_location.GibberishKey ?? ''
+      location.GibberishKey ?? ''
     );
 
-    const insert_data = {
-      CompanyName: find_location.CompanyName ?? '',
-      NMID: find_location.NMID ?? '',
-      StoreCode: transactionNo.toString().slice(-5), // Ensure string type
-      TransactionNo: transactionNo ?? '',
-      RefernceNo: null,
+    await createInquiryTransaction({
+      CompanyName: location.CompanyName ?? '',
+      NMID: location.NMID ?? '',
+      StoreCode: transactionNo.toString().slice(-5),
+      TransactionNo: transactionNo,
+      ReferenceNo: '',
       ProjectCategoryId: 14,
       ProjectCategoryName: 'Parking',
-      DataSend: JSON.stringify(data_send), // Convert to string
-      DataResponse: JSON.stringify(data_final), // Convert to string if needed
-      DataDetailResponse: JSON.stringify(data_final?.data), // Convert to string if needed
-      CreatedOn: new Date(), // Use Date object
-      UpdatedOn: new Date(), // Use Date object
-      CreatedBy: find_location.CompanyName ?? '',
-      UpdatedBy: find_location.CompanyName ?? ''
-    };
+      DataSend: JSON.stringify(requestPayload),
+      DataResponse: JSON.stringify(finalData),
+      DataDetailResponse: JSON.stringify(finalData?.data),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
+      CreatedBy: location.CompanyName ?? '',
+      UpdatedBy: location.CompanyName ?? ''
+    });
 
-    //Harus Dipantaui
-    const data_inquiry_insert = await createInquiryTransaction(insert_data);
-
-    const res_final = {
-      responseStatus: data_final?.responseStatus,
+    const responsePayload = {
+      responseStatus: finalData?.responseStatus,
       responseCode:
-        data_final?.responseStatus === 'Failed' ? '211001' : '211000',
-      responseMessage: data_final?.responseMessage,
-      responseDescription: data_final?.responseDescription,
-      messageDetail: data_final?.messageDetail,
-      data: data_final?.data
+        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseMessage: finalData?.responseMessage,
+      responseDescription: finalData?.responseDescription,
+      messageDetail: finalData?.messageDetail,
+      data: finalData?.data
     };
 
-    return res.status(200).json(res_final);
+    return encryptAndRespond(
+      responsePayload,
+      credential.GibberishKey ?? '',
+      transactionNo
+    );
   } catch (error: any) {
-    console.error('Error processing transaction:', error);
+    console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
@@ -1112,3 +1097,27 @@ export async function processPaymentTransactionPOST(
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+// export async function InquiryTransactionSnap(req: Request, res: Response):Promise<any>
+// {
+
+//   try {
+
+//     const {storeID, transactionNo}= req.body;
+
+//     // Validate required fields
+//     if (!storeID || !transactionNo) {
+//       return res.status(400).json({ error: 'Missing required fields' });
+//     }
+
+//     // Fetch SecretKey from DB
+//     const secretKeyData = await findInquiryTransactionMappingPartner(
+//       login,
+//       password
+//     );
+
+//   } catch (error) {
+
+//   }
+
+// }

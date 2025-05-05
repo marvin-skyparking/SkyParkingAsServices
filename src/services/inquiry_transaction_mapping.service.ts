@@ -54,9 +54,9 @@ export async function findInquiryTransactionMapping(
 ) {
   const mapping = await InquiryTransactionMapping.findOne({
     where: {
-      Login,
-      Password,
-      NMID
+      Login: Login,
+      Password: Password,
+      NMID: NMID
     }
   });
 
@@ -64,13 +64,13 @@ export async function findInquiryTransactionMapping(
 }
 
 export async function findInquiryTransactionMappingPartner(
-  Login: string,
-  Password: string
+  login: string,
+  password: string
 ) {
   const mapping = await InquiryTransactionMapping.findOne({
     where: {
-      Login,
-      Password
+      Login: login,
+      Password: password
     }
   });
 
@@ -80,7 +80,7 @@ export async function findInquiryTransactionMappingPartner(
 export async function findInquiryTransactionMappingByNMID(NMID: string) {
   const mapping = await InquiryTransactionMapping.findOne({
     where: {
-      NMID
+      NMID: NMID
     }
   });
 

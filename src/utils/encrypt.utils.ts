@@ -79,6 +79,32 @@ export const EncryptTotPOST = (
   }
 };
 
+export const EncryptResponse = (
+  data: Record<string, any>,
+  partner_key: string
+): string => {
+  try {
+    const jsonString = JSON.stringify(data);
+
+    // Get the current UTC date in YYYYMMDD format
+    const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+
+    // Append UTC date to the PARTNER_KEY
+    const encryptionKey = utcDate + partner_key;
+
+    // Encrypt the data using the encryption key with UTC date
+    const encrypted = CryptoJS.AES.encrypt(
+      CryptoJS.enc.Utf8.parse(jsonString),
+      encryptionKey
+    ).toString();
+
+    return encrypted;
+  } catch (error: any) {
+    console.error('Encryption Error:', error.message);
+    throw new Error('Encryption failed');
+  }
+};
+
 export const DecryptTotPOST = (
   encryptedData: string,
   partner_key: string

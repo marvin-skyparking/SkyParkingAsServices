@@ -2,6 +2,7 @@ import express from 'express';
 import timeout from 'connect-timeout';
 import {
   Inquiry_Transaction,
+  // InquiryTransactionSnap,
   Payment_Confirmation,
   processInquiryTransaction,
   processPaymentTransaction,
@@ -13,6 +14,7 @@ import {
   sigantureKey
 } from '../controllers/ticket_generator.controller';
 import { haltOnTimeout } from '../middleware/timeout.middleware';
+import { verifyClientAuth } from '../middleware/verify_auth.middleware';
 
 const innAppRoute = express.Router();
 
@@ -48,5 +50,9 @@ innAppRoute.post(
   '/POST/Simulator/PaymentConfrimationREG/',
   processPaymentTransactionPOST
 );
+
+//Version 2
+// innAppRoute.post('/Partner/ticket/InquiryTariffREG',verifyClientAuth, InquiryTransactionSnap);
+// innAppRoute.post('/Partner/PaymentConfrimationREG', processPaymentTransaction);
 
 export default innAppRoute;
