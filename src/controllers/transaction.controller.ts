@@ -7,10 +7,10 @@ import {
   EncryptTotPOST,
   generatePaymentSignature,
   generateSignature,
-  RealdecryptPayload
+  RealdecryptPayload,
+  RealencryptPayload
 } from '../utils/encrypt.utils';
 import {
-  findInquiryTransactionMapping,
   findInquiryTransactionMappingByNMID,
   findInquiryTransactionMappingPartner
 } from '../services/inquiry_transaction_mapping.service';
@@ -19,11 +19,7 @@ import {
   updateTarifIfExpired,
   updateTicketStatus
 } from '../services/ticket_generator.service';
-import {
-  createPaymentTransaction,
-  getPaymentTransactionById,
-  getAllPayments
-} from '../services/payment_confirmation.service';
+import { createPaymentTransaction } from '../services/payment_confirmation.service';
 import moment from 'moment-timezone';
 import {
   getRoleById,
@@ -40,6 +36,7 @@ import {
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import Sentry from '../utils/sentry.utils';
+import { ACCESS_ERROR_MESSAGES } from '../constant/ACCESS.errormessage';
 
 /**
  * Process Inquiry Transaction
@@ -147,7 +144,7 @@ export async function Inquiry_Transaction(
     );
     if (!hasInquiryAccess) {
       return encryptAndRespond(
-        { responseCode: '401401', responseMessage: 'Access Denied' },
+        ACCESS_ERROR_MESSAGES.ACCESS_DENIED,
         credential.GibberishKey ?? '',
         transactionNo
       );
@@ -247,26 +244,28 @@ export async function Payment_Confirmation(
   res: Response
 ): Promise<any> {
   if ((req as any).timedout) return;
+
+  const encryptAndRespond = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) payload.data = defaultTransactionData(transactionNo);
+    const encrypted = await EncryptTotPOST(payload, key);
+    return res.status(200).json({ data: encrypted });
+  };
+
   try {
-    if ((req as any).timedout) return;
-    //Get Value Data
     const { data } = req.body;
 
-    // Check if data is provided
     if (!data) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-        data: defaultTransactionData()
-      });
+      return encryptAndRespond(ERROR_MESSAGES.MISSING_ENCRYPTED_DATA, '', '');
     }
 
     const decryptedObject = RealdecryptPayload(data);
 
     if (!decryptedObject) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-        data: defaultTransactionData()
-      });
+      return encryptAndRespond(ERROR_MESSAGES.INVALID_DATA_ENCRYPTION, '', '');
     }
 
     const {
@@ -285,7 +284,6 @@ export async function Payment_Confirmation(
       signature
     } = decryptedObject;
 
-    //return res.status(200).json(decryptedObject);
     if (
       ![
         login,
@@ -303,29 +301,29 @@ export async function Payment_Confirmation(
         signature
       ].every(Boolean)
     ) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.MISSING_FIELDS,
-        data: defaultTransactionData()
-      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_FIELDS,
+        '',
+        transactionNo
+      );
     }
 
-    // Credential Payment Partner
     const validate_credential = await findInquiryTransactionMappingPartner(
       login,
       password
     );
+    if (!validate_credential) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_CREDENTIAL,
+        '',
+        transactionNo
+      );
+    }
 
-    if (!validate_credential)
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-        data: defaultTransactionData(transactionNo)
-      });
-
-    //Payment Signature
     const expectedSignature = generatePaymentSignature(
       login,
       password,
-      validate_credential.NMID || '',
+      validate_credential.NMID ?? '',
       transactionNo,
       referenceNo,
       amount,
@@ -335,49 +333,47 @@ export async function Payment_Confirmation(
       issuerID,
       retrievalReferenceNo,
       approvalCode,
-      validate_credential.SecretKey || ''
+      validate_credential.SecretKey ?? ''
     );
 
-    if (signature.toLowerCase() !== expectedSignature.toLowerCase())
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_SIGNATURE,
-        data: defaultTransactionData(transactionNo)
-      });
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_SIGNATURE,
+        validate_credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     const find_location = await findInquiryTransactionMappingByNMID(
       decryptedObject.storeID
     );
-
-    if (!find_location)
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_LOCATION,
-        data: defaultTransactionData(transactionNo)
-      });
+    if (!find_location) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_LOCATION,
+        validate_credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
       (role) => role.access_type === 'PAYMENT'
     );
-    if (!hasAccess)
-      return res
-        .status(200)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+    if (!hasAccess) {
+      return encryptAndRespond(
+        {
+          responseCode: '401401',
+          responseMessage: 'Access Denied'
+        },
+        validate_credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
-    // const access_post = await getRolesByPartnerId(find_location.Id);
-    // Filter the result based on role_name and access_type
-
-    const data_signature = {
-      login: find_location.Login ?? '',
-      password: find_location.Password ?? '',
-      storeID: find_location.NMID ?? '',
-      transactionNo: decryptedObject.transactionNo ?? ''
-    };
-
-    //Signature
-    const create_signature = await generatePaymentSignature(
-      data_signature.login,
-      data_signature.password,
-      data_signature.storeID,
-      data_signature.transactionNo,
+    const create_signature = generatePaymentSignature(
+      find_location.Login ?? '',
+      find_location.Password ?? '',
+      find_location.NMID ?? '',
+      decryptedObject.transactionNo ?? '',
       decryptedObject.referenceNo ?? '',
       decryptedObject.amount ?? '',
       decryptedObject.paymentStatus ?? '',
@@ -389,12 +385,11 @@ export async function Payment_Confirmation(
       find_location.SecretKey ?? ''
     );
 
-    // Flow Re Check Transaction
     const create_signature_inquiry = await generateSignature(
       find_location.Login ?? '',
       find_location.Password ?? '',
       find_location.NMID ?? '',
-      data_signature.transactionNo,
+      decryptedObject.transactionNo ?? '',
       find_location.SecretKey ?? ''
     );
 
@@ -405,19 +400,24 @@ export async function Payment_Confirmation(
       transactionNo: decryptedObject.transactionNo ?? '',
       signature: create_signature_inquiry
     };
-    // Filter the result based on role_name and access_type
-    const access_post = await getRolesByPartnerId(find_location.Id);
 
+    const access_post = await getRolesByPartnerId(find_location.Id);
     const inquiryAccess = access_post.find(
       (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
     );
-    const postAccess = (await getRolesByPartnerId(find_location.Id)).some(
+    const hasInquiryAccess = access_post.some(
       (role) => role.access_type === 'INQUIRY'
     );
-    if (!postAccess)
-      return res
-        .status(200)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+    if (!hasInquiryAccess) {
+      return encryptAndRespond(
+        {
+          responseCode: '401401',
+          responseMessage: 'Access Denied'
+        },
+        find_location.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     const encrypted_data = await EncryptTotPOST(
       data_send_recheck,
@@ -425,48 +425,48 @@ export async function Payment_Confirmation(
     );
 
     if (!inquiryAccess?.url_access) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_LOCATION,
-        data: defaultTransactionData(transactionNo)
-      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_LOCATION,
+        find_location.GibberishKey ?? '',
+        transactionNo
+      );
     }
 
     const response = await axios.post(inquiryAccess.url_access, {
       data: encrypted_data
     });
-
-    const cleanJsonString = response.data.replace(
-      /[\u0000-\u001F\u007F-\u009F]/g,
-      ''
+    const parsedData = JSON.parse(
+      response.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     );
-    const parsedData = JSON.parse(cleanJsonString);
-
     const data_inquiry = await DecryptTotPOST(
       parsedData.data,
       find_location.GibberishKey ?? ''
     );
 
-    //Validasi PAYMENT AMOUNT dan Status
-    if (data_inquiry?.data.paymentStatus == 'PAID') {
-      return res.status(200).json({
-        responseStatus: data_inquiry?.responseStatus,
-        responseCode:
-          data_inquiry?.responseStatus === 'Failed' ? '211001' : '211000',
-        responseMessage: data_inquiry?.responseMessage,
-        responseDescription: data_inquiry?.responseDescription,
-        messageDetail: data_inquiry?.messageDetail,
-        data: data_inquiry.data
-      });
+    if (data_inquiry?.data.paymentStatus === 'PAID') {
+      return encryptAndRespond(
+        {
+          responseStatus: data_inquiry?.responseStatus,
+          responseCode:
+            data_inquiry?.responseStatus === 'Failed' ? '211001' : '211000',
+          responseMessage: data_inquiry?.responseMessage,
+          responseDescription: data_inquiry?.responseDescription,
+          messageDetail: data_inquiry?.messageDetail,
+          data: data_inquiry.data
+        },
+        find_location.GibberishKey ?? '',
+        transactionNo
+      );
     }
 
     if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_AMOUNT,
-        data: data_inquiry?.data
-      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_AMOUNT,
+        find_location.GibberishKey ?? '',
+        transactionNo
+      );
     }
 
-    // Data yang akan dikirim ke post untuk konfirmasi pembayaran
     const data_send = {
       login: find_location.Login ?? '',
       password: find_location.Password ?? '',
@@ -487,27 +487,27 @@ export async function Payment_Confirmation(
       data_send,
       find_location.GibberishKey ?? ''
     );
-
     const paymentAccess = access_post.find(
       (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
     );
-
-    if (!paymentAccess)
-      return res
-        .status(200)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+    if (!paymentAccess) {
+      return encryptAndRespond(
+        {
+          responseCode: '401401',
+          responseMessage: 'Access Denied'
+        },
+        find_location.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     const response_confirm_pay = await axios.post(paymentAccess.url_access, {
       data: encrypted_data_pay
     });
 
-    const cleanJsonStringPay = response_confirm_pay.data.replace(
-      /[\u0000-\u001F\u007F-\u009F]/g,
-      ''
+    const parsedDataPay = JSON.parse(
+      response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     );
-
-    const parsedDataPay = JSON.parse(cleanJsonStringPay);
-
     const data_payment = await DecryptTotPOST(
       parsedDataPay.data,
       find_location.GibberishKey ?? ''
@@ -525,7 +525,7 @@ export async function Payment_Confirmation(
 
     const insert_data = {
       NMID: transactionNo.toString().slice(-5),
-      StoreCode: transactionNo.toString().slice(-5), // Ensure string type
+      StoreCode: transactionNo.toString().slice(-5),
       referenceNo: decryptedObject.referenceNo ?? '',
       transactionNo: decryptedObject.transactionNo ?? '',
       RefernceNo: decryptedObject.referenceNo ?? '',
@@ -539,32 +539,37 @@ export async function Payment_Confirmation(
       approvalCode: decryptedObject.approvalCode ?? '',
       ProjectCategoryId: 14,
       ProjectCategoryName: 'Parking',
-      DataSend: JSON.stringify(data_send), // Convert to string
-      DataResponse: JSON.stringify(data_payment), // Convert to string if needed
-      DataDetailResponse: JSON.stringify(data_payment?.data), // Convert to string if needed
-      DataReceived: JSON.stringify(decryptedObject), // Convert to string
-      MerchantDataRequest: JSON.stringify(decryptedObject), // Convert to string
-      MerchantDataResponse: JSON.stringify(res_final), // Convert to string
-      POSTDataRequest: JSON.stringify(data_send), // Convert to string
-      POSTDataResponse: JSON.stringify(data_payment), // Convert to string
-      CreatedOn: new Date(), // Use Date object
-      UpdatedOn: new Date(), // Use Date object
+      DataSend: JSON.stringify(data_send),
+      DataResponse: JSON.stringify(data_payment),
+      DataDetailResponse: JSON.stringify(data_payment?.data),
+      DataReceived: JSON.stringify(decryptedObject),
+      MerchantDataRequest: JSON.stringify(decryptedObject),
+      MerchantDataResponse: JSON.stringify(res_final),
+      POSTDataRequest: JSON.stringify(data_send),
+      POSTDataResponse: JSON.stringify(data_payment),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
       CreatedBy: find_location.Login ?? '',
       UpdatedBy: find_location.Login ?? ''
     };
 
-    //Harus Dipantaui
-    const payment_confirmation_insert =
-      await createPaymentTransaction(insert_data);
+    await createPaymentTransaction(insert_data);
 
-    // Final Response
-    return res.status(200).json(res_final);
+    return encryptAndRespond(
+      res_final,
+      find_location.GibberishKey ?? '',
+      transactionNo
+    );
   } catch (error: any) {
     console.error('Error processing transaction:', error);
-    return res.status(200).json({
-      responseCode: '500500',
-      responseMessage: 'General Server Error'
-    });
+    return encryptAndRespond(
+      {
+        responseCode: '500500',
+        responseMessage: 'General Server Error'
+      },
+      '',
+      ''
+    );
   }
 }
 
@@ -1095,6 +1100,385 @@ export async function processPaymentTransactionPOST(
   } catch (error) {
     console.error('Error processing inquiry transaction:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+export async function processInquiryTransactionEncrypt(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body;
+    if (!data) {
+      const response = {
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+    if (!decryptedObject) {
+      const response = {
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
+    if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
+      const response = { error: 'Invalid data format' };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const validate_credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+    if (!validate_credential) {
+      const response = {
+        responseCode: '401402',
+        responseMessage: 'Invalid Credential - Partner'
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const expectedSignature = generateSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      validate_credential.SecretKey || ''
+    );
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      const response = {
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasAccess) {
+      const response = {
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      };
+      return res.status(401).json({ data: RealencryptPayload(response) });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket) {
+      const response = {
+        responseStatus: 'Failed',
+        responseCode: '211001',
+        responseDescription: 'Invalid Transaction',
+        messageDetail: 'The ticket is invalid',
+        data: {
+          transactionNo: transactionNo,
+          transactionStatus: 'INVALID',
+          inTime: '',
+          duration: 0,
+          tariff: 0,
+          vehicleType: '',
+          outTime: '',
+          gracePeriod: 0,
+          location: '',
+          paymentStatus: 'UNPAID'
+        }
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    if (data_ticket.status === 'PAID') {
+      const response = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid and has been paid',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          transactionStatus: 'VALID',
+          inTime: data_ticket.inTime,
+          duration:
+            data_ticket.inTime && data_ticket.outTime
+              ? Math.floor(
+                  (new Date(data_ticket.outTime).getTime() -
+                    new Date(data_ticket.inTime).getTime()) /
+                    60000
+                )
+              : null,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: data_ticket.outTime,
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'PAID'
+        }
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const inTime = moment(data_ticket.inTime);
+    const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
+    const gracePeriodEnd = inTime
+      .clone()
+      .add(data_ticket.grace_period || 5, 'minutes');
+
+    let responsePayload;
+
+    if (moment().isBefore(gracePeriodEnd)) {
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid, Parking is still free.',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          inTime: formattedInTime,
+          duration: 0,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: data_ticket.outTime
+            ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
+          gracePeriod: data_ticket.grace_period,
+          location: 'SKY PLUIT VILLAGE',
+          paymentStatus: 'FREE'
+        }
+      };
+    } else {
+      const update_tarif = await updateTarifIfExpired(transactionNo);
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Please proceed with payment.',
+        data: {
+          transactionNo: update_tarif.transactionNo,
+          inTime: formattedInTime,
+          duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
+          tariff: update_tarif.tarif,
+          vehicleType: update_tarif.vehicle_type,
+          outTime: update_tarif.outTime
+            ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
+          gracePeriod: update_tarif.grace_period,
+          location: 'SKY PLUIT VILLAGE',
+          paymentStatus: update_tarif.status
+        }
+      };
+    }
+
+    await createInquiryTransaction({
+      StoreCode: '007SK',
+      TransactionNo: transactionNo,
+      NMID: '007SK',
+      CompanyName: validate_credential.CompanyName || '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(decryptedObject),
+      DataResponse: JSON.stringify(responsePayload),
+      CreatedOn: moment().toDate(),
+      CreatedBy: login
+    });
+
+    return res.json({ data: RealencryptPayload(responsePayload) });
+  } catch (error) {
+    console.error('Error processing transaction:', error);
+    const response = { error: 'Internal Server Error' };
+    return res.status(500).json({ data: RealencryptPayload(response) });
+  }
+}
+
+export async function processPaymentTransactionEncrypt(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body;
+
+    if (!data) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+          data: defaultTransactionData()
+        })
+      });
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+          data: defaultTransactionData()
+        })
+      });
+    }
+
+    const {
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      signature
+    } = decryptedObject;
+
+    if (
+      ![
+        login,
+        password,
+        storeID,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        issuerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].every(Boolean)
+    ) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.MISSING_FIELDS,
+          data: defaultTransactionData()
+        })
+      });
+    }
+
+    const secretKeyData = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!secretKeyData || !secretKeyData.SecretKey) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const SecretKeys = secretKeyData.SecretKey;
+
+    const expectedSignature = generatePaymentSignature(
+      login,
+      password,
+      secretKeyData.NMID ?? '',
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      SecretKeys
+    );
+
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_SIGNATURE,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const check_role = await getRolesByPartnerId(secretKeyData.Id);
+    const hasPaymentAccess = check_role.some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+
+    if (!hasPaymentAccess) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '401401',
+          responseMessage: 'You Not Allowed To Access This Feature'
+        })
+      });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+
+    if (!data_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_TRANSACTION,
+          data: data_ticket
+        })
+      });
+    }
+
+    if (decryptedObject.amount != data_ticket.dataValues.tarif) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_AMOUNT,
+          data: data_ticket
+        })
+      });
+    }
+
+    const update_ticket = await updateTicketStatus(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '500200',
+          responseMessage: 'Failure Update Transaction'
+        })
+      });
+    }
+
+    const success_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail:
+        update_ticket.tarif === 0
+          ? 'Tiket valid, biaya parkir Anda masih gratis.'
+          : 'Payment confirmation has been accepted and verified successfully',
+      data: {
+        referenceNo: decryptedObject.referenceNo,
+        referenceTransactionNo: decryptedObject.referenceTransactionNo,
+        amount: update_ticket.tarif,
+        paymentReferenceNo: decryptedObject.paymentReferenceNo,
+        paymentDate: new Date(),
+        issuerID: decryptedObject.issuerID,
+        retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
+        transactionNo: decryptedObject.transactionNo,
+        transactionStatus: 'VALID',
+        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
+      }
+    };
+
+    return res.status(200).json({
+      data: RealencryptPayload(success_payload)
+    });
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
   }
 }
 

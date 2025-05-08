@@ -5,7 +5,9 @@ import {
   // InquiryTransactionSnap,
   Payment_Confirmation,
   processInquiryTransaction,
+  processInquiryTransactionEncrypt,
   processPaymentTransaction,
+  processPaymentTransactionEncrypt,
   processPaymentTransactionPOST
 } from '../controllers/transaction.controller';
 import {
@@ -22,12 +24,12 @@ const innAppRoute = express.Router();
 innAppRoute.post(
   '/Partner/InquiryTariffREG',
   haltOnTimeout,
-  Inquiry_Transaction
+  processInquiryTransactionEncrypt
 );
 innAppRoute.post(
   '/Partner/PaymentConfrimationREG',
   haltOnTimeout,
-  Payment_Confirmation
+  processPaymentTransactionEncrypt
 );
 
 //Simulator

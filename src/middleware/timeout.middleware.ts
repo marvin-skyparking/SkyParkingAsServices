@@ -14,7 +14,7 @@ export async function errorHandler(
     console.warn('Timeout error caught:', err.message);
     return res.status(200).json({
       responseStatus: 'Failed',
-      responseCode: '211002',
+      responseCode: '211051',
       responseDescription: 'Request timed out',
       messageDetail: 'Connection to the API Timeout'
     });
