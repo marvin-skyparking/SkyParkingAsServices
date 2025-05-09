@@ -1339,7 +1339,7 @@ export async function processPaymentTransactionEncrypt(
     } = decryptedObject;
 
     if (
-      ![
+      [
         login,
         password,
         storeID,
@@ -1353,7 +1353,7 @@ export async function processPaymentTransactionEncrypt(
         retrievalReferenceNo,
         approvalCode,
         signature
-      ].every(Boolean)
+      ].some((field) => field === null || field === undefined)
     ) {
       return res.status(200).json({
         data: RealencryptPayload({

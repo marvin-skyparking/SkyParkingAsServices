@@ -40,10 +40,10 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Handling Timeout
+// // Handling Timeout
 // app.use(timeout('1'));
 //Routes Flow
 app.use('/v1', indexRoutes);
-// app.use(errorHandler);
+app.use(errorHandler);
 
 export default app;
