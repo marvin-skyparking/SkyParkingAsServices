@@ -200,7 +200,7 @@ export function generatePaymentSignature(
   storeID: string,
   transactionNo: string,
   referenceNo: string,
-  amount: string,
+  amount: number,
   paymentStatus: string,
   paymentReferenceNo: string,
   paymentDate: string,
