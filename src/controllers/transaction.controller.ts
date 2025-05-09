@@ -1382,7 +1382,7 @@ export async function processPaymentTransactionEncrypt(
     const expectedSignature = generatePaymentSignature(
       login,
       password,
-      secretKeyData.NMID ?? '',
+      storeID,
       transactionNo,
       referenceNo,
       amount,

@@ -209,21 +209,22 @@ export function generatePaymentSignature(
   approvalCode: string,
   SECRET_KEY: string
 ): string {
+  const dataString = `${login}${password}${storeID}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${approvalCode}${SECRET_KEY}`;
   // Concatenating all parameters into a single string
-  const dataString =
-    login +
-    password +
-    storeID +
-    transactionNo +
-    referenceNo +
-    amount +
-    paymentStatus +
-    paymentReferenceNo +
-    paymentDate +
-    issuerID +
-    retrievalReferenceNo +
-    approvalCode +
-    SECRET_KEY;
+  // const dataString =
+  //   login +
+  //   password +
+  //   storeID +
+  //   transactionNo +
+  //   referenceNo +
+  //   amount +
+  //   paymentStatus +
+  //   paymentReferenceNo +
+  //   paymentDate +
+  //   issuerID +
+  //   retrievalReferenceNo +
+  //   approvalCode +
+  //   SECRET_KEY;
 
   // Generating MD5 hash
   return crypto.createHash('md5').update(dataString).digest('hex');
