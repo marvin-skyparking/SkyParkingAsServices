@@ -26,7 +26,8 @@ export async function createTicket() {
     reference_no: generateReferenceNo(24),
     grace_period: 5, // Default 15 minutes
     inTime: moment().toDate(), // Current date-time
-    status: 'UNPAID'
+    status: 'UNPAID',
+    ticket_close: false
   });
 
   return newTicket;
@@ -88,4 +89,14 @@ export async function updateTicketStatus(transactionNo: string) {
     console.error('Error updating ticket status:', error);
     throw new Error(error.message || 'Failed to update ticket status');
   }
+}
+
+export async function close_ticket(transactionNo: string) {
+  const ticket = await TicketGenerator.findOne({ where: { transactionNo } });
+  if (!ticket) {
+    throw new Error('Ticket not found');
+  }
+  ticket.ticket_close = true;
+  await ticket.save();
+  return ticket;
 }

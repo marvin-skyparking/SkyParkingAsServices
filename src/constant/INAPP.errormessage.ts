@@ -40,7 +40,7 @@ export const ERROR_MESSAGES = {
     responseStatus: 'Success',
     responseCode: '211000',
     responseDescription: 'Transaction Success',
-    messageDetail: 'Tiket valid, biaya parkir Anda masih gratis.'
+    messageDetail: 'Ticket is valid and parking fee is still free'
   },
   BILL_AREADY_PAID: {
     responseStatus: 'Failed',

@@ -32,6 +32,17 @@ innAppRoute.post(
   processPaymentTransactionEncrypt
 );
 
+// innAppRoute.post(
+//   '/Partner/InquiryTariffREG',
+//   haltOnTimeout,
+//   Inquiry_Transaction
+// );
+// innAppRoute.post(
+//   '/Partner/PaymentConfrimationREG',
+//   haltOnTimeout,
+//   Payment_Confirmation
+// );
+
 //Simulator
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
 innAppRoute.post('/Signature-Payment', getPaymentSignature);

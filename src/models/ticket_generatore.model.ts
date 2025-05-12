@@ -12,6 +12,7 @@ interface TicketGeneratorAttributes {
   url_ticket?: string | null;
   vehicle_type: 'MOBIL' | 'MOTOR';
   reference_no: string;
+  ticket_close: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -36,6 +37,7 @@ class TicketGenerator
   public status!: 'PAID' | 'UNPAID';
   public vehicle_type!: 'MOBIL' | 'MOTOR';
   public reference_no!: string;
+  public ticket_close!: boolean;
   public url_ticket!: string | null;
   public created_at!: Date;
   public updated_at!: Date;
@@ -85,6 +87,11 @@ TicketGenerator.init(
     reference_no: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    ticket_close: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
     },
     created_at: {
       type: DataTypes.DATE,

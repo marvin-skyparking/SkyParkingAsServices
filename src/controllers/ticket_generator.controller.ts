@@ -196,7 +196,7 @@ export async function getPaymentSignature(
     const signature = generatePaymentSignature(
       login,
       password,
-      secretKeyData.NMID ?? '',
+      storeID,
       transactionNo,
       referenceNo,
       amount,

@@ -221,9 +221,11 @@ export async function Inquiry_Transaction(
       responseStatus: finalData?.responseStatus,
       responseCode:
         finalData?.responseStatus === 'Failed' ? '211001' : '211000',
-      responseMessage: finalData?.responseMessage,
       responseDescription: finalData?.responseDescription,
-      messageDetail: finalData?.messageDetail,
+      messageDetail:
+        finalData?.tariff === 0
+          ? 'Ticket is valid, Parking is still free.'
+          : 'Ticket is valid, please continue for payment',
       data: finalData?.data
     };
 
@@ -323,7 +325,7 @@ export async function Payment_Confirmation(
     const expectedSignature = generatePaymentSignature(
       login,
       password,
-      validate_credential.NMID ?? '',
+      storeID,
       transactionNo,
       referenceNo,
       amount,
@@ -513,13 +515,19 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
+    const exitLimitDate = new Date(
+      data_payment?.paymentDate.getTime() + 30 * 60 * 1000
+    );
+
     const res_final = {
       responseStatus: data_payment?.responseStatus,
       responseCode:
         data_payment?.responseStatus === 'Failed' ? '211001' : '211000',
-      responseMessage: data_payment?.responseMessage,
       responseDescription: data_payment?.responseDescription,
-      messageDetail: data_payment?.messageDetail,
+      messageDetail:
+        data_payment?.tarif === 0
+          ? 'Parking fee is still free, please continue to scan ticket at exit gate"'
+          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${exitLimitDate} Not valid for flat rates.`,
       data: data_payment?.data
     };
 
@@ -1257,7 +1265,7 @@ export async function processInquiryTransactionEncrypt(
         responseStatus: 'Success',
         responseCode: '211000',
         responseDescription: 'Transaction Success',
-        messageDetail: 'Please proceed with payment.',
+        messageDetail: 'Ticket is valid, please continue for payment',
         data: {
           transactionNo: update_tarif.transactionNo,
           inTime: formattedInTime,
@@ -1268,7 +1276,7 @@ export async function processInquiryTransactionEncrypt(
             ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
             : '',
           gracePeriod: update_tarif.grace_period,
-          location: 'SKY PLUIT VILLAGE',
+          location: 'LIPPO MALL PURI',
           paymentStatus: update_tarif.status
         }
       };
@@ -1449,20 +1457,23 @@ export async function processPaymentTransactionEncrypt(
       });
     }
 
+    const paymentDates = new Date();
+    const exitLimitDate = new Date(paymentDate.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+
     const success_payload = {
-      responseStatus: 'Success',
-      responseCode: '211000',
+      responseStatus: update_ticket.tarif === 0 ? 'Failed' : 'Success',
+      responseCode: update_ticket.tarif === 0 ? '211001' : '211000',
       responseDescription: 'Transaction Success',
       messageDetail:
         update_ticket.tarif === 0
-          ? 'Tiket valid, biaya parkir Anda masih gratis.'
-          : 'Payment confirmation has been accepted and verified successfully',
+          ? 'Parking fee is still free, please continue to scan ticket at exit gate"'
+          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${exitLimitDate} Not valid for flat rates.`,
       data: {
         referenceNo: decryptedObject.referenceNo,
         referenceTransactionNo: decryptedObject.referenceTransactionNo,
         amount: update_ticket.tarif,
         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-        paymentDate: new Date(),
+        paymentDate: paymentDates,
         issuerID: decryptedObject.issuerID,
         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
         transactionNo: decryptedObject.transactionNo,
@@ -1474,6 +1485,17 @@ export async function processPaymentTransactionEncrypt(
     return res.status(200).json({
       data: RealencryptPayload(success_payload)
     });
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
+  }
+}
+
+export async function close_ticket(req: Request, res: Response): Promise<any> {
+  try {
+    const { transactionNo } = req.body;
   } catch (error) {
     console.error('Error processing payment transaction:', error);
     return res.status(500).json({
