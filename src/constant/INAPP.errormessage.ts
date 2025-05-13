@@ -1,3 +1,5 @@
+import { response } from 'express';
+
 export const ERROR_MESSAGES = {
   MISSING_ENCRYPTED_DATA: {
     responseStatus: 'Failed',
@@ -52,12 +54,28 @@ export const ERROR_MESSAGES = {
     responseStatus: 'Failed',
     responseCode: '211001',
     responseDescription: 'Invalid Transaction',
-    messageDetail: 'Invalid Amount, Please Inquiry your bill again'
+    messageDetail:
+      'Ticket Valid but Invalid Amount, Please Inquiry your bill again'
   },
   INVALID_TRANSACTION: {
     responseStatus: 'Failed',
     responseCode: '211001',
     responseDescription: 'Invalid Transaction',
     messageDetail: 'The ticket is invalid'
+  },
+
+  CLOSE_TICKET_UNPAID: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail:
+      'Ticket cannot be closed because it has not been paid or it still has outstanding tariff. Please pay the ticket to continue'
+  },
+  CLOSE_TICKET_CLOSED: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail:
+      'Ticket has closed and the vehicle has left the parking location'
   }
 };

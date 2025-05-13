@@ -15,12 +15,13 @@ import {
   findInquiryTransactionMappingPartner
 } from '../services/inquiry_transaction_mapping.service';
 import {
+  close_ticket_update,
   findTicket,
   updateTarifIfExpired,
   updateTicketStatus
 } from '../services/ticket_generator.service';
 import { createPaymentTransaction } from '../services/payment_confirmation.service';
-import moment from 'moment-timezone';
+import moment, { duration } from 'moment-timezone';
 import {
   getRoleById,
   getRolesByPartnerId
@@ -37,6 +38,7 @@ import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import Sentry from '../utils/sentry.utils';
 import { ACCESS_ERROR_MESSAGES } from '../constant/ACCESS.errormessage';
+import { SUCCESS_MESSAGE } from '../constant/INAPP.successmessage';
 
 /**
  * Process Inquiry Transaction
@@ -893,8 +895,7 @@ export async function processPaymentTransaction(
 
     if (decryptedObject.amount != data_ticket.dataValues.tarif) {
       return res.status(200).json({
-        ...ERROR_MESSAGES.INVALID_AMOUNT,
-        data: data_ticket
+        ...ERROR_MESSAGES.INVALID_AMOUNT
       });
     }
 
@@ -1202,7 +1203,13 @@ export async function processInquiryTransactionEncrypt(
       return res.status(200).json({ data: RealencryptPayload(response) });
     }
 
-    if (data_ticket.status === 'PAID') {
+    if (
+      data_ticket.status === 'PAID' &&
+      data_ticket.ticket_close !== true &&
+      data_ticket.paid_at &&
+      new Date().getTime() - new Date(data_ticket.paid_at).getTime() <
+        30 * 60 * 1000
+    ) {
       const response = {
         responseStatus: 'Success',
         responseCode: '211000',
@@ -1211,7 +1218,7 @@ export async function processInquiryTransactionEncrypt(
         data: {
           transactionNo: data_ticket.transactionNo,
           transactionStatus: 'VALID',
-          inTime: data_ticket.inTime,
+          inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
           duration:
             data_ticket.inTime && data_ticket.outTime
               ? Math.floor(
@@ -1222,7 +1229,39 @@ export async function processInquiryTransactionEncrypt(
               : null,
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
-          outTime: data_ticket.outTime,
+          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'PAID'
+        }
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    if (data_ticket.ticket_close === true) {
+      const response = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail:
+          data_ticket.paid_at != null
+            ? 'Ticket is valid and has been paid, the vehicle has left the parking location'
+            : 'Ticket is valid, parking fee is free, the vehicle has left the parking location',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          transactionStatus: 'VALID',
+          inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+          duration:
+            data_ticket.inTime && data_ticket.outTime
+              ? Math.floor(
+                  (new Date(data_ticket.outTime).getTime() -
+                    new Date(data_ticket.inTime).getTime()) /
+                    60000
+                )
+              : null,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
           paymentStatus: 'PAID'
@@ -1255,12 +1294,13 @@ export async function processInquiryTransactionEncrypt(
             ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
             : '',
           gracePeriod: data_ticket.grace_period,
-          location: 'SKY PLUIT VILLAGE',
+          location: 'LIPPO MALL PURI',
           paymentStatus: 'FREE'
         }
       };
     } else {
       const update_tarif = await updateTarifIfExpired(transactionNo);
+
       responsePayload = {
         responseStatus: 'Success',
         responseCode: '211000',
@@ -1277,7 +1317,7 @@ export async function processInquiryTransactionEncrypt(
             : '',
           gracePeriod: update_tarif.grace_period,
           location: 'LIPPO MALL PURI',
-          paymentStatus: update_tarif.status
+          paymentStatus: update_tarif.tarif === 0 ? 'PAID' : 'UNPAID'
         }
       };
     }
@@ -1432,7 +1472,19 @@ export async function processPaymentTransactionEncrypt(
       return res.status(200).json({
         data: RealencryptPayload({
           ...ERROR_MESSAGES.INVALID_TRANSACTION,
-          data: data_ticket
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    if (
+      data_ticket.dataValues.status === 'PAID' &&
+      data_ticket.dataValues.tarif === 0
+    ) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
+          data: defaultTransactionDataPaid(transactionNo)
         })
       });
     }
@@ -1441,7 +1493,7 @@ export async function processPaymentTransactionEncrypt(
       return res.status(200).json({
         data: RealencryptPayload({
           ...ERROR_MESSAGES.INVALID_AMOUNT,
-          data: data_ticket
+          data: defaultTransactionData(transactionNo)
         })
       });
     }
@@ -1458,27 +1510,32 @@ export async function processPaymentTransactionEncrypt(
     }
 
     const paymentDates = new Date();
-    const exitLimitDate = new Date(paymentDate.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+
+    const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+    const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
 
     const success_payload = {
-      responseStatus: update_ticket.tarif === 0 ? 'Failed' : 'Success',
-      responseCode: update_ticket.tarif === 0 ? '211001' : '211000',
-      responseDescription: 'Transaction Success',
+      responseStatus: update_ticket.status === 'PAID' ? 'Success' : 'Failed',
+      responseCode: update_ticket.status === 'PAID' ? '211000' : '211001',
+      responseDescription:
+        update_ticket.status === 'PAID'
+          ? 'Transaction Success'
+          : 'Invalid Transaction',
       messageDetail:
-        update_ticket.tarif === 0
-          ? 'Parking fee is still free, please continue to scan ticket at exit gate"'
-          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${exitLimitDate} Not valid for flat rates.`,
+        update_ticket.status === 'PAID'
+          ? `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`
+          : 'Parking fee is still free, please continue to scan ticket at exit gate',
       data: {
         referenceNo: decryptedObject.referenceNo,
         referenceTransactionNo: decryptedObject.referenceTransactionNo,
-        amount: update_ticket.tarif,
+        amount: decryptedObject.amount,
         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-        paymentDate: paymentDates,
+        paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
         issuerID: decryptedObject.issuerID,
         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
         transactionNo: decryptedObject.transactionNo,
         transactionStatus: 'VALID',
-        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE'
       }
     };
 
@@ -1496,6 +1553,93 @@ export async function processPaymentTransactionEncrypt(
 export async function close_ticket(req: Request, res: Response): Promise<any> {
   try {
     const { transactionNo } = req.body;
+
+    console.log(req.body.transactionNo);
+    if (!transactionNo) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '400200',
+          responseMessage: 'Missing required fields'
+        })
+      });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_TRANSACTION,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const update_ticket_tarif = await updateTarifIfExpired(transactionNo);
+
+    if (update_ticket_tarif.tarif != 0) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.CLOSE_TICKET_UNPAID,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    if (data_ticket.ticket_close === true) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.CLOSE_TICKET_CLOSED,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const update_ticket = await close_ticket_update(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '500200',
+          responseMessage: 'System Failure Update Transaction'
+        })
+      });
+    }
+    const success_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Ticket is closed successfully',
+      data: {
+        transactionNo: update_ticket.transactionNo,
+        storeID: '',
+        locationCode: '007SK',
+        subLocationCode: '007SK-1',
+        gateInCode: '007SK-1-PM-GATE1A',
+        vehicleType: update_ticket.vehicle_type,
+        productName: 'MOBIL REGULAR',
+        inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+        duration: moment(update_ticket.outTime).diff(
+          moment(update_ticket.inTime),
+          'minutes'
+        ),
+        tarif: update_ticket.tarif,
+        gracePeriod: update_ticket.grace_period,
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
+        paymentReferenceNo: update_ticket.reference_no,
+        paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
+        paymentMethod: 'IN-APP',
+        issuerID: '',
+        retrievalReferenceNo: '',
+        referenceTransactionNo: '',
+        approvalCode: '',
+        outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+        gateOutCode: '007SK-1-PK-GATE2B'
+      }
+    };
+
+    return res.status(200).json({
+      data: RealencryptPayload(success_payload)
+    });
   } catch (error) {
     console.error('Error processing payment transaction:', error);
     return res.status(500).json({

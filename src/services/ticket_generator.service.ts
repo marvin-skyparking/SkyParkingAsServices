@@ -49,14 +49,23 @@ export async function updateTarifIfExpired(transactionNo: string) {
 
   const inTime = moment(ticket.inTime);
   const now = moment();
-
-  // Calculate how many full grace periods have passed since inTime
   const gracePeriodMinutes = ticket.grace_period || 5;
+
+  // Calculate minutes since inTime
   const minutesElapsed = now.diff(inTime, 'minutes');
   const gracePeriodsPassed = Math.floor(minutesElapsed / gracePeriodMinutes);
-
-  // Expected tarif based on elapsed grace periods
   const expectedTarif = 5000 * gracePeriodsPassed;
+
+  // If paid, pause tarif increase for 30 minutes
+  if (ticket.status === 'PAID' && ticket.paid_at) {
+    const paidAt = moment(ticket.paid_at);
+    const resumeTime = paidAt.clone().add(30, 'minutes');
+
+    if (now.isBefore(resumeTime)) {
+      // Still in 30-minute freeze window — return without updating
+      return ticket;
+    }
+  }
 
   if (expectedTarif > ticket.tarif) {
     ticket.tarif = expectedTarif;
@@ -79,8 +88,10 @@ export async function updateTicketStatus(transactionNo: string) {
 
     // Set status to "PAID" and update outTime
     const updateData = {
+      tarif: 0,
       status: 'PAID' as const, // Explicitly define the type
-      outTime: new Date()
+      outTime: new Date(),
+      paid_at: new Date()
     };
 
     await ticket.update(updateData);
@@ -91,7 +102,7 @@ export async function updateTicketStatus(transactionNo: string) {
   }
 }
 
-export async function close_ticket(transactionNo: string) {
+export async function close_ticket_update(transactionNo: string) {
   const ticket = await TicketGenerator.findOne({ where: { transactionNo } });
   if (!ticket) {
     throw new Error('Ticket not found');

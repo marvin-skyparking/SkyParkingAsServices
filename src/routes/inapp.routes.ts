@@ -1,6 +1,7 @@
 import express from 'express';
 import timeout from 'connect-timeout';
 import {
+  close_ticket,
   Inquiry_Transaction,
   // InquiryTransactionSnap,
   Payment_Confirmation,
@@ -27,10 +28,12 @@ innAppRoute.post(
   processInquiryTransactionEncrypt
 );
 innAppRoute.post(
-  '/Partner/PaymentConfrimationREG',
+  '/Partner/PaymentConfirmationREG',
   haltOnTimeout,
   processPaymentTransactionEncrypt
 );
+
+innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
 
 // innAppRoute.post(
 //   '/Partner/InquiryTariffREG',
