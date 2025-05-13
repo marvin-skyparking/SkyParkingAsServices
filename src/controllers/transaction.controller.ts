@@ -1477,10 +1477,9 @@ export async function processPaymentTransactionEncrypt(
       });
     }
 
-    if (
-      data_ticket.dataValues.status === 'PAID' &&
-      data_ticket.dataValues.tarif === 0
-    ) {
+    const update_tarif = await updateTarifIfExpired(transactionNo);
+
+    if (update_tarif.status === 'PAID' && update_tarif.tarif === 0) {
       return res.status(200).json({
         data: RealencryptPayload({
           ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
@@ -1489,7 +1488,31 @@ export async function processPaymentTransactionEncrypt(
       });
     }
 
-    if (decryptedObject.amount != data_ticket.dataValues.tarif) {
+    if (update_tarif.status === 'UNPAID' && update_tarif.tarif === 0) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseStatus: 'Success',
+          responseCode: '211000',
+          responseDescription: 'Transaction Success',
+          messageDetail: 'Ticket is valid, Parking is still free.',
+          data: {
+            transactionNo: data_ticket.transactionNo,
+            inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+            duration: 0,
+            tariff: data_ticket.tarif,
+            vehicleType: data_ticket.vehicle_type,
+            outTime: data_ticket.outTime
+              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              : '',
+            gracePeriod: data_ticket.grace_period,
+            location: 'LIPPO MALL PURI',
+            paymentStatus: 'FREE'
+          }
+        })
+      });
+    }
+
+    if (decryptedObject.amount != update_tarif.tarif) {
       return res.status(200).json({
         data: RealencryptPayload({
           ...ERROR_MESSAGES.INVALID_AMOUNT,

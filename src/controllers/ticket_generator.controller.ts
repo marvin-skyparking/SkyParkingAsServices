@@ -170,7 +170,9 @@ export async function getPaymentSignature(
       'approvalCode'
     ];
 
-    const missingFields = requiredFields.filter((field) => !req.body[field]);
+    const missingFields = requiredFields.filter(
+      (field) => req.body[field] === undefined || req.body[field] === null
+    );
 
     if (missingFields.length) {
       return res.status(400).json({
