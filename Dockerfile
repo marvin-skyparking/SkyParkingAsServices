@@ -1,35 +1,20 @@
-# -------- Stage 1: Builder --------
-    FROM node:20-alpine AS builder
+# Use a lightweight Node image
+FROM node:20-alpine
 
-    # Set working directory
-    WORKDIR /app
-    
-    # Install dependencies
-    COPY package.json yarn.lock ./
-    RUN yarn install --frozen-lockfile
-    
-    # Copy the rest of the source code
-    COPY . .
-    
-    # Build the TypeScript project
-    RUN yarn build
-    
-    # -------- Stage 2: Production --------
-    FROM node:20-alpine
-    
-    # Set working directory
-    WORKDIR /app
-    
-    # Copy only the production dependencies
-    COPY package.json yarn.lock ./
-    RUN yarn install --frozen-lockfile --production
-    
-    # Copy the compiled output from the builder stage
-    COPY --from=builder /app/dist ./dist
-    
-    # Expose the application port
-    EXPOSE 9002
-    
-    # Start the application
-    CMD ["node", "dist/index.js"]
-    
+# Set the working directory
+WORKDIR /app
+
+# Copy dependency files first (for better Docker cache)
+COPY package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install
+
+# Copy the rest of the project files
+COPY . .
+
+# Build the TypeScript project
+RUN yarn build
+
+# Set the command to run the app
+CMD ["node", "dist/server.js"]
