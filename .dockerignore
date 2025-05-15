@@ -1,3 +1,8 @@
 node_modules
 dist
+Dockerfile
+.dockerignore
+*.md
 *.log
+src/
+tests/

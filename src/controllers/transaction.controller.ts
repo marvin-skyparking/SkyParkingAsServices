@@ -39,6 +39,10 @@ import axiosRetry from 'axios-retry';
 import Sentry from '../utils/sentry.utils';
 import { ACCESS_ERROR_MESSAGES } from '../constant/ACCESS.errormessage';
 import { SUCCESS_MESSAGE } from '../constant/INAPP.successmessage';
+import {
+  ERROR_MESSAGES_NEW,
+  SUCCESS_MESSAGES_NEW
+} from '../constant/inapp-message';
 
 /**
  * Process Inquiry Transaction
@@ -157,11 +161,10 @@ export async function Inquiry_Transaction(
       (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
     );
     if (!postRole || !postRole.url_access) {
-      return encryptAndRespond(
-        ERROR_MESSAGES.INVALID_LOCATION,
-        credential.GibberishKey ?? '',
-        transactionNo
-      );
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
     }
 
     const signatureData = {
@@ -202,6 +205,8 @@ export async function Inquiry_Transaction(
       location.GibberishKey ?? ''
     );
 
+    console.log('finalData', finalData);
+
     await createInquiryTransaction({
       CompanyName: location.CompanyName ?? '',
       NMID: location.NMID ?? '',
@@ -219,15 +224,22 @@ export async function Inquiry_Transaction(
       UpdatedBy: location.CompanyName ?? ''
     });
 
+    const isPaid = finalData?.data?.paymentStatus === 'PAID';
+    const isFree = finalData?.tariff === 0;
+
     const responsePayload = {
       responseStatus: finalData?.responseStatus,
       responseCode:
         finalData?.responseStatus === 'Failed' ? '211001' : '211000',
       responseDescription: finalData?.responseDescription,
       messageDetail:
-        finalData?.tariff === 0
-          ? 'Ticket is valid, Parking is still free.'
-          : 'Ticket is valid, please continue for payment',
+        finalData?.responseStatus === 'Failed'
+          ? 'Ticket is invalid'
+          : isPaid
+            ? 'Ticket is valid and has been paid'
+            : isFree
+              ? 'Ticket is valid, Parking is still free.'
+              : 'Ticket is valid, please continue for payment',
       data: finalData?.data
     };
 
@@ -429,11 +441,10 @@ export async function Payment_Confirmation(
     );
 
     if (!inquiryAccess?.url_access) {
-      return encryptAndRespond(
-        ERROR_MESSAGES.INVALID_LOCATION,
-        find_location.GibberishKey ?? '',
-        transactionNo
-      );
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
     }
 
     const response = await axios.post(inquiryAccess.url_access, {
@@ -447,16 +458,14 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
-    if (data_inquiry?.data.paymentStatus === 'PAID') {
+    if (
+      data_inquiry?.data.paymentStatus === 'PAID' &&
+      data_inquiry?.data.tariff === 0
+    ) {
       return encryptAndRespond(
         {
-          responseStatus: data_inquiry?.responseStatus,
-          responseCode:
-            data_inquiry?.responseStatus === 'Failed' ? '211001' : '211000',
-          responseMessage: data_inquiry?.responseMessage,
-          responseDescription: data_inquiry?.responseDescription,
-          messageDetail: data_inquiry?.messageDetail,
-          data: data_inquiry.data
+          ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
+          data: defaultTransactionDataPaid(transactionNo)
         },
         find_location.GibberishKey ?? '',
         transactionNo
@@ -495,14 +504,10 @@ export async function Payment_Confirmation(
       (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
     );
     if (!paymentAccess) {
-      return encryptAndRespond(
-        {
-          responseCode: '401401',
-          responseMessage: 'Access Denied'
-        },
-        find_location.GibberishKey ?? '',
-        transactionNo
-      );
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
     }
 
     const response_confirm_pay = await axios.post(paymentAccess.url_access, {
@@ -517,9 +522,29 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
-    const exitLimitDate = new Date(
-      data_payment?.paymentDate.getTime() + 30 * 60 * 1000
-    );
+    console.log('data_payment', parsedDataPay);
+
+    const rawDate = data_payment?.data.paymentDate; // e.g., "2025-05-14 11:42:14"
+    const isoDate = rawDate?.replace(' ', 'T'); // Convert to ISO format
+    const parsedDate = new Date(isoDate);
+
+    if (isNaN(parsedDate.getTime())) {
+      throw new Error('Invalid paymentDate');
+    }
+
+    // Add 30 minutes
+    const exitLimitDate = new Date(parsedDate.getTime() + 30 * 60 * 1000);
+
+    // Format: "YYYY-MM-DD HH:mm:ss"
+    const formatDate = (date: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return (
+        `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+        `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+      );
+    };
+
+    const formattedExitLimitDate = formatDate(exitLimitDate);
 
     const res_final = {
       responseStatus: data_payment?.responseStatus,
@@ -529,7 +554,7 @@ export async function Payment_Confirmation(
       messageDetail:
         data_payment?.tarif === 0
           ? 'Parking fee is still free, please continue to scan ticket at exit gate"'
-          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${exitLimitDate} Not valid for flat rates.`,
+          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${formattedExitLimitDate} Not valid for flat rates.`,
       data: data_payment?.data
     };
 
@@ -1671,26 +1696,111 @@ export async function close_ticket(req: Request, res: Response): Promise<any> {
   }
 }
 
-// export async function InquiryTransactionSnap(req: Request, res: Response):Promise<any>
-// {
+export async function Inquiry_Transaction_Snap(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { P1, P2 } = req.body;
 
-//   try {
+    // Validate required fields
+    if (!P1 || !P2) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES_NEW.INVALID_REQUEST,
+        data: defaultTransactionData()
+      });
+    }
 
-//     const {storeID, transactionNo}= req.body;
+    // Find Location
+    const location = await findInquiryTransactionMappingByNMID(P1);
 
-//     // Validate required fields
-//     if (!storeID || !transactionNo) {
-//       return res.status(400).json({ error: 'Missing required fields' });
-//     }
+    if (!location) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES_NEW.INVALID_LOCATION,
+        data: defaultTransactionData()
+      });
+    }
 
-//     // Fetch SecretKey from DB
-//     const secretKeyData = await findInquiryTransactionMappingPartner(
-//       login,
-//       password
-//     );
+    const signature_data = {
+      login: location.Login ?? '',
+      password: location.Password ?? '',
+      storeID: location.NMID ?? '',
+      transactionNo: P2
+    };
 
-//   } catch (error) {
+    const generate_signature = generateSignature(
+      location.Login ?? '',
+      location.Password ?? '',
+      location.NMID ?? '',
+      P2 ?? '',
+      location.SecretKey ?? ''
+    );
 
-//   }
+    const requestPayload = {
+      ...signature_data,
+      signature: generate_signature
+    };
 
-// }
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      location.GibberishKey ?? ''
+    );
+    const apiResponse = await axios.post(
+      'https://membership-ezitama.ddns.net/WebApplication3/InquiryTransaction',
+      {
+        data: encryptedRequest
+      }
+    );
+
+    const cleanString = apiResponse.data.replace(
+      /[\u0000-\u001F\u007F-\u009F]/g,
+      ''
+    );
+    const parsedData = JSON.parse(cleanString);
+    const finalData = await DecryptTotPOST(
+      parsedData.data,
+      location.GibberishKey ?? ''
+    );
+
+    if (
+      finalData?.data.tariff === 0 &&
+      finalData?.data.paymentStatus === 'FREE'
+    ) {
+      return res.status(200).json({
+        ...SUCCESS_MESSAGES_NEW.SUCCESS_TICKET_FREE,
+        data: finalData.data
+      });
+    }
+
+    if (finalData?.data.paymentStatus === 'UNPAID') {
+      return res.status(200).json({
+        ...SUCCESS_MESSAGES_NEW.SUCCESS_TICKET_FEE,
+        data: finalData.data
+      });
+    }
+    if (finalData?.data.paymentStatus === 'PAID') {
+      return res.status(200).json({
+        ...SUCCESS_MESSAGES_NEW.SUCCESS_TICKET_ALREADY_PAID,
+        data: finalData.data
+      });
+    }
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
+  }
+}
+
+export async function Payment_Confirmation_Snap(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
+  }
+}

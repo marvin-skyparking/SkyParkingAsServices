@@ -3,6 +3,7 @@ import timeout from 'connect-timeout';
 import {
   close_ticket,
   Inquiry_Transaction,
+  Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
   Payment_Confirmation,
   processInquiryTransaction,
@@ -17,7 +18,10 @@ import {
   sigantureKey
 } from '../controllers/ticket_generator.controller';
 import { haltOnTimeout } from '../middleware/timeout.middleware';
-import { verifyClientAuth } from '../middleware/verify_auth.middleware';
+import {
+  verifyClientAuth,
+  verifyClientAuthAccess
+} from '../middleware/verify_auth.middleware';
 
 const innAppRoute = express.Router();
 
@@ -35,16 +39,16 @@ innAppRoute.post(
 
 innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
 
-// innAppRoute.post(
-//   '/Partner/InquiryTariffREG',
-//   haltOnTimeout,
-//   Inquiry_Transaction
-// );
-// innAppRoute.post(
-//   '/Partner/PaymentConfrimationREG',
-//   haltOnTimeout,
-//   Payment_Confirmation
-// );
+innAppRoute.post(
+  '/Partner/InquiryTariffREGS',
+  haltOnTimeout,
+  Inquiry_Transaction
+);
+innAppRoute.post(
+  '/Partner/PaymentConfirmationREGS',
+  haltOnTimeout,
+  Payment_Confirmation
+);
 
 //Simulator
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
@@ -68,7 +72,11 @@ innAppRoute.post(
 );
 
 //Version 2
-// innAppRoute.post('/Partner/ticket/InquiryTariffREG',verifyClientAuth, InquiryTransactionSnap);
+innAppRoute.post(
+  '/Partner/ticket/InquiryTariffREG',
+  verifyClientAuthAccess,
+  Inquiry_Transaction_Snap
+);
 // innAppRoute.post('/Partner/PaymentConfrimationREG', processPaymentTransaction);
 
 export default innAppRoute;
