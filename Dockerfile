@@ -16,5 +16,8 @@ COPY . .
 # Build the TypeScript project
 RUN yarn build
 
-# Set the command to run the app
-CMD ["node", "dist/server.js"]
+# Expose the port the app runs on
+EXPOSE 9002
+
+# Specify the command to run the application
+CMD ["yarn", "start"]
