@@ -1603,6 +1603,96 @@ export async function processPaymentTransactionEncrypt(
   }
 }
 
+export async function close_ticket_not_encrypt(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { transactionNo } = req.body;
+
+    console.log(req.body.transactionNo);
+    if (!transactionNo) {
+      return res.status(200).json({
+        responseCode: '400200',
+        responseMessage: 'Missing required fields'
+      });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_TRANSACTION,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const update_ticket_tarif = await updateTarifIfExpired(transactionNo);
+
+    if (update_ticket_tarif.tarif != 0) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.CLOSE_TICKET_UNPAID,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    if (data_ticket.ticket_close === true) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.CLOSE_TICKET_CLOSED,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const update_ticket = await close_ticket_update(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        responseCode: '500200',
+        responseMessage: 'System Failure Update Transaction'
+      });
+    }
+
+    const success_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Ticket is closed successfully',
+      data: {
+        transactionNo: update_ticket.transactionNo,
+        storeID: '',
+        locationCode: '007SK',
+        subLocationCode: '007SK-1',
+        gateInCode: '007SK-1-PM-GATE1A',
+        vehicleType: update_ticket.vehicle_type,
+        productName: 'MOBIL REGULAR',
+        inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+        duration: moment(update_ticket.outTime).diff(
+          moment(update_ticket.inTime),
+          'minutes'
+        ),
+        tarif: update_ticket.tarif,
+        gracePeriod: update_ticket.grace_period,
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
+        paymentReferenceNo: update_ticket.reference_no,
+        paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
+        paymentMethod: 'IN-APP',
+        issuerID: '',
+        retrievalReferenceNo: '',
+        referenceTransactionNo: '',
+        approvalCode: '',
+        outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+        gateOutCode: '007SK-1-PK-GATE2B'
+      }
+    };
+
+    return res.status(200).json(success_payload);
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error'
+    });
+  }
+}
+
 export async function close_ticket(req: Request, res: Response): Promise<any> {
   try {
     const { transactionNo } = req.body;
