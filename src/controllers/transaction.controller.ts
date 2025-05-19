@@ -637,11 +637,13 @@ export async function processInquiryTransaction(
       login,
       password
     );
-    if (!validate_credential)
-      return res.status(200).json({
-        responseCode: '401402',
-        responseMessage: 'Invalid Credential - Partner'
-      });
+    if (!validate_credential) {
+      const response = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
 
     const expectedSignature = generateSignature(
       login,
@@ -1171,6 +1173,7 @@ export async function processInquiryTransactionEncrypt(
       login,
       password
     );
+
     if (!validate_credential) {
       const response = {
         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
