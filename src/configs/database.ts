@@ -14,10 +14,10 @@ const sequelize = new Sequelize(
       timezone: '+07:00' // Set timezone to UTC+7
     },
     pool: {
-      max: 30,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
+      max: 500,
+      min: 20,
+      acquire: 60000,
+      idle: 20000
     }
   }
 );

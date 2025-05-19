@@ -9,7 +9,7 @@ export const ERROR_MESSAGES_NEW = {
   },
   INVALID_CLIENTKEY: {
     responseCode: '401402',
-    responseMessage: 'Unauthorized. Invalid Clientkey'
+    responseMessage: 'Unauthorized. Invalid clientkey'
   },
   INVALID_REQUEST: {
     responseCode: '400413',
