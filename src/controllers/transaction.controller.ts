@@ -1175,11 +1175,13 @@ export async function processInquiryTransactionEncrypt(
     );
 
     if (!validate_credential) {
-      const response = {
+      const response_invalid_credential = {
         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
         data: defaultTransactionData(transactionNo)
       };
-      return res.status(200).json({ data: RealencryptPayload(response) });
+      return res
+        .status(200)
+        .json({ data: RealencryptPayload(response_invalid_credential) });
     }
 
     const expectedSignature = generateSignature(
