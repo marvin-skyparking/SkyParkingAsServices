@@ -113,3 +113,29 @@ export function generateReferenceNo(length = 24): string {
 
   return result;
 }
+
+//FOR SIMULATOR ONLY
+
+export function generateCustomCode(sequence: number): string {
+  const now = new Date();
+  const pad = (n: number, width = 2) => n.toString().padStart(width, '0');
+
+  const dateTimePart =
+    pad(now.getDate()) +
+    pad(now.getMonth() + 1) +
+    now.getFullYear().toString() +
+    pad(now.getHours()) +
+    pad(now.getMinutes()) +
+    pad(now.getSeconds());
+
+  const staticPart = '007SK';
+
+  const datePart =
+    pad(now.getDate()) + pad(now.getMonth() + 1) + now.getFullYear().toString();
+
+  const sequencePart = sequence.toString().padStart(6, '0');
+
+  const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
+
+  return `${dateTimePart}${staticPart}-${datePart}${sequencePart}-${randomPart}`;
+}

@@ -43,6 +43,7 @@ import {
   ERROR_MESSAGES_NEW,
   SUCCESS_MESSAGES_NEW
 } from '../constant/inapp-message';
+import { generateCustomCode } from '../utils/helper.utils';
 
 /**
  * Process Inquiry Transaction
@@ -1580,7 +1581,7 @@ export async function processPaymentTransactionEncrypt(
           : 'Parking fee is still free, please continue to scan ticket at exit gate',
       data: {
         referenceNo: decryptedObject.referenceNo,
-        referenceTransactionNo: decryptedObject.referenceTransactionNo,
+        referenceTransactionNo: generateCustomCode(8),
         amount: decryptedObject.amount,
         paymentReferenceNo: decryptedObject.paymentReferenceNo,
         paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
