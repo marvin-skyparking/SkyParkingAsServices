@@ -2,5 +2,29 @@ node_modules
 # Keep environment variables out of version control
 .env
 dist
+
 .scannerwork
 bundle
+
+# Docker related
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+docker.env
+.docker/data/
+*.local.yml
+
+# Docker volumes and data
+data/
+volumes/
+docker-volumes/
+
+# Docker logs
+docker-logs/
+*.log
+
+
+# Database configurations
+src/configs/config.json
+config.json
+**/config.json
