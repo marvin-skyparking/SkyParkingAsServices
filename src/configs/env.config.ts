@@ -14,7 +14,7 @@ const EnvConfig: IEnvInterface = ENV;
 
 if (EnvConfig.NODE_ENV === 'development') {
   EnvConfig.APP_URL = EnvConfig.APP_URL;
-  EnvConfig.DB_DEV = EnvConfig.DB_DEV;
+  EnvConfig.DB_NAME_DEV = EnvConfig.DB_NAME_DEV;
   EnvConfig.ENABLE_SWAGGER = EnvConfig.ENABLE_SWAGGER;
   EnvConfig.PORT = EnvConfig.PORT;
   EnvConfig.USERNAME_DB_DEV = EnvConfig.USERNAME_DB_DEV;
@@ -22,5 +22,13 @@ if (EnvConfig.NODE_ENV === 'development') {
   EnvConfig.SENTRY_URI = EnvConfig.SENTRY_URI;
   EnvConfig.SENTRY_ENABLE = EnvConfig.SENTRY_ENABLE;
   EnvConfig.JWT_SECRET = EnvConfig.JWT_SECRET;
+}
+
+if (EnvConfig.NODE_ENV === 'production') {
+  EnvConfig.APP_URL = EnvConfig.APP_URL;
+  EnvConfig.DB_NAME_PROD = EnvConfig.DB_NAME_PROD;
+  EnvConfig.PORT = EnvConfig.PORT;
+  EnvConfig.USERNAME_DB_PROD = EnvConfig.USERNAME_DB_PROD;
+  EnvConfig.PASSWORD_DB_PROD = EnvConfig.PASSWORD_DB_PROD;
 }
 export default EnvConfig;
