@@ -1187,7 +1187,7 @@ export async function processInquiryTransactionEncrypt(
 
     if (decryptedObject.storeID !== 'ID2020028029516') {
       const response_invalid_credential = {
-        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL_POST,
         data: defaultTransactionData(transactionNo)
       };
       return res
@@ -1459,7 +1459,7 @@ export async function processPaymentTransactionEncrypt(
 
     if (decryptedObject.storeID !== 'ID2020028029516') {
       const response_invalid_credential = {
-        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL_POST,
         data: defaultTransactionData(transactionNo)
       };
       return res
