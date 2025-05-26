@@ -1185,6 +1185,16 @@ export async function processInquiryTransactionEncrypt(
         .json({ data: RealencryptPayload(response_invalid_credential) });
     }
 
+    if (decryptedObject.storeID !== 'ID2020028029516') {
+      const response_invalid_credential = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res
+        .status(200)
+        .json({ data: RealencryptPayload(response_invalid_credential) });
+    }
+
     const expectedSignature = generateSignature(
       login,
       password,
@@ -1446,6 +1456,16 @@ export async function processPaymentTransactionEncrypt(
       login,
       password
     );
+
+    if (decryptedObject.storeID !== 'ID2020028029516') {
+      const response_invalid_credential = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res
+        .status(200)
+        .json({ data: RealencryptPayload(response_invalid_credential) });
+    }
 
     if (!secretKeyData || !secretKeyData.SecretKey) {
       return res.status(200).json({

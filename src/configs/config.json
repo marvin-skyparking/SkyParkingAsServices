@@ -14,10 +14,10 @@
     "dialect": "mysql"
   },
   "production": {
-    "username": "root",
-    "password": null,
-    "database": "database_production",
-    "host": "127.0.0.1",
+    "username": "unikas",
+    "password": "5ky50p4y123!.",
+    "database": "parkingasservices",
+    "host": "147.139.137.204",
     "dialect": "mysql"
   }
 }
