@@ -13,7 +13,7 @@
     "dev": "yarn prettier:format && ts-node-dev --respawn --transpile-only src/server.ts",
     "migration:generate": "sequelize-cli migration:generate",
     "migrate": "sequelize-cli db:migrate",
-     "migrate:prod": "sequelize-cli db:migrate --env production",
+    "migrate:prod": "sequelize-cli db:migrate --env production",
     "migration:undo": "sequelize-cli db:migrate:undo",
     "migration:undo:all": "sequelize-cli db:migrate:undo:all",
     "prettier:format": "prettier --config .prettierrc src/**/*.ts --write",

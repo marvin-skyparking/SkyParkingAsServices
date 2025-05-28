@@ -1533,7 +1533,7 @@ export async function processPaymentTransactionEncrypt(
     if (update_tarif.status === 'PAID' && update_tarif.tarif === 0) {
       return res.status(200).json({
         data: RealencryptPayload({
-          ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
+          ...ERROR_MESSAGES.BILL_AREADY_PAID,
           data: defaultTransactionDataPaid(transactionNo)
         })
       });
