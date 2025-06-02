@@ -8,7 +8,7 @@ import bodyParser from 'body-parser';
 import indexRoutes from './routes';
 import cors from 'cors';
 import timeout from 'connect-timeout';
-import { errorHandler } from './middleware/timeout.middleware';
+import { haltOnTimeout } from './middleware/timeout.middleware';
 
 const app = express().disable('x-powered-by');
 
@@ -41,9 +41,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // // Handling Timeout
-// app.use(timeout('1ms'));
+app.use(timeout('2000ms'));
 //Routes Flow
 app.use('/v1', indexRoutes);
-// app.use(errorHandler);
+app.use(haltOnTimeout);
 
 export default app;

@@ -1,32 +1,24 @@
-import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { RealencryptPayload } from '../utils/encrypt.utils';
 
-export function haltOnTimeout(req: Request, res: Response, next: NextFunction) {
-  if (!(req as any).timedout) next();
-}
-
-export async function errorHandler(
+export async function haltOnTimeout(
   err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<any> {
+  // Handle timeout
   if (err?.timeout && !res.headersSent) {
     console.warn('Timeout error caught:', err.message);
-    return res.status(200).json({
-      responseStatus: 'Failed',
-      responseCode: '211051',
-      responseDescription: 'Request timed out',
-      messageDetail: 'Connection to the API Timeout'
-    });
+    return res.status(200).json(
+      RealencryptPayload({
+        responseStatus: 'Failed',
+        responseCode: '211051',
+        responseDescription: 'Request timed out',
+        messageDetail: 'Connection to the API Timeout'
+      })
+    );
   }
 
-  if (!res.headersSent) {
-    return res.status(200).json({
-      responseStatus: 'Failed',
-      responseCode: '500501',
-      message: 'General server error'
-    });
-  }
-
-  next();
+  next(err);
 }
