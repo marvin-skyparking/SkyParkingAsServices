@@ -1,5 +1,3 @@
-import { response } from 'express';
-
 export const ERROR_MESSAGES = {
   MISSING_ENCRYPTED_DATA: {
     responseStatus: 'Failed',

@@ -43,7 +43,7 @@ export async function createTicketHandler(
       productName: 'MOBIL REGULAR',
       inTime: ticket.inTime
     };
-    return res.json({ success: true, data: response });
+    return res.status(200).json({ success: true, data: response });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -66,7 +66,7 @@ export async function getTicketHandler(
         .json({ success: false, error: 'Ticket not found' });
     }
 
-    return res.json({ success: true, data: ticket });
+    return res.status(200).json({ success: true, data: ticket });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -88,7 +88,7 @@ export async function updateTicketStatusHandler(
     }
 
     const updatedTicket = await updateTicketStatus(transactionNo);
-    return res.json({ success: true, data: updatedTicket });
+    return res.status(200).json({ success: true, data: updatedTicket });
   } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message });
   }
@@ -127,7 +127,7 @@ export async function sigantureKey(req: Request, res: Response): Promise<any> {
 
   const encrypted_data = encryptPayload(data);
 
-  return res.json({
+  return res.status(200).json({
     responseCode: '200200',
     responseMessage: 'Success',
     signature: signature,

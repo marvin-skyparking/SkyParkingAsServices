@@ -27,14 +27,9 @@ import {
 const innAppRoute = express.Router();
 
 //Real IN APP
-innAppRoute.post(
-  '/Partner/InquiryTariffREG',
-  haltOnTimeout,
-  processInquiryTransactionEncrypt
-);
+innAppRoute.post('/Partner/InquiryTariffREG', processInquiryTransactionEncrypt);
 innAppRoute.post(
   '/Partner/PaymentConfirmationREG',
-  haltOnTimeout,
   processPaymentTransactionEncrypt
 );
 
