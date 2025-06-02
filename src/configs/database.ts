@@ -20,7 +20,7 @@ const sequelize = new Sequelize(
       acquire: 60000, // wait up to 60 seconds for a connection
       idle: 10000 // release connection if idle for 10 seconds
     },
-    timezone: '-05:00'
+    timezone: '-01:00'
   }
 );
 
