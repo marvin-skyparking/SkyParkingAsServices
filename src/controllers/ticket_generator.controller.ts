@@ -35,7 +35,7 @@ export async function createTicketHandler(
       status: ticket.status,
       grace_period: ticket.grace_period,
       url_ticket: ticket.url_ticket,
-      storeID: 'ID2023262331937',
+      storeID: 'ID2020028029516',
       locationCode: '007SK',
       subLocationCode: '007SK-1',
       gateInCode: '007SK-1-PM-GATE1A',

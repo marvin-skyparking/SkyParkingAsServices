@@ -8,16 +8,16 @@ export async function haltOnTimeout(
   next: NextFunction
 ): Promise<any> {
   // Handle timeout
-  if (err?.timeout && !res.headersSent) {
+  if (err?.timeout) {
     console.warn('Timeout error caught:', err.message);
-    return res.status(200).json(
-      RealencryptPayload({
+    return res.status(200).json({
+      data: RealencryptPayload({
         responseStatus: 'Failed',
         responseCode: '211051',
         responseDescription: 'Request timed out',
         messageDetail: 'Connection to the API Timeout'
       })
-    );
+    });
   }
 
   next(err);
