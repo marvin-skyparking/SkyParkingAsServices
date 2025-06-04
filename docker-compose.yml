@@ -12,7 +12,7 @@ services:
     environment:
       - PORT=9002
     ports:
-      - "9241:9002"
+      - "9212:9002"
     # command: npm install cookie-parser && npm start
     networks:
       - parking_as_services
