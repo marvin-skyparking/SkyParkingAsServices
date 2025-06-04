@@ -41,9 +41,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // // Handling Timeout
-app.use(timeout('1ms'));
+// app.use(timeout('1ms'));
 //Routes Flow
 app.use('/v1', indexRoutes);
-app.use(haltOnTimeout);
+// app.use(haltOnTimeout);
 
 export default app;
