@@ -9,7 +9,7 @@ import indexRoutes from './routes';
 import cors from 'cors';
 import timeout from 'connect-timeout';
 import { haltOnTimeout } from './middleware/timeout.middleware';
-
+import path from 'path';
 const app = express().disable('x-powered-by');
 
 const allowedOrigins = [
@@ -39,6 +39,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve static files (like index.html)
+app.use(express.static(path.join(__dirname, '../public')));
 
 // // Handling Timeout
 app.use(timeout('2000ms'));
