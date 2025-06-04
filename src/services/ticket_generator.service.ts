@@ -20,7 +20,7 @@ export async function createTicket() {
 
   const newTicket = await TicketGenerator.create({
     transactionNo,
-    url_ticket: `https://devapps.skyparking.online/Ebilling?p1=ID2023262331937&p2=${transactionNo}`,
+    url_ticket: `https://devapps.skyparking.online/Ebilling?p1=ID2020028029516&p2=${transactionNo}`,
     tarif: 0,
     vehicle_type: 'MOBIL',
     reference_no: generateReferenceNo(24),
