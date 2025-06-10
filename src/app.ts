@@ -44,9 +44,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // // Handling Timeout
-app.use(timeout('2000ms'));
+// app.use(timeout('2000ms'));
 //Routes Flow
 app.use('/v1', indexRoutes);
-app.use(haltOnTimeout);
+// app.use(haltOnTimeout);
 
 export default app;
