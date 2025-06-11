@@ -196,11 +196,6 @@ export async function Inquiry_Transaction(
       data: encryptedRequest
     });
 
-    const cleanString = apiResponse.data.replace(
-      /[\u0000-\u001F\u007F-\u009F]/g,
-      ''
-    );
-    const parsedData = JSON.parse(cleanString);
     // const finalData = await DecryptTotPOST(
     //   parsedData.data,
     //   location.GibberishKey ?? ''
@@ -250,11 +245,7 @@ export async function Inquiry_Transaction(
     //   transactionNo
     // );
 
-    return res.status(200).json({
-      responseCode: '211000',
-      responseMessage: 'Success',
-      data: parsedData
-    });
+    return res.status(200).json(apiResponse);
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
