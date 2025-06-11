@@ -196,30 +196,34 @@ export async function Inquiry_Transaction(
       data: encryptedRequest
     });
 
-    console.log('apiResponse', apiResponse);
-    // const finalData = await DecryptTotPOST(
-    //   parsedData.data,
-    //   location.GibberishKey ?? ''
+    // const cleanString = apiResponse.data.replace(
+    //   /[\u0000-\u001F\u007F-\u009F]/g,
+    //   ''
     // );
+    // const parsedData = JSON.parse(cleanString);
+    const finalData = await DecryptTotPOST(
+      apiResponse.data?.data,
+      location.GibberishKey ?? ''
+    );
 
     // console.log('finalData', finalData);
 
-    await createInquiryTransaction({
-      CompanyName: location.CompanyName ?? '',
-      NMID: location.NMID ?? '',
-      StoreCode: transactionNo.toString().slice(-5),
-      TransactionNo: transactionNo,
-      ReferenceNo: '',
-      ProjectCategoryId: 14,
-      ProjectCategoryName: 'Parking',
-      DataSend: JSON.stringify(requestPayload),
-      DataResponse: JSON.stringify(apiResponse),
-      DataDetailResponse: JSON.stringify(apiResponse?.data),
-      CreatedOn: new Date(),
-      UpdatedOn: new Date(),
-      CreatedBy: location.CompanyName ?? '',
-      UpdatedBy: location.CompanyName ?? ''
-    });
+    // await createInquiryTransaction({
+    //   CompanyName: location.CompanyName ?? '',
+    //   NMID: location.NMID ?? '',
+    //   StoreCode: transactionNo.toString().slice(-5),
+    //   TransactionNo: transactionNo,
+    //   ReferenceNo: '',
+    //   ProjectCategoryId: 14,
+    //   ProjectCategoryName: 'Parking',
+    //   DataSend: JSON.stringify(requestPayload),
+    //   DataResponse: JSON.stringify(apiResponse),
+    //   DataDetailResponse: JSON.stringify(apiResponse?.data),
+    //   CreatedOn: new Date(),
+    //   UpdatedOn: new Date(),
+    //   CreatedBy: location.CompanyName ?? '',
+    //   UpdatedBy: location.CompanyName ?? ''
+    // });
 
     // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
     // const isFree = finalData?.tariff === 0;
@@ -246,7 +250,11 @@ export async function Inquiry_Transaction(
     //   transactionNo
     // );
 
-    return res.status(200).json(apiResponse);
+    return res.status(200).json({
+      responseCode: '211000',
+      responseMessage: 'Success',
+      data: finalData
+    });
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
