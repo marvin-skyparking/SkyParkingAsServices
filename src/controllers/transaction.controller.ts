@@ -213,13 +213,16 @@ export async function Inquiry_Transaction(
       UpdatedBy: location.CompanyName ?? ''
     });
 
+    const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
+    const isFree = apiResponse?.data?.tariff === 0;
+
     const responsePayload = {
-      responseStatus: apiResponse?.data?.responseStatus,
+      responseStatus: apiResponse?.data.responseStatus,
       responseCode:
-        apiResponse?.data?.responseStatus === 'Failed' ? '211001' : '211000',
-      responseDescription: apiResponse?.data?.responseDescription,
-      messageDetail: apiResponse?.data?.messageDetail,
-      data: apiResponse?.data?.data
+        apiResponse?.data.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: apiResponse?.data.responseDescription,
+      messageDetail: apiResponse?.data.messageDetail,
+      data: apiResponse?.data
     };
 
     // return encryptAndRespond(
@@ -228,7 +231,11 @@ export async function Inquiry_Transaction(
     //   transactionNo
     // );
 
-    return res.status(200).json(responsePayload);
+    return res.status(200).json({
+      responseCode: '211000',
+      responseMessage: 'Success',
+      data: apiResponse.data
+    });
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
