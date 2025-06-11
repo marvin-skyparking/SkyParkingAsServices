@@ -196,53 +196,31 @@ export async function Inquiry_Transaction(
       data: encryptedRequest
     });
 
-    // const cleanString = apiResponse.data.replace(
-    //   /[\u0000-\u001F\u007F-\u009F]/g,
-    //   ''
-    // );
-    // const parsedData = JSON.parse(cleanString);
-    // const finalData = await DecryptTotPOST(
-    //   parsedData.data,
-    //   location.GibberishKey ?? ''
-    // );
+    await createInquiryTransaction({
+      CompanyName: location.CompanyName ?? '',
+      NMID: location.NMID ?? '',
+      StoreCode: transactionNo.toString().slice(-5),
+      TransactionNo: transactionNo,
+      ReferenceNo: '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(requestPayload),
+      DataResponse: JSON.stringify(apiResponse),
+      DataDetailResponse: JSON.stringify(apiResponse?.data),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
+      CreatedBy: location.CompanyName ?? '',
+      UpdatedBy: location.CompanyName ?? ''
+    });
 
-    // console.log('finalData', finalData);
-
-    // await createInquiryTransaction({
-    //   CompanyName: location.CompanyName ?? '',
-    //   NMID: location.NMID ?? '',
-    //   StoreCode: transactionNo.toString().slice(-5),
-    //   TransactionNo: transactionNo,
-    //   ReferenceNo: '',
-    //   ProjectCategoryId: 14,
-    //   ProjectCategoryName: 'Parking',
-    //   DataSend: JSON.stringify(requestPayload),
-    //   DataResponse: JSON.stringify(finalData),
-    //   DataDetailResponse: JSON.stringify(finalData?.data),
-    //   CreatedOn: new Date(),
-    //   UpdatedOn: new Date(),
-    //   CreatedBy: location.CompanyName ?? '',
-    //   UpdatedBy: location.CompanyName ?? ''
-    // });
-
-    // const isPaid = finalData?.data?.paymentStatus === 'PAID';
-    // const isFree = finalData?.tariff === 0;
-
-    // const responsePayload = {
-    //   responseStatus: finalData?.responseStatus,
-    //   responseCode:
-    //     finalData?.responseStatus === 'Failed' ? '211001' : '211000',
-    //   responseDescription: finalData?.responseDescription,
-    //   messageDetail:
-    //     finalData?.responseStatus === 'Failed'
-    //       ? 'Ticket is invalid'
-    //       : isPaid
-    //         ? 'Ticket is valid and has been paid'
-    //         : isFree
-    //           ? 'Ticket is valid, Parking is still free.'
-    //           : 'Ticket is valid, please continue for payment',
-    //   data: finalData?.data
-    // };
+    const responsePayload = {
+      responseStatus: apiResponse?.data.responseStatus,
+      responseCode:
+        apiResponse?.data.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: apiResponse?.data.responseDescription,
+      messageDetail: apiResponse?.data.messageDetail,
+      data: apiResponse?.data
+    };
 
     // return encryptAndRespond(
     //   responsePayload,
@@ -250,11 +228,7 @@ export async function Inquiry_Transaction(
     //   transactionNo
     // );
 
-    return res.status(200).json({
-      responseCode: '211000',
-      responseMessage: 'Success',
-      data: apiResponse.data
-    });
+    return res.status(200).json(responsePayload);
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
