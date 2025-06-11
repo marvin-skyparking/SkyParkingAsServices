@@ -27,13 +27,13 @@ import {
 const innAppRoute = express.Router();
 
 //Real IN APP
-innAppRoute.post('/Partner/InquiryTariffREG', processInquiryTransactionEncrypt);
-innAppRoute.post(
-  '/Partner/PaymentConfirmationREG',
-  processPaymentTransactionEncrypt
-);
+// innAppRoute.post('/Partner/InquiryTariffREG', processInquiryTransactionEncrypt);
+// innAppRoute.post(
+//   '/Partner/PaymentConfirmationREG',
+//   processPaymentTransactionEncrypt
+// );
 
-innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
+// innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
 
 // POST TEST
 innAppRoute.post(
@@ -50,25 +50,25 @@ innAppRoute.post(
 //Simulator
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
 innAppRoute.post('/Signature-Payment', getPaymentSignature);
-innAppRoute.post('/GenerateTicket', createTicketHandler);
-innAppRoute.post(
-  '/POST/Simulator/InquiryTariffREG/',
-  processInquiryTransaction
-);
-innAppRoute.post(
-  '/Partner/Simulator/InquiryTariffREG/',
-  processInquiryTransaction
-);
-innAppRoute.post(
-  '/Partner/Simulator/PaymentConfrimationREG/',
-  processPaymentTransaction
-);
-innAppRoute.post(
-  '/POST/Simulator/PaymentConfrimationREG/',
-  processPaymentTransactionPOST
-);
+// innAppRoute.post('/GenerateTicket', createTicketHandler);
+// innAppRoute.post(
+//   '/POST/Simulator/InquiryTariffREG/',
+//   processInquiryTransaction
+// );
+// innAppRoute.post(
+//   '/Partner/Simulator/InquiryTariffREG/',
+//   processInquiryTransaction
+// );
+// innAppRoute.post(
+//   '/Partner/Simulator/PaymentConfrimationREG/',
+//   processPaymentTransaction
+// );
+// innAppRoute.post(
+//   '/POST/Simulator/PaymentConfrimationREG/',
+//   processPaymentTransactionPOST
+// );
 
-innAppRoute.post('/POST/Simulator/Close-Ticket/', close_ticket_not_encrypt);
+// innAppRoute.post('/POST/Simulator/Close-Ticket/', close_ticket_not_encrypt);
 
 //Version 2
 innAppRoute.post(
