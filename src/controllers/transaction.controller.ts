@@ -214,12 +214,12 @@ export async function Inquiry_Transaction(
     });
 
     const responsePayload = {
-      responseStatus: apiResponse?.data.responseStatus,
+      responseStatus: apiResponse?.data?.responseStatus,
       responseCode:
-        apiResponse?.data.responseStatus === 'Failed' ? '211001' : '211000',
-      responseDescription: apiResponse?.data.responseDescription,
-      messageDetail: apiResponse?.data.messageDetail,
-      data: apiResponse?.data
+        apiResponse?.data?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: apiResponse?.data?.responseDescription,
+      messageDetail: apiResponse?.data?.messageDetail,
+      data: apiResponse?.data?.data
     };
 
     // return encryptAndRespond(
