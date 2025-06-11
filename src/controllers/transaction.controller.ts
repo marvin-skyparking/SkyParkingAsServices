@@ -196,6 +196,7 @@ export async function Inquiry_Transaction(
       data: encryptedRequest
     });
 
+    console.log('apiResponse', apiResponse);
     // const finalData = await DecryptTotPOST(
     //   parsedData.data,
     //   location.GibberishKey ?? ''
