@@ -386,7 +386,7 @@ export async function Payment_Confirmation(
       find_location.NMID ?? '',
       decryptedObject.transactionNo ?? '',
       decryptedObject.referenceNo ?? '',
-      decryptedObject.amount ?? '',
+      decryptedObject.amount ?? 0,
       decryptedObject.paymentStatus ?? '',
       decryptedObject.paymentReferenceNo ?? '',
       decryptedObject.paymentDate ?? '',
