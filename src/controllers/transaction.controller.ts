@@ -511,7 +511,7 @@ export async function Payment_Confirmation(
     //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     // );
     const data_payment = await DecryptTotPOST(
-      response_confirm_pay.data,
+      response_confirm_pay.data?.data,
       find_location.GibberishKey ?? ''
     );
 
