@@ -424,7 +424,7 @@ export async function Payment_Confirmation(
           responseCode: '401401',
           responseMessage: 'Access Denied'
         },
-        find_location.GibberishKey ?? '',
+        validate_credential.GibberishKey ?? '',
         transactionNo
       );
     }
@@ -508,47 +508,42 @@ export async function Payment_Confirmation(
       data: encrypted_data_pay
     });
 
-    const parsedDataPay = JSON.parse(
-      response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-    );
+    // const parsedDataPay = JSON.parse(
+    //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+    // );
     const data_payment = await DecryptTotPOST(
-      parsedDataPay.data,
+      response_confirm_pay.data,
       find_location.GibberishKey ?? ''
     );
 
-    console.log('data_payment', parsedDataPay);
+    // const rawDate = data_payment?.data.paymentDate; // e.g., "2025-05-14 11:42:14"
+    // const isoDate = rawDate?.replace(' ', 'T'); // Convert to ISO format
+    // const parsedDate = new Date(isoDate);
 
-    const rawDate = data_payment?.data.paymentDate; // e.g., "2025-05-14 11:42:14"
-    const isoDate = rawDate?.replace(' ', 'T'); // Convert to ISO format
-    const parsedDate = new Date(isoDate);
+    // if (isNaN(parsedDate.getTime())) {
+    //   throw new Error('Invalid paymentDate');
+    // }
 
-    if (isNaN(parsedDate.getTime())) {
-      throw new Error('Invalid paymentDate');
-    }
+    // // Add 30 minutes
+    // const exitLimitDate = new Date(parsedDate.getTime() + 30 * 60 * 1000);
 
-    // Add 30 minutes
-    const exitLimitDate = new Date(parsedDate.getTime() + 30 * 60 * 1000);
+    // // Format: "YYYY-MM-DD HH:mm:ss"
+    // const formatDate = (date: Date) => {
+    //   const pad = (n: number) => String(n).padStart(2, '0');
+    //   return (
+    //     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+    //     `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+    //   );
+    // };
 
-    // Format: "YYYY-MM-DD HH:mm:ss"
-    const formatDate = (date: Date) => {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return (
-        `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
-        `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
-      );
-    };
-
-    const formattedExitLimitDate = formatDate(exitLimitDate);
+    // const formattedExitLimitDate = formatDate(exitLimitDate);
 
     const res_final = {
       responseStatus: data_payment?.responseStatus,
       responseCode:
         data_payment?.responseStatus === 'Failed' ? '211001' : '211000',
       responseDescription: data_payment?.responseDescription,
-      messageDetail:
-        data_payment?.tarif === 0
-          ? 'Parking fee is still free, please continue to scan ticket at exit gate"'
-          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${formattedExitLimitDate} Not valid for flat rates.`,
+      messageDetail: data_payment?.data.messageDetail,
       data: data_payment?.data
     };
 
