@@ -5,6 +5,7 @@ import {
   DecryptTotPOST,
   EncryptResponse,
   EncryptTotPOST,
+  generatePaymentPOSTSignature,
   generatePaymentSignature,
   generateSignature,
   RealdecryptPayload,
@@ -334,6 +335,7 @@ export async function Payment_Confirmation(
     const expectedSignature = generatePaymentSignature(
       login,
       password,
+      storeID,
       transactionNo,
       referenceNo,
       amount,
@@ -342,6 +344,7 @@ export async function Payment_Confirmation(
       paymentDate,
       issuerID,
       retrievalReferenceNo,
+      approvalCode,
       validate_credential.SecretKey ?? ''
     );
 
@@ -378,7 +381,7 @@ export async function Payment_Confirmation(
       );
     }
 
-    const create_signature = generatePaymentSignature(
+    const create_signature = generatePaymentPOSTSignature(
       find_location.Login ?? '',
       find_location.Password ?? '',
       decryptedObject.transactionNo ?? '',
@@ -480,7 +483,6 @@ export async function Payment_Confirmation(
       paymentDate: decryptedObject.paymentDate ?? '',
       issuerID: decryptedObject.issuerID ?? '',
       retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
-      approvalCode: decryptedObject.approvalCode ?? '',
       signature: create_signature
     };
 
@@ -503,9 +505,6 @@ export async function Payment_Confirmation(
     const response_confirm_pay = await axios.post(paymentAccess.url_access, {
       data: encrypted_data_pay
     });
-
-    console.log(encrypted_data_pay);
-    console.log(response_confirm_pay);
 
     // const parsedDataPay = JSON.parse(
     //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
@@ -596,1188 +595,1188 @@ export async function Payment_Confirmation(
   }
 }
 
-// // For simulator purpose
-// export async function processInquiryTransaction(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { data } = req.body;
-//     if (!data)
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-//         data: defaultTransactionData()
-//       });
-
-//     const decryptedObject = RealdecryptPayload(data);
-//     if (!decryptedObject)
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-//         data: defaultTransactionData()
-//       });
-
-//     const { login, password, storeID, transactionNo, signature } =
-//       decryptedObject;
-//     if (![login, password, storeID, transactionNo, signature].every(Boolean))
-//       return res.status(200).json({ error: 'Invalid data format' });
-
-//     const validate_credential = await findInquiryTransactionMappingPartner(
-//       login,
-//       password
-//     );
-//     if (!validate_credential) {
-//       const response = {
-//         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-//         data: defaultTransactionData(transactionNo)
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const expectedSignature = generateSignature(
-//       login,
-//       password,
-//       storeID,
-//       transactionNo,
-//       validate_credential.SecretKey || ''
-//     );
-//     if (signature.toLowerCase() !== expectedSignature.toLowerCase())
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_SIGNATURE,
-//         data: defaultTransactionData(transactionNo)
-//       });
-
-//     const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
-//       (role) => role.access_type === 'INQUIRY'
-//     );
-//     if (!hasAccess)
-//       return res
-//         .status(401)
-//         .json({ responseCode: '401401', responseMessage: 'Access Denied' });
-
-//     const data_ticket = await findTicket(transactionNo);
-//     if (!data_ticket)
-//       return res.status(200).json({
-//         responseStatus: 'Failed',
-//         responseCode: '211001',
-//         responseDescription: 'Invalid Transaction',
-//         messageDetail: 'The ticket is invalid',
-//         data: {
-//           transactionNo: transactionNo,
-//           transactionStatus: 'INVALID',
-//           inTime: '',
-//           duration: 0,
-//           tariff: 0,
-//           vehicleType: '',
-//           outTime: '',
-//           gracePeriod: 0,
-//           location: '',
-//           paymentStatus: 'UNPAID'
-//         }
-//       });
-
-//     if (data_ticket.status === 'PAID')
-//       return res.status(200).json({
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail: 'Ticket is valid and has been paid',
-//         data: {
-//           transactionNo: data_ticket.transactionNo,
-//           transactionStatus: 'VALID',
-//           inTime: data_ticket.inTime,
-//           duration:
-//             data_ticket.inTime && data_ticket.outTime
-//               ? Math.floor(
-//                   (new Date(data_ticket.outTime).getTime() -
-//                     new Date(data_ticket.inTime).getTime()) /
-//                     60000
-//                 )
-//               : null,
-//           tariff: data_ticket.tarif,
-//           vehicleType: data_ticket.vehicle_type,
-//           outTime: data_ticket.outTime,
-//           gracePeriod: data_ticket.grace_period,
-//           location: 'LIPPO MALL PURI',
-//           paymentStatus: 'PAID'
-//         }
-//       });
-
-//     const inTime = moment(data_ticket.inTime);
-//     const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
-//     const gracePeriodEnd = inTime
-//       .clone()
-//       .add(data_ticket.grace_period || 5, 'minutes');
-
-//     let responsePayload;
-
-//     if (moment().isBefore(gracePeriodEnd)) {
-//       responsePayload = {
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail: 'Ticket is valid, Parking is still free.',
-//         data: {
-//           transactionNo: data_ticket.transactionNo,
-//           inTime: formattedInTime,
-//           duration: 0,
-//           tariff: data_ticket.tarif,
-//           vehicleType: data_ticket.vehicle_type,
-//           outTime: data_ticket.outTime
-//             ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
-//             : '',
-//           gracePeriod: data_ticket.grace_period,
-//           location: 'SKY PLUIT VILLAGE',
-//           paymentStatus: 'FREE'
-//         }
-//       };
-//     } else {
-//       const update_tarif = await updateTarifIfExpired(transactionNo);
-//       responsePayload = {
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail: 'Please proceed with payment.',
-//         data: {
-//           transactionNo: update_tarif.transactionNo,
-//           inTime: formattedInTime,
-//           duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
-//           tariff: update_tarif.tarif,
-//           vehicleType: update_tarif.vehicle_type,
-//           outTime: update_tarif.outTime
-//             ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
-//             : '',
-//           gracePeriod: update_tarif.grace_period,
-//           location: 'SKY PLUIT VILLAGE',
-//           paymentStatus: update_tarif.status
-//         }
-//       };
-//     }
-
-//     // ✅ Insert InquiryTransaction Record
-//     await createInquiryTransaction({
-//       StoreCode: '007SK',
-//       TransactionNo: transactionNo,
-//       NMID: '007SK',
-//       CompanyName: validate_credential.CompanyName || '',
-//       ProjectCategoryId: 14,
-//       ProjectCategoryName: 'Parking',
-//       DataSend: JSON.stringify(decryptedObject), // Store request payload
-//       DataResponse: JSON.stringify(responsePayload), // Store response payload
-//       CreatedOn: moment().toDate(),
-//       CreatedBy: login
-//     });
-
-//     return res.json(responsePayload);
-//   } catch (error) {
-//     console.error('Error processing transaction:', error);
-//     return res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// }
-
-// export async function processPaymentTransaction(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { data } = req.body; // Encrypted data from request
-
-//     if (!data) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-//         data: defaultTransactionData()
-//       });
-//     }
-
-//     // // Fetch secret key from `inquiry_transaction_mapping`
-//     // const mapping = await PartnerMapping.findOne();
-//     // if (!mapping || !mapping.SecretKey) {
-//     //   return res
-//     //     .status(404)
-//     //     .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
-//     // }
-
-//     // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
-
-//     // Decrypt AES data
-//     const decryptedObject = RealdecryptPayload(data);
-
-//     if (!decryptedObject) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-//         data: defaultTransactionData()
-//       });
-//     }
-
-//     const {
-//       login,
-//       password,
-//       storeID,
-//       transactionNo,
-//       referenceNo,
-//       amount,
-//       paymentStatus,
-//       paymentReferenceNo,
-//       paymentDate,
-//       issuerID,
-//       retrievalReferenceNo,
-//       approvalCode,
-//       signature
-//     } = decryptedObject;
-
-//     //return res.status(200).json(decryptedObject);
-//     if (
-//       ![
-//         login,
-//         password,
-//         storeID,
-//         transactionNo,
-//         referenceNo,
-//         amount,
-//         paymentStatus,
-//         paymentReferenceNo,
-//         paymentDate,
-//         issuerID,
-//         retrievalReferenceNo,
-//         approvalCode,
-//         signature
-//       ].every(Boolean)
-//     ) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.MISSING_FIELDS,
-//         data: defaultTransactionData()
-//       });
-//     }
-
-//     // Fetch SecretKey from DB
-//     const secretKeyData = await findInquiryTransactionMappingPartner(
-//       login,
-//       password
-//     );
-
-//     if (!secretKeyData || !secretKeyData.SecretKey) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     const SecretKeys = secretKeyData.SecretKey;
-
-//     const expectedSignature = generatePaymentSignature(
-//       login,
-//       password,
-//       secretKeyData.NMID ?? '',
-//       transactionNo,
-//       referenceNo,
-//       amount,
-//       paymentStatus,
-//       paymentReferenceNo,
-//       paymentDate,
-//       issuerID,
-//       retrievalReferenceNo,
-//       approvalCode,
-//       SecretKeys
-//     );
-
-//     // Ensure both signatures are lowercase for comparison
-//     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_SIGNATURE,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     const check_role = await getRolesByPartnerId(secretKeyData.Id);
-
-//     const hasPaymentAccess = check_role.some(
-//       (role) => role.access_type === 'PAYMENT'
-//     );
-
-//     if (!hasPaymentAccess) {
-//       return res.status(200).json({
-//         responseCode: '401401',
-//         responseMessage: 'You Not Allowed To Access This Feature'
-//       });
-//     }
-//     const data_ticket = await findTicket(decryptedObject.transactionNo);
-
-//     if (!data_ticket) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_TRANSACTION,
-//         data: data_ticket
-//       });
-//     }
-
-//     if (decryptedObject.amount != data_ticket.dataValues.tarif) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_AMOUNT
-//       });
-//     }
-
-//     const update_ticket = await updateTicketStatus(transactionNo);
-
-//     if (!update_ticket) {
-//       return res.status(200).json({
-//         responseCode: '500200',
-//         responseMessage: 'Failure Update Transaction'
-//       });
-//     }
-
-//     const succes_payload = {
-//       responseStatus: 'Success',
-//       responseCode: '211000',
-//       responseDescription: 'Transaction Success',
-//       messageDetail:
-//         update_ticket.tarif === 0
-//           ? 'Tiket valid, biaya parkir Anda masih gratis.'
-//           : 'Payment confirmation has been accepted and verified successfully',
-//       data: {
-//         referenceNo: decryptedObject.referenceNo,
-//         referenceTransactionNo: decryptedObject.referenceTransactionNo,
-//         amount: update_ticket.tarif,
-//         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-//         paymentDate: new Date(),
-//         issuerID: decryptedObject.issuerID,
-//         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
-//         transactionNo: decryptedObject.transactionNo,
-//         transactionStatus: 'VALID',
-//         paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
-//       }
-//     };
-//     return res.json(succes_payload); // Respond with the decrypted object directly
-//   } catch (error) {
-//     console.error('Error processing inquiry transaction:', error);
-//     return res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// }
-
-// export async function processPaymentTransactionPOST(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { data } = req.body; // Encrypted data from request
-
-//     if (!data) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-//         data: defaultTransactionData()
-//       });
-//     }
-
-//     // // Fetch secret key from `inquiry_transaction_mapping`
-//     // const mapping = await PartnerMapping.findOne();
-//     // if (!mapping || !mapping.SecretKey) {
-//     //   return res
-//     //     .status(404)
-//     //     .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
-//     // }
-
-//     // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
-
-//     // Decrypt AES data
-//     const decryptedObject = RealdecryptPayload(data);
-
-//     if (!decryptedObject) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-//         data: defaultTransactionData()
-//       });
-//     }
-
-//     const {
-//       login,
-//       password,
-//       transactionNo,
-//       referenceNo,
-//       amount,
-//       paymentStatus,
-//       paymentReferenceNo,
-//       paymentDate,
-//       issuerID,
-//       retrievalReferenceNo,
-//       approvalCode,
-//       signature
-//     } = decryptedObject;
-
-//     //return res.status(200).json(decryptedObject);
-//     if (
-//       ![
-//         login,
-//         password,
-//         transactionNo,
-//         referenceNo,
-//         amount,
-//         paymentStatus,
-//         paymentReferenceNo,
-//         paymentDate,
-//         issuerID,
-//         retrievalReferenceNo,
-//         approvalCode,
-//         signature
-//       ].every(Boolean)
-//     ) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.MISSING_FIELDS,
-//         data: defaultTransactionData()
-//       });
-//     }
-
-//     // Fetch SecretKey from DB
-//     const secretKeyData = await findInquiryTransactionMappingPartner(
-//       login,
-//       password
-//     );
-
-//     if (!secretKeyData || !secretKeyData.SecretKey) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     const SecretKeys = secretKeyData.SecretKey;
-
-//     const expectedSignature = generatePaymentSignature(
-//       login,
-//       password,
-//       secretKeyData.NMID ?? '',
-//       transactionNo,
-//       referenceNo,
-//       amount,
-//       paymentStatus,
-//       paymentReferenceNo,
-//       paymentDate,
-//       issuerID,
-//       retrievalReferenceNo,
-//       approvalCode,
-//       SecretKeys
-//     );
-
-//     // Ensure both signatures are lowercase for comparison
-//     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_SIGNATURE,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     const check_role = await getRolesByPartnerId(secretKeyData.Id);
-
-//     const hasPaymentAccess = check_role.some(
-//       (role) => role.access_type === 'PAYMENT'
-//     );
-
-//     if (!hasPaymentAccess) {
-//       return res.status(200).json({
-//         responseCode: '401401',
-//         responseMessage: 'You Not Allowed To Access This Feature'
-//       });
-//     }
-//     const data_ticket = await findTicket(decryptedObject.transactionNo);
-
-//     if (!data_ticket) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_TRANSACTION,
-//         data: data_ticket
-//       });
-//     }
-
-//     if (decryptedObject.amount != data_ticket.dataValues.tarif) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_AMOUNT,
-//         data: data_ticket
-//       });
-//     }
-
-//     const update_ticket = await updateTicketStatus(transactionNo);
-
-//     if (!update_ticket) {
-//       return res.status(200).json({
-//         responseCode: '500200',
-//         responseMessage: 'Failure Update Transaction'
-//       });
-//     }
-
-//     const succes_payload = {
-//       responseStatus: 'Success',
-//       responseCode: '211000',
-//       responseDescription: 'Transaction Success',
-//       messageDetail:
-//         update_ticket.tarif === 0
-//           ? 'Tiket valid, biaya parkir Anda masih gratis.'
-//           : 'Payment confirmation has been accepted and verified successfully',
-//       data: {
-//         referenceNo: decryptedObject.referenceNo,
-//         referenceTransactionNo: decryptedObject.referenceTransactionNo,
-//         amount: update_ticket.tarif,
-//         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-//         paymentDate: new Date(),
-//         issuerID: decryptedObject.issuerID,
-//         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
-//         transactionNo: decryptedObject.transactionNo,
-//         transactionStatus: 'VALID',
-//         paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
-//       }
-//     };
-//     return res.json(succes_payload); // Respond with the decrypted object directly
-//   } catch (error) {
-//     console.error('Error processing inquiry transaction:', error);
-//     return res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// }
-
-// export async function processInquiryTransactionEncrypt(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { data } = req.body;
-//     if (!data) {
-//       const response = {
-//         ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-//         data: defaultTransactionData()
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const decryptedObject = RealdecryptPayload(data);
-//     if (!decryptedObject) {
-//       const response = {
-//         ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-//         data: defaultTransactionData()
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const { login, password, storeID, transactionNo, signature } =
-//       decryptedObject;
-//     if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
-//       const response = { error: 'Invalid data format' };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const validate_credential = await findInquiryTransactionMappingPartner(
-//       login,
-//       password
-//     );
-
-//     if (!validate_credential) {
-//       const response_invalid_credential = {
-//         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-//         data: defaultTransactionData(transactionNo)
-//       };
-//       return res
-//         .status(200)
-//         .json({ data: RealencryptPayload(response_invalid_credential) });
-//     }
-
-//     const expectedSignature = generateSignature(
-//       login,
-//       password,
-//       storeID,
-//       transactionNo,
-//       validate_credential.SecretKey || ''
-//     );
-//     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
-//       const response = {
-//         ...ERROR_MESSAGES.INVALID_SIGNATURE,
-//         data: defaultTransactionData(transactionNo)
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
-//       (role) => role.access_type === 'INQUIRY'
-//     );
-//     if (!hasAccess) {
-//       const response = {
-//         responseCode: '401401',
-//         responseMessage: 'Access Denied'
-//       };
-//       return res.status(401).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const data_ticket = await findTicket(transactionNo);
-//     if (!data_ticket) {
-//       const response = {
-//         responseStatus: 'Failed',
-//         responseCode: '211001',
-//         responseDescription: 'Invalid Transaction',
-//         messageDetail: 'The ticket is invalid',
-//         data: {
-//           transactionNo: transactionNo,
-//           transactionStatus: 'INVALID',
-//           inTime: '',
-//           duration: 0,
-//           tariff: 0,
-//           vehicleType: '',
-//           outTime: '',
-//           gracePeriod: 0,
-//           location: '',
-//           paymentStatus: 'UNPAID'
-//         }
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     if (
-//       data_ticket.status === 'PAID' &&
-//       data_ticket.ticket_close !== true &&
-//       data_ticket.paid_at &&
-//       new Date().getTime() - new Date(data_ticket.paid_at).getTime() <
-//         30 * 60 * 1000
-//     ) {
-//       const response = {
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail: 'Ticket is valid and has been paid',
-//         data: {
-//           transactionNo: data_ticket.transactionNo,
-//           transactionStatus: 'VALID',
-//           inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
-//           duration:
-//             data_ticket.inTime && data_ticket.outTime
-//               ? Math.floor(
-//                   (new Date(data_ticket.outTime).getTime() -
-//                     new Date(data_ticket.inTime).getTime()) /
-//                     60000
-//                 )
-//               : null,
-//           tariff: data_ticket.tarif,
-//           vehicleType: data_ticket.vehicle_type,
-//           outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
-//           gracePeriod: data_ticket.grace_period,
-//           location: 'LIPPO MALL PURI',
-//           paymentStatus: 'PAID'
-//         }
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     if (data_ticket.ticket_close === true) {
-//       const response = {
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail:
-//           data_ticket.paid_at != null
-//             ? 'Ticket is valid and has been paid, the vehicle has left the parking location'
-//             : 'Ticket is valid, parking fee is free, the vehicle has left the parking location',
-//         data: {
-//           transactionNo: data_ticket.transactionNo,
-//           transactionStatus: 'VALID',
-//           inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
-//           duration:
-//             data_ticket.inTime && data_ticket.outTime
-//               ? Math.floor(
-//                   (new Date(data_ticket.outTime).getTime() -
-//                     new Date(data_ticket.inTime).getTime()) /
-//                     60000
-//                 )
-//               : null,
-//           tariff: data_ticket.tarif,
-//           vehicleType: data_ticket.vehicle_type,
-//           outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
-//           gracePeriod: data_ticket.grace_period,
-//           location: 'LIPPO MALL PURI',
-//           paymentStatus: 'PAID'
-//         }
-//       };
-//       return res.status(200).json({ data: RealencryptPayload(response) });
-//     }
-
-//     const inTime = moment(data_ticket.inTime);
-//     const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
-//     const gracePeriodEnd = inTime
-//       .clone()
-//       .add(data_ticket.grace_period || 5, 'minutes');
-
-//     let responsePayload;
-
-//     if (moment().isBefore(gracePeriodEnd)) {
-//       responsePayload = {
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail: 'Ticket is valid, Parking is still free.',
-//         data: {
-//           transactionNo: data_ticket.transactionNo,
-//           inTime: formattedInTime,
-//           duration: 0,
-//           tariff: data_ticket.tarif,
-//           vehicleType: data_ticket.vehicle_type,
-//           outTime: data_ticket.outTime
-//             ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
-//             : '',
-//           gracePeriod: data_ticket.grace_period,
-//           location: 'LIPPO MALL PURI',
-//           paymentStatus: 'FREE'
-//         }
-//       };
-//     } else {
-//       const update_tarif = await updateTarifIfExpired(transactionNo);
-
-//       responsePayload = {
-//         responseStatus: 'Success',
-//         responseCode: '211000',
-//         responseDescription: 'Transaction Success',
-//         messageDetail: 'Ticket is valid, please continue for payment',
-//         data: {
-//           transactionNo: update_tarif.transactionNo,
-//           inTime: formattedInTime,
-//           duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
-//           tariff: update_tarif.tarif,
-//           vehicleType: update_tarif.vehicle_type,
-//           outTime: update_tarif.outTime
-//             ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
-//             : '',
-//           gracePeriod: update_tarif.grace_period,
-//           location: 'LIPPO MALL PURI',
-//           paymentStatus: update_tarif.tarif === 0 ? 'PAID' : 'UNPAID'
-//         }
-//       };
-//     }
-
-//     await createInquiryTransaction({
-//       StoreCode: '007SK',
-//       TransactionNo: transactionNo,
-//       NMID: '007SK',
-//       CompanyName: validate_credential.CompanyName || '',
-//       ProjectCategoryId: 14,
-//       ProjectCategoryName: 'Parking',
-//       DataSend: JSON.stringify(decryptedObject),
-//       DataResponse: JSON.stringify(responsePayload),
-//       CreatedOn: moment().toDate(),
-//       CreatedBy: login
-//     });
-
-//     return res.json({ data: RealencryptPayload(responsePayload) });
-//   } catch (error) {
-//     console.error('Error processing transaction:', error);
-//     const response = { error: 'Internal Server Error' };
-//     return res.status(500).json({ data: RealencryptPayload(response) });
-//   }
-// }
-
-// export async function processPaymentTransactionEncrypt(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { data } = req.body;
-
-//     if (!data) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-//           data: defaultTransactionData()
-//         })
-//       });
-//     }
-
-//     const decryptedObject = RealdecryptPayload(data);
-
-//     if (!decryptedObject) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-//           data: defaultTransactionData()
-//         })
-//       });
-//     }
-
-//     const {
-//       login,
-//       password,
-//       storeID,
-//       transactionNo,
-//       referenceNo,
-//       amount,
-//       paymentStatus,
-//       paymentReferenceNo,
-//       paymentDate,
-//       issuerID,
-//       retrievalReferenceNo,
-//       approvalCode,
-//       signature
-//     } = decryptedObject;
-
-//     if (
-//       [
-//         login,
-//         password,
-//         storeID,
-//         transactionNo,
-//         referenceNo,
-//         amount,
-//         paymentStatus,
-//         paymentReferenceNo,
-//         paymentDate,
-//         issuerID,
-//         retrievalReferenceNo,
-//         approvalCode,
-//         signature
-//       ].some((field) => field === null || field === undefined)
-//     ) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.MISSING_FIELDS,
-//           data: defaultTransactionData()
-//         })
-//       });
-//     }
-
-//     const secretKeyData = await findInquiryTransactionMappingPartner(
-//       login,
-//       password
-//     );
-
-//     if (!secretKeyData || !secretKeyData.SecretKey) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.INVALID_CREDENTIAL,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     const SecretKeys = secretKeyData.SecretKey;
-
-//     const expectedSignature = generatePaymentSignature(
-//       login,
-//       password,
-//       storeID,
-//       transactionNo,
-//       referenceNo,
-//       amount,
-//       paymentStatus,
-//       paymentReferenceNo,
-//       paymentDate,
-//       issuerID,
-//       retrievalReferenceNo,
-//       approvalCode,
-//       SecretKeys
-//     );
-
-//     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.INVALID_SIGNATURE,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     const check_role = await getRolesByPartnerId(secretKeyData.Id);
-//     const hasPaymentAccess = check_role.some(
-//       (role) => role.access_type === 'PAYMENT'
-//     );
-
-//     if (!hasPaymentAccess) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           responseCode: '401401',
-//           responseMessage: 'You Not Allowed To Access This Feature'
-//         })
-//       });
-//     }
-
-//     const data_ticket = await findTicket(transactionNo);
-
-//     if (!data_ticket) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.INVALID_TRANSACTION,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     const update_tarif = await updateTarifIfExpired(transactionNo);
-
-//     if (update_tarif.status === 'PAID' && update_tarif.tarif === 0) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
-//           data: defaultTransactionDataPaid(transactionNo)
-//         })
-//       });
-//     }
-
-//     if (update_tarif.status === 'UNPAID' && update_tarif.tarif === 0) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           responseStatus: 'Success',
-//           responseCode: '211000',
-//           responseDescription: 'Transaction Success',
-//           messageDetail: 'Ticket is valid, Parking is still free.',
-//           data: {
-//             transactionNo: data_ticket.transactionNo,
-//             inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
-//             duration: 0,
-//             tariff: data_ticket.tarif,
-//             vehicleType: data_ticket.vehicle_type,
-//             outTime: data_ticket.outTime
-//               ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
-//               : '',
-//             gracePeriod: data_ticket.grace_period,
-//             location: 'LIPPO MALL PURI',
-//             paymentStatus: 'FREE'
-//           }
-//         })
-//       });
-//     }
-
-//     if (decryptedObject.amount != update_tarif.tarif) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.INVALID_AMOUNT,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     const update_ticket = await updateTicketStatus(transactionNo);
-
-//     if (!update_ticket) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           responseCode: '500200',
-//           responseMessage: 'Failure Update Transaction'
-//         })
-//       });
-//     }
-
-//     const paymentDates = new Date();
-
-//     const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
-//     const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
-
-//     const success_payload = {
-//       responseStatus: update_ticket.status === 'PAID' ? 'Success' : 'Failed',
-//       responseCode: update_ticket.status === 'PAID' ? '211000' : '211001',
-//       responseDescription:
-//         update_ticket.status === 'PAID'
-//           ? 'Transaction Success'
-//           : 'Invalid Transaction',
-//       messageDetail:
-//         update_ticket.status === 'PAID'
-//           ? `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`
-//           : 'Parking fee is still free, please continue to scan ticket at exit gate',
-//       data: {
-//         referenceNo: decryptedObject.referenceNo,
-//         referenceTransactionNo: generateCustomCode(8),
-//         amount: decryptedObject.amount,
-//         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-//         paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
-//         issuerID: decryptedObject.issuerID,
-//         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
-//         transactionNo: decryptedObject.transactionNo,
-//         transactionStatus: 'VALID',
-//         paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE'
-//       }
-//     };
-
-//     return res.status(200).json({
-//       data: RealencryptPayload(success_payload)
-//     });
-//   } catch (error) {
-//     console.error('Error processing payment transaction:', error);
-//     return res.status(500).json({
-//       data: RealencryptPayload({ error: 'Internal Server Error' })
-//     });
-//   }
-// }
-
-// export async function close_ticket_not_encrypt(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { transactionNo } = req.body;
-
-//     console.log(req.body.transactionNo);
-//     if (!transactionNo) {
-//       return res.status(200).json({
-//         responseCode: '400200',
-//         responseMessage: 'Missing required fields'
-//       });
-//     }
-
-//     const data_ticket = await findTicket(transactionNo);
-//     if (!data_ticket) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.INVALID_TRANSACTION,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     const update_ticket_tarif = await updateTarifIfExpired(transactionNo);
-
-//     if (update_ticket_tarif.tarif != 0) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.CLOSE_TICKET_UNPAID,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     if (data_ticket.ticket_close === true) {
-//       return res.status(200).json({
-//         ...ERROR_MESSAGES.CLOSE_TICKET_CLOSED,
-//         data: defaultTransactionData(transactionNo)
-//       });
-//     }
-
-//     const update_ticket = await close_ticket_update(transactionNo);
-
-//     if (!update_ticket) {
-//       return res.status(200).json({
-//         responseCode: '500200',
-//         responseMessage: 'System Failure Update Transaction'
-//       });
-//     }
-
-//     const success_payload = {
-//       responseStatus: 'Success',
-//       responseCode: '211000',
-//       responseDescription: 'Transaction Success',
-//       messageDetail: 'Ticket is closed successfully',
-//       data: {
-//         transactionNo: update_ticket.transactionNo,
-//         storeID: '',
-//         locationCode: '007SK',
-//         subLocationCode: '007SK-1',
-//         gateInCode: '007SK-1-PM-GATE1A',
-//         vehicleType: update_ticket.vehicle_type,
-//         productName: 'MOBIL REGULAR',
-//         inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
-//         duration: moment(update_ticket.outTime).diff(
-//           moment(update_ticket.inTime),
-//           'minutes'
-//         ),
-//         tarif: update_ticket.tarif,
-//         gracePeriod: update_ticket.grace_period,
-//         paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
-//         paymentReferenceNo: update_ticket.reference_no,
-//         paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
-//         paymentMethod: 'IN-APP',
-//         issuerID: '',
-//         retrievalReferenceNo: '',
-//         referenceTransactionNo: '',
-//         approvalCode: '',
-//         outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
-//         gateOutCode: '007SK-1-PK-GATE2B'
-//       }
-//     };
-
-//     return res.status(200).json(success_payload);
-//   } catch (error) {
-//     console.error('Error processing payment transaction:', error);
-//     return res.status(500).json({
-//       error: 'Internal Server Error'
-//     });
-//   }
-// }
-
-// export async function close_ticket(req: Request, res: Response): Promise<any> {
-//   try {
-//     const { transactionNo } = req.body;
-
-//     console.log(req.body.transactionNo);
-//     if (!transactionNo) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           responseCode: '400200',
-//           responseMessage: 'Missing required fields'
-//         })
-//       });
-//     }
-
-//     const data_ticket = await findTicket(transactionNo);
-//     if (!data_ticket) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.INVALID_TRANSACTION,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     const update_ticket_tarif = await updateTarifIfExpired(transactionNo);
-
-//     if (update_ticket_tarif.tarif != 0) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.CLOSE_TICKET_UNPAID,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     if (data_ticket.ticket_close === true) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           ...ERROR_MESSAGES.CLOSE_TICKET_CLOSED,
-//           data: defaultTransactionData(transactionNo)
-//         })
-//       });
-//     }
-
-//     const update_ticket = await close_ticket_update(transactionNo);
-
-//     if (!update_ticket) {
-//       return res.status(200).json({
-//         data: RealencryptPayload({
-//           responseCode: '500200',
-//           responseMessage: 'System Failure Update Transaction'
-//         })
-//       });
-//     }
-//     const success_payload = {
-//       responseStatus: 'Success',
-//       responseCode: '211000',
-//       responseDescription: 'Transaction Success',
-//       messageDetail: 'Ticket is closed successfully',
-//       data: {
-//         transactionNo: update_ticket.transactionNo,
-//         storeID: '',
-//         locationCode: '007SK',
-//         subLocationCode: '007SK-1',
-//         gateInCode: '007SK-1-PM-GATE1A',
-//         vehicleType: update_ticket.vehicle_type,
-//         productName: 'MOBIL REGULAR',
-//         inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
-//         duration: moment(update_ticket.outTime).diff(
-//           moment(update_ticket.inTime),
-//           'minutes'
-//         ),
-//         tarif: update_ticket.tarif,
-//         gracePeriod: update_ticket.grace_period,
-//         paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
-//         paymentReferenceNo: update_ticket.reference_no,
-//         paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
-//         paymentMethod: 'IN-APP',
-//         issuerID: '',
-//         retrievalReferenceNo: '',
-//         referenceTransactionNo: '',
-//         approvalCode: '',
-//         outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
-//         gateOutCode: '007SK-1-PK-GATE2B'
-//       }
-//     };
-
-//     return res.status(200).json({
-//       data: RealencryptPayload(success_payload)
-//     });
-//   } catch (error) {
-//     console.error('Error processing payment transaction:', error);
-//     return res.status(500).json({
-//       data: RealencryptPayload({ error: 'Internal Server Error' })
-//     });
-//   }
-// }
+// For simulator purpose
+export async function processInquiryTransaction(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body;
+    if (!data)
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
+
+    const decryptedObject = RealdecryptPayload(data);
+    if (!decryptedObject)
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
+
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
+    if (![login, password, storeID, transactionNo, signature].every(Boolean))
+      return res.status(200).json({ error: 'Invalid data format' });
+
+    const validate_credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+    if (!validate_credential) {
+      const response = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const expectedSignature = generateSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      validate_credential.SecretKey || ''
+    );
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase())
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
+
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasAccess)
+      return res
+        .status(401)
+        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket)
+      return res.status(200).json({
+        responseStatus: 'Failed',
+        responseCode: '211001',
+        responseDescription: 'Invalid Transaction',
+        messageDetail: 'The ticket is invalid',
+        data: {
+          transactionNo: transactionNo,
+          transactionStatus: 'INVALID',
+          inTime: '',
+          duration: 0,
+          tariff: 0,
+          vehicleType: '',
+          outTime: '',
+          gracePeriod: 0,
+          location: '',
+          paymentStatus: 'UNPAID'
+        }
+      });
+
+    if (data_ticket.status === 'PAID')
+      return res.status(200).json({
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid and has been paid',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          transactionStatus: 'VALID',
+          inTime: data_ticket.inTime,
+          duration:
+            data_ticket.inTime && data_ticket.outTime
+              ? Math.floor(
+                  (new Date(data_ticket.outTime).getTime() -
+                    new Date(data_ticket.inTime).getTime()) /
+                    60000
+                )
+              : null,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: data_ticket.outTime,
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'PAID'
+        }
+      });
+
+    const inTime = moment(data_ticket.inTime);
+    const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
+    const gracePeriodEnd = inTime
+      .clone()
+      .add(data_ticket.grace_period || 5, 'minutes');
+
+    let responsePayload;
+
+    if (moment().isBefore(gracePeriodEnd)) {
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid, Parking is still free.',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          inTime: formattedInTime,
+          duration: 0,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: data_ticket.outTime
+            ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
+          gracePeriod: data_ticket.grace_period,
+          location: 'SKY PLUIT VILLAGE',
+          paymentStatus: 'FREE'
+        }
+      };
+    } else {
+      const update_tarif = await updateTarifIfExpired(transactionNo);
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Please proceed with payment.',
+        data: {
+          transactionNo: update_tarif.transactionNo,
+          inTime: formattedInTime,
+          duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
+          tariff: update_tarif.tarif,
+          vehicleType: update_tarif.vehicle_type,
+          outTime: update_tarif.outTime
+            ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
+          gracePeriod: update_tarif.grace_period,
+          location: 'SKY PLUIT VILLAGE',
+          paymentStatus: update_tarif.status
+        }
+      };
+    }
+
+    // ✅ Insert InquiryTransaction Record
+    await createInquiryTransaction({
+      StoreCode: '007SK',
+      TransactionNo: transactionNo,
+      NMID: '007SK',
+      CompanyName: validate_credential.CompanyName || '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(decryptedObject), // Store request payload
+      DataResponse: JSON.stringify(responsePayload), // Store response payload
+      CreatedOn: moment().toDate(),
+      CreatedBy: login
+    });
+
+    return res.json(responsePayload);
+  } catch (error) {
+    console.error('Error processing transaction:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+export async function processPaymentTransaction(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body; // Encrypted data from request
+
+    if (!data) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
+    }
+
+    // // Fetch secret key from `inquiry_transaction_mapping`
+    // const mapping = await PartnerMapping.findOne();
+    // if (!mapping || !mapping.SecretKey) {
+    //   return res
+    //     .status(404)
+    //     .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
+    // }
+
+    // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
+
+    // Decrypt AES data
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
+    }
+
+    const {
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      signature
+    } = decryptedObject;
+
+    //return res.status(200).json(decryptedObject);
+    if (
+      ![
+        login,
+        password,
+        storeID,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        issuerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].every(Boolean)
+    ) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_FIELDS,
+        data: defaultTransactionData()
+      });
+    }
+
+    // Fetch SecretKey from DB
+    const secretKeyData = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!secretKeyData || !secretKeyData.SecretKey) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const SecretKeys = secretKeyData.SecretKey;
+
+    const expectedSignature = generatePaymentSignature(
+      login,
+      password,
+      secretKeyData.NMID ?? '',
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      SecretKeys
+    );
+
+    // Ensure both signatures are lowercase for comparison
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const check_role = await getRolesByPartnerId(secretKeyData.Id);
+
+    const hasPaymentAccess = check_role.some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+
+    if (!hasPaymentAccess) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'You Not Allowed To Access This Feature'
+      });
+    }
+    const data_ticket = await findTicket(decryptedObject.transactionNo);
+
+    if (!data_ticket) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_TRANSACTION,
+        data: data_ticket
+      });
+    }
+
+    if (decryptedObject.amount != data_ticket.dataValues.tarif) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_AMOUNT
+      });
+    }
+
+    const update_ticket = await updateTicketStatus(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        responseCode: '500200',
+        responseMessage: 'Failure Update Transaction'
+      });
+    }
+
+    const succes_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail:
+        update_ticket.tarif === 0
+          ? 'Tiket valid, biaya parkir Anda masih gratis.'
+          : 'Payment confirmation has been accepted and verified successfully',
+      data: {
+        referenceNo: decryptedObject.referenceNo,
+        referenceTransactionNo: decryptedObject.referenceTransactionNo,
+        amount: update_ticket.tarif,
+        paymentReferenceNo: decryptedObject.paymentReferenceNo,
+        paymentDate: new Date(),
+        issuerID: decryptedObject.issuerID,
+        retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
+        transactionNo: decryptedObject.transactionNo,
+        transactionStatus: 'VALID',
+        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
+      }
+    };
+    return res.json(succes_payload); // Respond with the decrypted object directly
+  } catch (error) {
+    console.error('Error processing inquiry transaction:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+export async function processPaymentTransactionPOST(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body; // Encrypted data from request
+
+    if (!data) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      });
+    }
+
+    // // Fetch secret key from `inquiry_transaction_mapping`
+    // const mapping = await PartnerMapping.findOne();
+    // if (!mapping || !mapping.SecretKey) {
+    //   return res
+    //     .status(404)
+    //     .json({ error: 'InquiryTransactionMapping or SecretKey not found' });
+    // }
+
+    // const SecretKey = mapping.SecretKey ?? ''; // Ensure SecretKey is a string
+
+    // Decrypt AES data
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      });
+    }
+
+    const {
+      login,
+      password,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      signature
+    } = decryptedObject;
+
+    //return res.status(200).json(decryptedObject);
+    if (
+      ![
+        login,
+        password,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        issuerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].every(Boolean)
+    ) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.MISSING_FIELDS,
+        data: defaultTransactionData()
+      });
+    }
+
+    // Fetch SecretKey from DB
+    const secretKeyData = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!secretKeyData || !secretKeyData.SecretKey) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const SecretKeys = secretKeyData.SecretKey;
+
+    const expectedSignature = generatePaymentSignature(
+      login,
+      password,
+      secretKeyData.NMID ?? '',
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      SecretKeys
+    );
+
+    // Ensure both signatures are lowercase for comparison
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const check_role = await getRolesByPartnerId(secretKeyData.Id);
+
+    const hasPaymentAccess = check_role.some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+
+    if (!hasPaymentAccess) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'You Not Allowed To Access This Feature'
+      });
+    }
+    const data_ticket = await findTicket(decryptedObject.transactionNo);
+
+    if (!data_ticket) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_TRANSACTION,
+        data: data_ticket
+      });
+    }
+
+    if (decryptedObject.amount != data_ticket.dataValues.tarif) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_AMOUNT,
+        data: data_ticket
+      });
+    }
+
+    const update_ticket = await updateTicketStatus(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        responseCode: '500200',
+        responseMessage: 'Failure Update Transaction'
+      });
+    }
+
+    const succes_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail:
+        update_ticket.tarif === 0
+          ? 'Tiket valid, biaya parkir Anda masih gratis.'
+          : 'Payment confirmation has been accepted and verified successfully',
+      data: {
+        referenceNo: decryptedObject.referenceNo,
+        referenceTransactionNo: decryptedObject.referenceTransactionNo,
+        amount: update_ticket.tarif,
+        paymentReferenceNo: decryptedObject.paymentReferenceNo,
+        paymentDate: new Date(),
+        issuerID: decryptedObject.issuerID,
+        retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
+        transactionNo: decryptedObject.transactionNo,
+        transactionStatus: 'VALID',
+        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
+      }
+    };
+    return res.json(succes_payload); // Respond with the decrypted object directly
+  } catch (error) {
+    console.error('Error processing inquiry transaction:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+export async function processInquiryTransactionEncrypt(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body;
+    if (!data) {
+      const response = {
+        ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        data: defaultTransactionData()
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+    if (!decryptedObject) {
+      const response = {
+        ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        data: defaultTransactionData()
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
+    if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
+      const response = { error: 'Invalid data format' };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const validate_credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!validate_credential) {
+      const response_invalid_credential = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res
+        .status(200)
+        .json({ data: RealencryptPayload(response_invalid_credential) });
+    }
+
+    const expectedSignature = generateSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      validate_credential.SecretKey || ''
+    );
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      const response = {
+        ...ERROR_MESSAGES.INVALID_SIGNATURE,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasAccess) {
+      const response = {
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      };
+      return res.status(401).json({ data: RealencryptPayload(response) });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket) {
+      const response = {
+        responseStatus: 'Failed',
+        responseCode: '211001',
+        responseDescription: 'Invalid Transaction',
+        messageDetail: 'The ticket is invalid',
+        data: {
+          transactionNo: transactionNo,
+          transactionStatus: 'INVALID',
+          inTime: '',
+          duration: 0,
+          tariff: 0,
+          vehicleType: '',
+          outTime: '',
+          gracePeriod: 0,
+          location: '',
+          paymentStatus: 'UNPAID'
+        }
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    if (
+      data_ticket.status === 'PAID' &&
+      data_ticket.ticket_close !== true &&
+      data_ticket.paid_at &&
+      new Date().getTime() - new Date(data_ticket.paid_at).getTime() <
+        30 * 60 * 1000
+    ) {
+      const response = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid and has been paid',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          transactionStatus: 'VALID',
+          inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+          duration:
+            data_ticket.inTime && data_ticket.outTime
+              ? Math.floor(
+                  (new Date(data_ticket.outTime).getTime() -
+                    new Date(data_ticket.inTime).getTime()) /
+                    60000
+                )
+              : null,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'PAID'
+        }
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    if (data_ticket.ticket_close === true) {
+      const response = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail:
+          data_ticket.paid_at != null
+            ? 'Ticket is valid and has been paid, the vehicle has left the parking location'
+            : 'Ticket is valid, parking fee is free, the vehicle has left the parking location',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          transactionStatus: 'VALID',
+          inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+          duration:
+            data_ticket.inTime && data_ticket.outTime
+              ? Math.floor(
+                  (new Date(data_ticket.outTime).getTime() -
+                    new Date(data_ticket.inTime).getTime()) /
+                    60000
+                )
+              : null,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'PAID'
+        }
+      };
+      return res.status(200).json({ data: RealencryptPayload(response) });
+    }
+
+    const inTime = moment(data_ticket.inTime);
+    const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
+    const gracePeriodEnd = inTime
+      .clone()
+      .add(data_ticket.grace_period || 5, 'minutes');
+
+    let responsePayload;
+
+    if (moment().isBefore(gracePeriodEnd)) {
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid, Parking is still free.',
+        data: {
+          transactionNo: data_ticket.transactionNo,
+          inTime: formattedInTime,
+          duration: 0,
+          tariff: data_ticket.tarif,
+          vehicleType: data_ticket.vehicle_type,
+          outTime: data_ticket.outTime
+            ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
+          gracePeriod: data_ticket.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: 'FREE'
+        }
+      };
+    } else {
+      const update_tarif = await updateTarifIfExpired(transactionNo);
+
+      responsePayload = {
+        responseStatus: 'Success',
+        responseCode: '211000',
+        responseDescription: 'Transaction Success',
+        messageDetail: 'Ticket is valid, please continue for payment',
+        data: {
+          transactionNo: update_tarif.transactionNo,
+          inTime: formattedInTime,
+          duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
+          tariff: update_tarif.tarif,
+          vehicleType: update_tarif.vehicle_type,
+          outTime: update_tarif.outTime
+            ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
+            : '',
+          gracePeriod: update_tarif.grace_period,
+          location: 'LIPPO MALL PURI',
+          paymentStatus: update_tarif.tarif === 0 ? 'PAID' : 'UNPAID'
+        }
+      };
+    }
+
+    await createInquiryTransaction({
+      StoreCode: '007SK',
+      TransactionNo: transactionNo,
+      NMID: '007SK',
+      CompanyName: validate_credential.CompanyName || '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(decryptedObject),
+      DataResponse: JSON.stringify(responsePayload),
+      CreatedOn: moment().toDate(),
+      CreatedBy: login
+    });
+
+    return res.json({ data: RealencryptPayload(responsePayload) });
+  } catch (error) {
+    console.error('Error processing transaction:', error);
+    const response = { error: 'Internal Server Error' };
+    return res.status(500).json({ data: RealencryptPayload(response) });
+  }
+}
+
+export async function processPaymentTransactionEncrypt(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data } = req.body;
+
+    if (!data) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+          data: defaultTransactionData()
+        })
+      });
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+          data: defaultTransactionData()
+        })
+      });
+    }
+
+    const {
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      signature
+    } = decryptedObject;
+
+    if (
+      [
+        login,
+        password,
+        storeID,
+        transactionNo,
+        referenceNo,
+        amount,
+        paymentStatus,
+        paymentReferenceNo,
+        paymentDate,
+        issuerID,
+        retrievalReferenceNo,
+        approvalCode,
+        signature
+      ].some((field) => field === null || field === undefined)
+    ) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.MISSING_FIELDS,
+          data: defaultTransactionData()
+        })
+      });
+    }
+
+    const secretKeyData = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!secretKeyData || !secretKeyData.SecretKey) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_CREDENTIAL,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const SecretKeys = secretKeyData.SecretKey;
+
+    const expectedSignature = generatePaymentSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode,
+      SecretKeys
+    );
+
+    if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_SIGNATURE,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const check_role = await getRolesByPartnerId(secretKeyData.Id);
+    const hasPaymentAccess = check_role.some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+
+    if (!hasPaymentAccess) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '401401',
+          responseMessage: 'You Not Allowed To Access This Feature'
+        })
+      });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+
+    if (!data_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_TRANSACTION,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const update_tarif = await updateTarifIfExpired(transactionNo);
+
+    if (update_tarif.status === 'PAID' && update_tarif.tarif === 0) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
+          data: defaultTransactionDataPaid(transactionNo)
+        })
+      });
+    }
+
+    if (update_tarif.status === 'UNPAID' && update_tarif.tarif === 0) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseStatus: 'Success',
+          responseCode: '211000',
+          responseDescription: 'Transaction Success',
+          messageDetail: 'Ticket is valid, Parking is still free.',
+          data: {
+            transactionNo: data_ticket.transactionNo,
+            inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+            duration: 0,
+            tariff: data_ticket.tarif,
+            vehicleType: data_ticket.vehicle_type,
+            outTime: data_ticket.outTime
+              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              : '',
+            gracePeriod: data_ticket.grace_period,
+            location: 'LIPPO MALL PURI',
+            paymentStatus: 'FREE'
+          }
+        })
+      });
+    }
+
+    if (decryptedObject.amount != update_tarif.tarif) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_AMOUNT,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const update_ticket = await updateTicketStatus(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '500200',
+          responseMessage: 'Failure Update Transaction'
+        })
+      });
+    }
+
+    const paymentDates = new Date();
+
+    const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+    const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
+
+    const success_payload = {
+      responseStatus: update_ticket.status === 'PAID' ? 'Success' : 'Failed',
+      responseCode: update_ticket.status === 'PAID' ? '211000' : '211001',
+      responseDescription:
+        update_ticket.status === 'PAID'
+          ? 'Transaction Success'
+          : 'Invalid Transaction',
+      messageDetail:
+        update_ticket.status === 'PAID'
+          ? `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`
+          : 'Parking fee is still free, please continue to scan ticket at exit gate',
+      data: {
+        referenceNo: decryptedObject.referenceNo,
+        referenceTransactionNo: generateCustomCode(8),
+        amount: decryptedObject.amount,
+        paymentReferenceNo: decryptedObject.paymentReferenceNo,
+        paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
+        issuerID: decryptedObject.issuerID,
+        retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
+        transactionNo: decryptedObject.transactionNo,
+        transactionStatus: 'VALID',
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE'
+      }
+    };
+
+    return res.status(200).json({
+      data: RealencryptPayload(success_payload)
+    });
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
+  }
+}
+
+export async function close_ticket_not_encrypt(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { transactionNo } = req.body;
+
+    console.log(req.body.transactionNo);
+    if (!transactionNo) {
+      return res.status(200).json({
+        responseCode: '400200',
+        responseMessage: 'Missing required fields'
+      });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.INVALID_TRANSACTION,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const update_ticket_tarif = await updateTarifIfExpired(transactionNo);
+
+    if (update_ticket_tarif.tarif != 0) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.CLOSE_TICKET_UNPAID,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    if (data_ticket.ticket_close === true) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES.CLOSE_TICKET_CLOSED,
+        data: defaultTransactionData(transactionNo)
+      });
+    }
+
+    const update_ticket = await close_ticket_update(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        responseCode: '500200',
+        responseMessage: 'System Failure Update Transaction'
+      });
+    }
+
+    const success_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Ticket is closed successfully',
+      data: {
+        transactionNo: update_ticket.transactionNo,
+        storeID: '',
+        locationCode: '007SK',
+        subLocationCode: '007SK-1',
+        gateInCode: '007SK-1-PM-GATE1A',
+        vehicleType: update_ticket.vehicle_type,
+        productName: 'MOBIL REGULAR',
+        inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+        duration: moment(update_ticket.outTime).diff(
+          moment(update_ticket.inTime),
+          'minutes'
+        ),
+        tarif: update_ticket.tarif,
+        gracePeriod: update_ticket.grace_period,
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
+        paymentReferenceNo: update_ticket.reference_no,
+        paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
+        paymentMethod: 'IN-APP',
+        issuerID: '',
+        retrievalReferenceNo: '',
+        referenceTransactionNo: '',
+        approvalCode: '',
+        outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+        gateOutCode: '007SK-1-PK-GATE2B'
+      }
+    };
+
+    return res.status(200).json(success_payload);
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      error: 'Internal Server Error'
+    });
+  }
+}
+
+export async function close_ticket(req: Request, res: Response): Promise<any> {
+  try {
+    const { transactionNo } = req.body;
+
+    console.log(req.body.transactionNo);
+    if (!transactionNo) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '400200',
+          responseMessage: 'Missing required fields'
+        })
+      });
+    }
+
+    const data_ticket = await findTicket(transactionNo);
+    if (!data_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.INVALID_TRANSACTION,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const update_ticket_tarif = await updateTarifIfExpired(transactionNo);
+
+    if (update_ticket_tarif.tarif != 0) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.CLOSE_TICKET_UNPAID,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    if (data_ticket.ticket_close === true) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.CLOSE_TICKET_CLOSED,
+          data: defaultTransactionData(transactionNo)
+        })
+      });
+    }
+
+    const update_ticket = await close_ticket_update(transactionNo);
+
+    if (!update_ticket) {
+      return res.status(200).json({
+        data: RealencryptPayload({
+          responseCode: '500200',
+          responseMessage: 'System Failure Update Transaction'
+        })
+      });
+    }
+    const success_payload = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Ticket is closed successfully',
+      data: {
+        transactionNo: update_ticket.transactionNo,
+        storeID: '',
+        locationCode: '007SK',
+        subLocationCode: '007SK-1',
+        gateInCode: '007SK-1-PM-GATE1A',
+        vehicleType: update_ticket.vehicle_type,
+        productName: 'MOBIL REGULAR',
+        inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+        duration: moment(update_ticket.outTime).diff(
+          moment(update_ticket.inTime),
+          'minutes'
+        ),
+        tarif: update_ticket.tarif,
+        gracePeriod: update_ticket.grace_period,
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
+        paymentReferenceNo: update_ticket.reference_no,
+        paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
+        paymentMethod: 'IN-APP',
+        issuerID: '',
+        retrievalReferenceNo: '',
+        referenceTransactionNo: '',
+        approvalCode: '',
+        outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+        gateOutCode: '007SK-1-PK-GATE2B'
+      }
+    };
+
+    return res.status(200).json({
+      data: RealencryptPayload(success_payload)
+    });
+  } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
+  }
+}
 
 export async function Inquiry_Transaction_Snap(
   req: Request,
