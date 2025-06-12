@@ -198,15 +198,31 @@ export async function Inquiry_Transaction(
       data: encryptedRequest
     });
 
-    console.log(apiResponse.data);
+    let encryptedData: string | undefined;
 
-    // const cleanString = apiResponse.data.replace(
-    //   /[\u0000-\u001F\u007F-\u009F]/g,
-    //   ''
-    // );
-    // const parsedData = JSON.parse(cleanString);
+    if (typeof apiResponse.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = apiResponse.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        encryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof apiResponse.data === 'object') {
+      // If already parsed as object
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
+
     const finalData = await DecryptTotPOST(
-      apiResponse.data?.data,
+      encryptedData,
       location.GibberishKey ?? ''
     );
 
