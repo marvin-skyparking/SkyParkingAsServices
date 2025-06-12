@@ -192,6 +192,7 @@ export async function Inquiry_Transaction(
       requestPayload,
       location.GibberishKey ?? ''
     );
+
     const apiResponse = await axios.post(postRole.url_access, {
       data: encryptedRequest
     });
@@ -459,7 +460,7 @@ export async function Payment_Confirmation(
           ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
           data: defaultTransactionDataPaid(transactionNo)
         },
-        find_location.GibberishKey ?? '',
+        validate_credential.GibberishKey ?? '',
         transactionNo
       );
     }
@@ -467,7 +468,7 @@ export async function Payment_Confirmation(
     if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_AMOUNT,
-        find_location.GibberishKey ?? '',
+        validate_credential.GibberishKey ?? '',
         transactionNo
       );
     }
@@ -579,7 +580,7 @@ export async function Payment_Confirmation(
 
     return encryptAndRespond(
       res_final,
-      find_location.GibberishKey ?? '',
+      validate_credential.GibberishKey ?? '',
       transactionNo
     );
   } catch (error: any) {
