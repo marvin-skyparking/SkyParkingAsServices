@@ -444,11 +444,9 @@ export async function Payment_Confirmation(
     const response = await axios.post(inquiryAccess.url_access, {
       data: encrypted_data
     });
-    const parsedData = JSON.parse(
-      response.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
-    );
+
     const data_inquiry = await DecryptTotPOST(
-      parsedData.data,
+      response.data?.data,
       find_location.GibberishKey ?? ''
     );
 
