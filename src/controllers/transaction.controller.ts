@@ -198,7 +198,8 @@ export async function Inquiry_Transaction(
       data: encryptedRequest
     });
 
-    console.log(apiResponse.data?.data);
+    console.log(apiResponse.data);
+
     // const cleanString = apiResponse.data.replace(
     //   /[\u0000-\u001F\u007F-\u009F]/g,
     //   ''
