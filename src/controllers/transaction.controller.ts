@@ -535,13 +535,20 @@ export async function Payment_Confirmation(
     // };
 
     // const formattedExitLimitDate = formatDate(exitLimitDate);
+    const paymentDates = decryptedObject.paymentDate;
+
+    const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+    const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
 
     const res_final = {
       responseStatus: data_payment?.responseStatus,
       responseCode:
         data_payment?.responseStatus === 'Failed' ? '211001' : '211000',
       responseDescription: data_payment?.responseDescription,
-      messageDetail: data_payment?.data.messageDetail,
+      messageDetail:
+        data_payment?.responseStatus === 'Failed'
+          ? 'INVALID TRANSACTION'
+          : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`,
       data: data_payment?.data
     };
 
