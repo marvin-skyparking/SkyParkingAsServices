@@ -493,6 +493,8 @@ export async function Payment_Confirmation(
       data_send,
       find_location.GibberishKey ?? ''
     );
+
+    console.log(data_send);
     const paymentAccess = access_post.find(
       (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
     );
