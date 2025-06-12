@@ -197,7 +197,6 @@ export const generateSignature = (
 export function generatePaymentSignature(
   login: string,
   password: string,
-  storeID: string,
   transactionNo: string,
   referenceNo: string,
   amount: number,
@@ -206,10 +205,9 @@ export function generatePaymentSignature(
   paymentDate: string,
   issuerID: string,
   retrievalReferenceNo: string,
-  approvalCode: string,
   SECRET_KEY: string
 ): string {
-  const dataString = `${login}${password}${storeID}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${approvalCode}${SECRET_KEY}`;
+  const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
   console.log(dataString);
   // Concatenating all parameters into a single string
   // const dataString =

@@ -1,17 +1,17 @@
 import express from 'express';
 import timeout from 'connect-timeout';
 import {
-  close_ticket,
-  close_ticket_not_encrypt,
+  // close_ticket,
+  // close_ticket_not_encrypt,
   Inquiry_Transaction,
   Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
-  Payment_Confirmation,
-  processInquiryTransaction,
-  processInquiryTransactionEncrypt,
-  processPaymentTransaction,
-  processPaymentTransactionEncrypt,
-  processPaymentTransactionPOST
+  Payment_Confirmation
+  // processInquiryTransaction,
+  // processInquiryTransactionEncrypt,
+  // processPaymentTransaction,
+  // processPaymentTransactionEncrypt,
+  // processPaymentTransactionPOST
 } from '../controllers/transaction.controller';
 import {
   createTicketHandler,
