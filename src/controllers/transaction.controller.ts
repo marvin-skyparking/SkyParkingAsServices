@@ -476,7 +476,6 @@ export async function Payment_Confirmation(
     const data_send = {
       login: find_location.Login ?? '',
       password: find_location.Password ?? '',
-      storeID: find_location.NMID ?? '',
       transactionNo: decryptedObject.transactionNo ?? '',
       referenceNo: decryptedObject.referenceNo ?? '',
       amount: decryptedObject.amount ?? 0,
