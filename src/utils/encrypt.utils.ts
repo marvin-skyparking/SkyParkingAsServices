@@ -210,6 +210,7 @@ export function generatePaymentSignature(
   SECRET_KEY: string
 ): string {
   const dataString = `${login}${password}${storeID}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${approvalCode}${SECRET_KEY}`;
+  console.log(dataString);
   // Concatenating all parameters into a single string
   // const dataString =
   //   login +
