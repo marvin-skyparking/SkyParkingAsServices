@@ -19,5 +19,11 @@ RUN yarn build
 # Expose the port the app runs on
 EXPOSE 9002
 
-# Specify the command to run the application
-CMD ["yarn", "start"]
+# Install PM2 globally
+RUN yarn global add pm2
+
+# Copy PM2 process file
+COPY process.json .
+
+# Specify the command to run the application using pm2-runtime
+CMD ["pm2-runtime", "process.json"]
