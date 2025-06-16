@@ -459,7 +459,6 @@ export async function Payment_Confirmation(
         responseMessage: 'Access Denied'
       });
     }
-    console.log(encrypted_data);
 
     const response = await axios.post(inquiryAccess.url_access, {
       data: encrypted_data
@@ -488,6 +487,7 @@ export async function Payment_Confirmation(
       throw new Error('Encrypted data not found in API response.');
     }
 
+    console.log(encryptedData);
     const data_inquiry = await DecryptTotPOST(
       encryptedData,
       find_location.GibberishKey ?? ''
@@ -507,13 +507,14 @@ export async function Payment_Confirmation(
       );
     }
 
-    if (data_inquiry?.data.tariff !== decryptedObject.amount) {
-      return encryptAndRespond(
-        ERROR_MESSAGES.INVALID_AMOUNT,
-        validate_credential.GibberishKey ?? '',
-        transactionNo
-      );
-    }
+    // if (data_inquiry?.data.tariff !== decryptedObject.amount) {
+
+    //   return encryptAndRespond(
+    //     ERROR_MESSAGES.INVALID_AMOUNT,
+    //     validate_credential.GibberishKey ?? '',
+    //     transactionNo
+    //   );
+    // }
 
     const data_send = {
       login: find_location.Login ?? '',
