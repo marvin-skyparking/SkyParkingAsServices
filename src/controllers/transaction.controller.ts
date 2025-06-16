@@ -579,9 +579,9 @@ export async function Payment_Confirmation(
     // };
 
     // const formattedExitLimitDate = formatDate(exitLimitDate);
-    const paymentDates = decryptedObject.paymentDate;
+    const paymentDates = new Date(decryptedObject.paymentDate); // convert to Date
 
-    const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+    const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes
     const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
 
     const res_final = {
