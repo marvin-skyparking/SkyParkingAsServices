@@ -463,8 +463,30 @@ export async function Payment_Confirmation(
       data: encrypted_data
     });
 
+    let encryptedData: string | undefined;
+
+    if (typeof response.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = response.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        encryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof response.data === 'object') {
+      // If already parsed as object
+      encryptedData = response.data?.data;
+    }
+
+    if (!encryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
     const data_inquiry = await DecryptTotPOST(
-      response.data?.data,
+      encryptedData,
       find_location.GibberishKey ?? ''
     );
 
