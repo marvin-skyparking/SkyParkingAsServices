@@ -463,6 +463,8 @@ export async function Payment_Confirmation(
       data: encrypted_data
     });
 
+    console.log(response);
+
     let encryptedData: string | undefined;
 
     if (typeof response.data === 'string') {
@@ -485,8 +487,6 @@ export async function Payment_Confirmation(
     if (!encryptedData) {
       throw new Error('Encrypted data not found in API response.');
     }
-    console.log(response);
-    console.log(encryptedData);
 
     const data_inquiry = await DecryptTotPOST(
       encryptedData,
