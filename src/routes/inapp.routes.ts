@@ -37,7 +37,7 @@ const innAppRoute = express.Router();
 
 // POST TEST
 innAppRoute.post(
-  '/Partner/InquiryTariffREGS',
+  '/Partner/InquiryTariffREG',
   haltOnTimeout,
   Inquiry_Transaction
 );
