@@ -507,7 +507,7 @@ export async function Payment_Confirmation(
       );
     }
 
-    if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
+    if (data_inquiry?.data.tariff !== decryptedObject.amount) {
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_AMOUNT,
         validate_credential.GibberishKey ?? '',
