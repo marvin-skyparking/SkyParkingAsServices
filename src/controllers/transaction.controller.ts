@@ -485,6 +485,9 @@ export async function Payment_Confirmation(
     if (!encryptedData) {
       throw new Error('Encrypted data not found in API response.');
     }
+    console.log(response);
+    console.log(encryptedData);
+
     const data_inquiry = await DecryptTotPOST(
       encryptedData,
       find_location.GibberishKey ?? ''
@@ -503,8 +506,6 @@ export async function Payment_Confirmation(
         transactionNo
       );
     }
-
-    console.log(data_inquiry?.data.tariff);
 
     if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
       return encryptAndRespond(
