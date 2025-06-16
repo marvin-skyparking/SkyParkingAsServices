@@ -507,14 +507,13 @@ export async function Payment_Confirmation(
       );
     }
 
-    // if (data_inquiry?.data.tariff !== decryptedObject.amount) {
-
-    //   return encryptAndRespond(
-    //     ERROR_MESSAGES.INVALID_AMOUNT,
-    //     validate_credential.GibberishKey ?? '',
-    //     transactionNo
-    //   );
-    // }
+    if (data_inquiry?.data.tariff !== decryptedObject.amount) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_AMOUNT,
+        validate_credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     const data_send = {
       login: find_location.Login ?? '',
@@ -553,6 +552,7 @@ export async function Payment_Confirmation(
     // const parsedDataPay = JSON.parse(
     //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     // );
+    console.log(response_confirm_pay);
     const data_payment = await DecryptTotPOST(
       response_confirm_pay.data?.data,
       find_location.GibberishKey ?? ''
