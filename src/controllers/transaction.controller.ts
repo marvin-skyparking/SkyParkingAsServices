@@ -504,7 +504,7 @@ export async function Payment_Confirmation(
       );
     }
 
-    console.log(encryptedData);
+    console.log(data_inquiry?.data.tariff);
 
     if (Number(data_inquiry?.data.tariff) !== Number(decryptedObject.amount)) {
       return encryptAndRespond(
