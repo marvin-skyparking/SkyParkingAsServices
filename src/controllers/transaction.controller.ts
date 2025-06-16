@@ -552,9 +552,33 @@ export async function Payment_Confirmation(
     // const parsedDataPay = JSON.parse(
     //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     // );
-    console.log(response_confirm_pay);
+    let PAYencryptedData: string | undefined;
+
+    if (typeof response_confirm_pay.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = response_confirm_pay.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        PAYencryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof response_confirm_pay.data === 'object') {
+      // If already parsed as object
+      PAYencryptedData = response_confirm_pay.data?.data;
+    }
+
+    if (!PAYencryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
+
+    console.log(PAYencryptedData);
+
     const data_payment = await DecryptTotPOST(
-      response_confirm_pay.data?.data,
+      PAYencryptedData,
       find_location.GibberishKey ?? ''
     );
 
