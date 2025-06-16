@@ -507,16 +507,17 @@ export async function Payment_Confirmation(
       );
     }
 
-    if (data_inquiry?.data.tariff !== decryptedObject.amount) {
-      console.log(data_inquiry?.data);
-      console.log('[DEBUG] Encrypted Data:', encryptedData);
-      return encryptAndRespond(
-        ERROR_MESSAGES.INVALID_AMOUNT,
-        validate_credential.GibberishKey ?? '',
-        transactionNo
-      );
-    }
+    // if (data_inquiry?.data.tariff !== decryptedObject.amount) {
 
+    //   return encryptAndRespond(
+    //     ERROR_MESSAGES.INVALID_AMOUNT,
+    //     validate_credential.GibberishKey ?? '',
+    //     transactionNo
+    //   );
+    // }
+
+    console.log(data_inquiry?.data);
+    console.log('[DEBUG] Encrypted Data:', encryptedData);
     const data_send = {
       login: find_location.Login ?? '',
       password: find_location.Password ?? '',
