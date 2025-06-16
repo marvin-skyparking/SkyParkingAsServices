@@ -487,14 +487,11 @@ export async function Payment_Confirmation(
     if (!encryptedData) {
       throw new Error('Encrypted data not found in API response.');
     }
-    console.log('[DEBUG] Encrypted Data:', encryptedData);
 
     const data_inquiry = await DecryptTotPOST(
       encryptedData,
       find_location.GibberishKey ?? ''
     );
-
-    console.log(data_inquiry?.data);
 
     if (
       data_inquiry?.data.paymentStatus === 'PAID' &&
@@ -511,6 +508,8 @@ export async function Payment_Confirmation(
     }
 
     if (data_inquiry?.data.tariff !== decryptedObject.amount) {
+      console.log(data_inquiry?.data);
+      console.log('[DEBUG] Encrypted Data:', encryptedData);
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_AMOUNT,
         validate_credential.GibberishKey ?? '',
