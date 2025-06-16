@@ -490,6 +490,8 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
+    console.log(data_inquiry);
+
     if (
       data_inquiry?.data.paymentStatus === 'PAID' &&
       data_inquiry?.data.tariff === 0
