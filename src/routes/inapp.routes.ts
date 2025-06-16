@@ -42,7 +42,7 @@ innAppRoute.post(
   Inquiry_Transaction
 );
 innAppRoute.post(
-  '/Partner/PaymentConfirmationREGS',
+  '/Partner/PaymentConfirmationREG',
   haltOnTimeout,
   Payment_Confirmation
 );
