@@ -463,8 +463,6 @@ export async function Payment_Confirmation(
       data: encrypted_data
     });
 
-    console.log(response);
-
     let encryptedData: string | undefined;
 
     if (typeof response.data === 'string') {
@@ -492,6 +490,8 @@ export async function Payment_Confirmation(
       encryptedData,
       find_location.GibberishKey ?? ''
     );
+
+    console.log(data_inquiry?.data);
 
     if (
       data_inquiry?.data.paymentStatus === 'PAID' &&
