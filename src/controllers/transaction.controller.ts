@@ -446,6 +446,7 @@ export async function Payment_Confirmation(
         transactionNo
       );
     }
+    console.log(data_send_recheck);
 
     const encrypted_data = await EncryptTotPOST(
       data_send_recheck,
@@ -458,6 +459,7 @@ export async function Payment_Confirmation(
         responseMessage: 'Access Denied'
       });
     }
+    console.log(encrypted_data);
 
     const response = await axios.post(inquiryAccess.url_access, {
       data: encrypted_data
