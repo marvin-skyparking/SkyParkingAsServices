@@ -84,7 +84,7 @@ export async function Inquiry_Transaction(
       });
       return encryptAndRespond(
         ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-        '',
+        '87e5df62d35aae739dc3b68ccb47383a',
         undefined
       );
     }
@@ -96,7 +96,7 @@ export async function Inquiry_Transaction(
       });
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-        'PARTNER_KEY'
+        '87e5df62d35aae739dc3b68ccb47383a'
       );
     }
 
