@@ -289,13 +289,21 @@ export async function Payment_Confirmation(
     const { data } = req.body;
 
     if (!data) {
-      return encryptAndRespond(ERROR_MESSAGES.MISSING_ENCRYPTED_DATA, '', '');
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        '87e5df62d35aae739dc3b68ccb47383a',
+        ''
+      );
     }
 
     const decryptedObject = RealdecryptPayload(data);
 
     if (!decryptedObject) {
-      return encryptAndRespond(ERROR_MESSAGES.INVALID_DATA_ENCRYPTION, '', '');
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        '87e5df62d35aae739dc3b68ccb47383a',
+        ''
+      );
     }
 
     const {
@@ -333,7 +341,7 @@ export async function Payment_Confirmation(
     ) {
       return encryptAndRespond(
         ERROR_MESSAGES.MISSING_FIELDS,
-        '',
+        '87e5df62d35aae739dc3b68ccb47383a',
         transactionNo
       );
     }
@@ -345,7 +353,7 @@ export async function Payment_Confirmation(
     if (!validate_credential) {
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_CREDENTIAL,
-        '',
+        '87e5df62d35aae739dc3b68ccb47383a',
         transactionNo
       );
     }
