@@ -260,7 +260,18 @@ export async function Inquiry_Transaction(
         finalData?.responseStatus === 'Failed' ? '211001' : '211000',
       responseDescription: finalData?.responseDescription,
       messageDetail: displayMessage,
-      data: finalData?.data
+      data: {
+        transactionNo: finalData?.data.transactionNo,
+        transactionStatus: finalData?.data.transactionStatus,
+        inTime: finalData?.data.inTime,
+        duration: finalData?.data.duration,
+        tariff: finalData?.data.tariff,
+        vehicleType: finalData?.data.vehicleType,
+        outTime: finalData?.data.outTime,
+        gracePeriod: Number(finalData?.data.gracePeriod),
+        location: finalData?.data.location,
+        paymentStatus: finalData?.data.paymentStatus
+      }
     };
 
     console.log(responsePayload);
