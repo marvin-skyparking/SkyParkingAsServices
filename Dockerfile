@@ -1,35 +1,24 @@
-# Use a lightweight Node.js base image
+# Use the official Node.js image as the base image
 FROM node:20-alpine
 
-# Set working directory
+# Create and set the working directory for the application
 WORKDIR /app
 
-# Copy dependency files for better Docker layer caching
-COPY package.json yarn.lock ./
+# Copy package.json and package-lock.json (or yarn.lock) to the container
+COPY package*.json ./
 
-# Install dependencies
+# Install application dependencies
 RUN yarn install
 
-# Copy the rest of the application (including tsconfig.json and src)
+# Copy the rest of the application source code
 COPY . .
 
-# Ensure TypeScript is available globally in container
-RUN yarn add typescript --dev
-
-# Build the TypeScript project
+# Build the TypeScript code
 RUN yarn build
 
-# Verify dist/ was created
-RUN if [ ! -d "dist" ]; then echo "❌ Build failed: dist/ folder not found"; exit 1; fi
-
-# Expose the application port
+# Expose the port the app runs on
 EXPOSE 9002
 
-# Install PM2 to manage the Node process
-RUN yarn global add pm2
-
-# Copy the PM2 process file
-COPY process.json .
-
-# Start the app using PM2 runtime
-CMD ["pm2-runtime", "process.json"]
+# Specify the command to run the application
+CMD ["yarn", "start"]
+ 

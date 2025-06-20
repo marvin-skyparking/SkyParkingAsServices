@@ -247,13 +247,18 @@ export async function Inquiry_Transaction(
 
     // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
     // const isFree = finalData?.tariff === 0;
+    const displayMessage =
+      finalData?.messageDetail ===
+      'Inquiry Tariff has been accepted and verified successfully'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
 
     const responsePayload = {
       responseStatus: finalData?.responseStatus,
       responseCode:
         finalData?.responseStatus === 'Failed' ? '211001' : '211000',
       responseDescription: finalData?.responseDescription,
-      messageDetail: finalData?.messageDetail,
+      messageDetail: displayMessage,
       data: finalData?.data
     };
 
