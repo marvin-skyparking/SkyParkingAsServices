@@ -262,6 +262,8 @@ export async function Inquiry_Transaction(
       data: finalData?.data
     };
 
+    console.log(requestPayload);
+
     return encryptAndRespond(
       responsePayload,
       credential.GibberishKey ?? '',
