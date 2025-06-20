@@ -249,7 +249,7 @@ export async function Inquiry_Transaction(
     // const isFree = finalData?.tariff === 0;
     const displayMessage =
       finalData?.messageDetail ===
-      'Inquiry Tariff has been accepted and verified successfully'
+      'Inquiry Tariff has been accepted and verified successfully.'
         ? 'Ticket is valid but not yet paid'
         : finalData?.messageDetail;
 
