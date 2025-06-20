@@ -254,6 +254,11 @@ export async function Inquiry_Transaction(
         ? finalData?.messageDetail
         : 'Ticket is valid but not yet paid';
 
+    console.log(
+      '>>> Expected match:',
+      finalData?.messageDetail.trim() ===
+        'Inquiry Tariff has been accepted and verified successfully.'
+    );
     const responsePayload = {
       responseStatus: finalData?.responseStatus,
       responseCode:
