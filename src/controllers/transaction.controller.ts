@@ -248,17 +248,11 @@ export async function Inquiry_Transaction(
     // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
     // const isFree = finalData?.tariff === 0;
     const displayMessage =
-      finalData?.messageDetail?.trim() ===
-        'Inquiry Tariff has been accepted and verified successfully.' &&
-      finalData?.data?.paymentStatus === 'UNPAID'
-        ? finalData?.messageDetail
-        : 'Ticket is valid but not yet paid';
+      finalData?.messageDetail ===
+      'Inquiry Tariff has been accepted and verified successfully.'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
 
-    console.log(
-      '>>> Expected match:',
-      finalData?.messageDetail.trim() ===
-        'Inquiry Tariff has been accepted and verified successfully.'
-    );
     const responsePayload = {
       responseStatus: finalData?.responseStatus,
       responseCode:
