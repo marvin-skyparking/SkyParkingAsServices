@@ -259,7 +259,7 @@ export async function Inquiry_Transaction(
       responseCode:
         finalData?.responseStatus === 'Failed' ? '211001' : '211000',
       responseDescription: finalData?.responseDescription,
-      messageDetail: displayMessage.toLowerCase(),
+      messageDetail: displayMessage,
       data: finalData?.data
     };
 
