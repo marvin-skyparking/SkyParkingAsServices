@@ -248,8 +248,8 @@ export async function Inquiry_Transaction(
     // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
     // const isFree = finalData?.tariff === 0;
     const displayMessage =
-      finalData?.messageDetail?.trim().toLowerCase() ===
-      'inquiry tariff has been accepted and verified successfully.'.toLowerCase()
+      finalData?.messageDetail?.trim() ===
+      'Inquiry Tariff has been accepted and verified successfully.'
         ? 'Ticket is valid but not yet paid'
         : finalData?.messageDetail;
 
