@@ -262,7 +262,7 @@ export async function Inquiry_Transaction(
       data: finalData?.data
     };
 
-    console.log(requestPayload);
+    console.log(responsePayload);
 
     return encryptAndRespond(
       responsePayload,
