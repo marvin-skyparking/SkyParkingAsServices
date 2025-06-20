@@ -251,8 +251,8 @@ export async function Inquiry_Transaction(
       finalData?.messageDetail?.trim() ===
         'Inquiry Tariff has been accepted and verified successfully.' &&
       finalData?.data?.paymentStatus === 'UNPAID'
-        ? 'Ticket is valid but not yet paid'
-        : finalData?.messageDetail;
+        ? finalData?.messageDetail
+        : 'Ticket is valid but not yet paid';
 
     const responsePayload = {
       responseStatus: finalData?.responseStatus,
