@@ -264,7 +264,7 @@ export async function Inquiry_Transaction(
         transactionNo: finalData?.data.transactionNo,
         transactionStatus: finalData?.data.transactionStatus,
         inTime: finalData?.data.inTime,
-        duration: finalData?.data.duration,
+        duration: Number(finalData?.data.duration),
         tariff: Number(finalData?.data.tariff),
         vehicleType: finalData?.data.vehicleType,
         outTime: finalData?.data.outTime,
