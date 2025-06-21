@@ -48,8 +48,8 @@ innAppRoute.post(
 );
 
 //Simulator
-// innAppRoute.post('/Signature-Inquiry', sigantureKey);
-// innAppRoute.post('/Signature-Payment', getPaymentSignature);
+innAppRoute.post('/Signature-Inquiry', sigantureKey);
+innAppRoute.post('/Signature-Payment', getPaymentSignature);
 // innAppRoute.post('/GenerateTicket', createTicketHandler);
 // innAppRoute.post(
 //   '/POST/Simulator/InquiryTariffREG/',
