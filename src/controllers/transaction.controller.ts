@@ -534,13 +534,13 @@ export async function Payment_Confirmation(
       );
     }
 
-    if (data_inquiry?.data.tariff !== decryptedObject.amount) {
-      return encryptAndRespond(
-        ERROR_MESSAGES.INVALID_AMOUNT,
-        validate_credential.GibberishKey ?? '',
-        transactionNo
-      );
-    }
+    // if (data_inquiry?.data.tariff !== decryptedObject.amount) {
+    //   return encryptAndRespond(
+    //     ERROR_MESSAGES.INVALID_AMOUNT,
+    //     validate_credential.GibberishKey ?? '',
+    //     transactionNo
+    //   );
+    // }
 
     const data_send = {
       login: find_location.Login ?? '',
