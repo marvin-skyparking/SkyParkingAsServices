@@ -576,6 +576,7 @@ export async function Payment_Confirmation(
       data: encrypted_data_pay
     });
 
+    console.log(response_confirm_pay);
     // const parsedDataPay = JSON.parse(
     //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     // );
