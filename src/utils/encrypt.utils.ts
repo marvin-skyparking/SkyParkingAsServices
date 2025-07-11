@@ -264,3 +264,39 @@ export function generatePaymentPOSTSignature(
   // Generating MD5 hash
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
+
+export function generatePaymentPOSTQRISSignature(
+  login: string,
+  password: string,
+  transactionNo: string,
+  referenceNo: string,
+  amount: number,
+  paymentStatus: string,
+  paymentType: string,
+  paymentReferenceNo: string,
+  paymentDate: string,
+  issuerID: string,
+  retrievalReferenceNo: string,
+  SECRET_KEY: string
+): string {
+  const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentType}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
+  console.log(dataString);
+  // Concatenating all parameters into a single string
+  // const dataString =
+  //   login +
+  //   password +
+  //   storeID +
+  //   transactionNo +
+  //   referenceNo +
+  //   amount +
+  //   paymentStatus +
+  //   paymentReferenceNo +
+  //   paymentDate +
+  //   issuerID +
+  //   retrievalReferenceNo +
+  //   approvalCode +
+  //   SECRET_KEY;
+
+  // Generating MD5 hash
+  return crypto.createHash('md5').update(dataString).digest('hex');
+}

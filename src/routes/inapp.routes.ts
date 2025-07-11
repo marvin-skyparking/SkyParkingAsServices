@@ -6,7 +6,8 @@ import {
   Inquiry_Transaction,
   Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
-  Payment_Confirmation
+  Payment_Confirmation,
+  Payment_Confirmation_QRIS
   // processInquiryTransaction,
   // processInquiryTransactionEncrypt,
   // processPaymentTransaction,
@@ -45,6 +46,12 @@ innAppRoute.post(
   '/Partner/PaymentConfirmationREG',
   haltOnTimeout,
   Payment_Confirmation
+);
+
+innAppRoute.post(
+  '/Partner/PaymentConfirmationQRIS',
+  haltOnTimeout,
+  Payment_Confirmation_QRIS
 );
 
 //Simulator

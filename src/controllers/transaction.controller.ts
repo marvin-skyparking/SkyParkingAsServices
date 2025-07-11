@@ -5,6 +5,7 @@ import {
   DecryptTotPOST,
   EncryptResponse,
   EncryptTotPOST,
+  generatePaymentPOSTQRISSignature,
   generatePaymentPOSTSignature,
   generatePaymentSignature,
   generateSignature,
@@ -1906,6 +1907,16 @@ export async function Inquiry_Transaction_Snap(
       });
     }
 
+    const locationRoles = await getRolesByPartnerId(location.Id);
+    const postRole = locationRoles.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    if (!postRole || !postRole.url_access) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
+    }
     const signature_data = {
       login: location.Login ?? '',
       password: location.Password ?? '',
@@ -1930,45 +1941,42 @@ export async function Inquiry_Transaction_Snap(
       requestPayload,
       location.GibberishKey ?? ''
     );
-    const apiResponse = await axios.post(
-      'https://membership-ezitama.ddns.net/WebApplication3/InquiryTransaction',
-      {
-        data: encryptedRequest
-      }
-    );
 
-    const cleanString = apiResponse.data.replace(
-      /[\u0000-\u001F\u007F-\u009F]/g,
-      ''
-    );
-    const parsedData = JSON.parse(cleanString);
+    const apiResponse = await axios.post(postRole.url_access, {
+      data: encryptedRequest
+    });
+
+    let encryptedData: string | undefined;
+
+    if (typeof apiResponse.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = apiResponse.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        encryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof apiResponse.data === 'object') {
+      // If already parsed as object
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
+
     const finalData = await DecryptTotPOST(
-      parsedData.data,
+      encryptedData,
       location.GibberishKey ?? ''
     );
 
-    if (
-      finalData?.data.tariff === 0 &&
-      finalData?.data.paymentStatus === 'FREE'
-    ) {
-      return res.status(200).json({
-        ...SUCCESS_MESSAGES_NEW.SUCCESS_TICKET_FREE,
-        data: finalData.data
-      });
-    }
-
-    if (finalData?.data.paymentStatus === 'UNPAID') {
-      return res.status(200).json({
-        ...SUCCESS_MESSAGES_NEW.SUCCESS_TICKET_FEE,
-        data: finalData.data
-      });
-    }
-    if (finalData?.data.paymentStatus === 'PAID') {
-      return res.status(200).json({
-        ...SUCCESS_MESSAGES_NEW.SUCCESS_TICKET_ALREADY_PAID,
-        data: finalData.data
-      });
-    }
+    return res.status(200).json({
+      data: finalData
+    });
   } catch (error) {
     console.error('Error processing payment transaction:', error);
     return res.status(500).json({
@@ -1983,6 +1991,157 @@ export async function Payment_Confirmation_Snap(
 ): Promise<any> {
   try {
   } catch (error) {
+    console.error('Error processing payment transaction:', error);
+    return res.status(500).json({
+      data: RealencryptPayload({ error: 'Internal Server Error' })
+    });
+  }
+}
+
+export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
+  try {
+    const {
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentType,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode
+    } = req.body;
+
+    // Basic validation
+    const requiredFields = {
+      storeID,
+      transactionNo,
+      referenceNo,
+      amount,
+      paymentStatus,
+      paymentType,
+      paymentReferenceNo,
+      paymentDate,
+      issuerID,
+      retrievalReferenceNo,
+      approvalCode
+    };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (value === undefined || value === null || value === '') {
+        return res.status(400).json({
+          responseStatus: 'Failed',
+          responseCode: '400000',
+          messageDetail: `${key} is required`
+        });
+      }
+    }
+
+    const find_location = await findInquiryTransactionMappingByNMID(storeID);
+
+    if (!find_location) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES_NEW.INVALID_LOCATION,
+        data: defaultTransactionData()
+      });
+    }
+
+    const hasAccess = (await getRolesByPartnerId(find_location.Id)).some(
+      (role) => role.access_type === 'PAYMENT'
+    );
+    if (!hasAccess) {
+      return res.status(200).json({
+        ...ERROR_MESSAGES_NEW.ACCESS_NOT_PERMITTED,
+        data: defaultTransactionData()
+      });
+    }
+
+    const create_signature = generatePaymentPOSTQRISSignature(
+      find_location.Login ?? '',
+      find_location.Password ?? '',
+      transactionNo ?? '',
+      referenceNo ?? '',
+      amount ?? 0,
+      paymentStatus ?? '',
+      paymentType ?? '',
+      paymentReferenceNo ?? '',
+      paymentDate ?? '',
+      issuerID ?? '',
+      retrievalReferenceNo ?? '',
+      find_location.SecretKey ?? ''
+    );
+
+    const data_send = {
+      login: find_location.Login ?? '',
+      password: find_location.Password ?? '',
+      transactionNo: transactionNo ?? '',
+      referenceNo: referenceNo ?? '',
+      amount: amount ?? 0,
+      paymentStatus: paymentStatus ?? '',
+      paymentReferenceNo: paymentReferenceNo ?? '',
+      paymentDate: paymentDate ?? '',
+      issuerID: issuerID ?? '',
+      retrievalReferenceNo: retrievalReferenceNo ?? '',
+      signature: create_signature
+    };
+
+    const encrypted_data_pay = await EncryptTotPOST(
+      data_send,
+      find_location.GibberishKey ?? ''
+    );
+    const access_post = await getRolesByPartnerId(find_location.Id);
+
+    console.log(data_send);
+    const paymentAccess = access_post.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'PAYMENTQRIS'
+    );
+    if (!paymentAccess) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
+    }
+
+    const response_confirm_pay = await axios.post(paymentAccess.url_access, {
+      data: encrypted_data_pay
+    });
+
+    let PAYencryptedData: string | undefined;
+
+    if (typeof response_confirm_pay.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = response_confirm_pay.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        PAYencryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof response_confirm_pay.data === 'object') {
+      // If already parsed as object
+      PAYencryptedData = response_confirm_pay.data?.data;
+    }
+
+    if (!PAYencryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
+
+    console.log(PAYencryptedData);
+
+    const data_payment = await DecryptTotPOST(
+      PAYencryptedData,
+      find_location.GibberishKey ?? ''
+    );
+
+    return res.status(200).json({
+      data: data_payment
+    });
+  } catch (error: any) {
     console.error('Error processing payment transaction:', error);
     return res.status(500).json({
       data: RealencryptPayload({ error: 'Internal Server Error' })
