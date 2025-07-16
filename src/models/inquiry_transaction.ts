@@ -20,6 +20,21 @@ export function defaultTransactionData(
   };
 }
 
+export function defaultTransactionDataAutoEntry(
+  transactionNo: string | null = '',
+  status: string = 'INVALID',
+  licensePlateNo: string | null = '',
+  locationCode: string | null = ''
+): TransactionDataAutoEntry {
+  return {
+    transactionNo: transactionNo || '',
+    licensePlateNo: licensePlateNo || '',
+    locationCode: locationCode || '',
+    customerEmail: '',
+    status: status || ''
+  };
+}
+
 export function defaultTransactionDataPaid(
   transactionNo: string | null = '',
   transactionStatus: string = 'VALID',
@@ -50,6 +65,14 @@ export interface TransactionData {
   gracePeriod: number | null;
   location: string;
   paymentStatus: string;
+}
+
+export interface TransactionDataAutoEntry {
+  transactionNo: string;
+  licensePlateNo: string;
+  locationCode: string;
+  customerEmail: string;
+  status: string;
 }
 
 interface InquiryTransactionAttributes {

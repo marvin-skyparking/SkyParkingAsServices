@@ -24,6 +24,7 @@ import {
   verifyClientAuth,
   verifyClientAuthAccess
 } from '../middleware/verify_auth.middleware';
+import { auto_entry } from '../controllers/auto_entry.controller';
 
 const innAppRoute = express.Router();
 
@@ -47,6 +48,8 @@ innAppRoute.post(
   haltOnTimeout,
   Payment_Confirmation
 );
+
+innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
 innAppRoute.post(
   '/Partner/PaymentConfirmationQRIS',
