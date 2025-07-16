@@ -9,6 +9,7 @@ interface PartnerMappingAttributes {
   StoreCode?: string;
   Login?: string;
   Password?: string;
+  Password_hash?: string;
   SecretKey?: string;
   URL_RequestInquiryTransaction?: string;
   ProjectCategoryId?: number;
@@ -37,6 +38,7 @@ class PartnerMapping
   public StoreCode?: string;
   public Login?: string;
   public Password?: string;
+  public Password_hash?: string | undefined;
   public SecretKey?: string;
   public URL_RequestInquiryTransaction?: string;
   public ProjectCategoryId?: number;
@@ -77,6 +79,10 @@ PartnerMapping.init(
     },
     Password: {
       type: DataTypes.STRING(50),
+      allowNull: true
+    },
+    Password_hash: {
+      type: DataTypes.STRING(150),
       allowNull: true
     },
     SecretKey: {
