@@ -22,6 +22,7 @@ if (EnvConfig.NODE_ENV === 'development') {
   EnvConfig.SENTRY_URI = EnvConfig.SENTRY_URI;
   EnvConfig.SENTRY_ENABLE = EnvConfig.SENTRY_ENABLE;
   EnvConfig.JWT_SECRET = EnvConfig.JWT_SECRET;
+  EnvConfig.PAYMENT_APP = EnvConfig.PAYMENT_APP;
 }
 
 if (EnvConfig.NODE_ENV === 'production') {
@@ -30,5 +31,6 @@ if (EnvConfig.NODE_ENV === 'production') {
   EnvConfig.PORT = EnvConfig.PORT;
   EnvConfig.USERNAME_DB_PROD = EnvConfig.USERNAME_DB_PROD;
   EnvConfig.PASSWORD_DB_PROD = EnvConfig.PASSWORD_DB_PROD;
+  EnvConfig.PAYMENT_APP = EnvConfig.PAYMENT_APP;
 }
 export default EnvConfig;
