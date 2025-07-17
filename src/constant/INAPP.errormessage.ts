@@ -29,6 +29,12 @@ export const ERROR_MESSAGES = {
     responseDescription: 'Invalid Partner',
     messageDetail: 'Partner, Not Found'
   },
+  INVALID_CREDENTIAL_POST: {
+    responseStatus: 'Failed',
+    responseCode: '911006',
+    responseDescription: 'Invalid Partner',
+    messageDetail: 'Location, Not Found'
+  },
   INVALID_LOCATION: {
     responseStatus: 'Failed',
     responseCode: '211080',

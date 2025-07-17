@@ -1275,6 +1275,16 @@ export async function processInquiryTransactionEncrypt(
         .json({ data: RealencryptPayload(response_invalid_credential) });
     }
 
+    if (decryptedObject.storeID !== 'ID2020028029516') {
+      const response_invalid_credential = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL_POST,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res
+        .status(200)
+        .json({ data: RealencryptPayload(response_invalid_credential) });
+    }
+
     const expectedSignature = generateSignature(
       login,
       password,
@@ -1537,6 +1547,16 @@ export async function processPaymentTransactionEncrypt(
       password
     );
 
+    if (decryptedObject.storeID !== 'ID2020028029516') {
+      const response_invalid_credential = {
+        ...ERROR_MESSAGES.INVALID_CREDENTIAL_POST,
+        data: defaultTransactionData(transactionNo)
+      };
+      return res
+        .status(200)
+        .json({ data: RealencryptPayload(response_invalid_credential) });
+    }
+
     if (!secretKeyData || !secretKeyData.SecretKey) {
       return res.status(200).json({
         data: RealencryptPayload({
@@ -1603,7 +1623,7 @@ export async function processPaymentTransactionEncrypt(
     if (update_tarif.status === 'PAID' && update_tarif.tarif === 0) {
       return res.status(200).json({
         data: RealencryptPayload({
-          ...SUCCESS_MESSAGE.BILL_AREADY_PAID,
+          ...ERROR_MESSAGES.BILL_AREADY_PAID,
           data: defaultTransactionDataPaid(transactionNo)
         })
       });

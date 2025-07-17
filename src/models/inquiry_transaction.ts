@@ -54,6 +54,39 @@ export function defaultTransactionDataPaid(
   };
 }
 
+// Updated 15-07-2025 (Galih Raka Gustiawan)
+// Adding Voucher Module
+export interface GenerateInquirySignature {
+  login: string;
+  password: string;
+  storeID: string;
+  transactionNo: string;
+}
+
+export interface InquirySignature {
+  data: string;
+}
+
+export interface InquiryTarifResponse {
+  transactionNo: string;
+  inTime: string;
+  duration: number;
+  tariff: number;
+  vehicleType: string;
+  outTime: string;
+  gracePeriod: number;
+  location: string;
+  paymentStatus: string;
+}
+
+export interface InquiryResponse {
+  responseCode?: string;
+  responseMessage?: string;
+  signature?: string;
+  data: string;
+}
+// End Update
+
 export interface TransactionData {
   transactionNo: string;
   transactionStatus: string;
