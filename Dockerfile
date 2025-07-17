@@ -1,19 +1,19 @@
-# Use a lightweight Node image
+# Use the official Node.js image as the base image
 FROM node:20-alpine
 
-# Set the working directory
+# Create and set the working directory for the application
 WORKDIR /app
 
-# Copy dependency files first (for better Docker cache)
-COPY package.json yarn.lock ./
+# Copy package.json and package-lock.json (or yarn.lock) to the container
+COPY package*.json ./
 
-# Install dependencies
+# Install application dependencies
 RUN yarn install
 
-# Copy the rest of the project files
+# Copy the rest of the application source code
 COPY . .
 
-# Build the TypeScript project
+# Build the TypeScript code
 RUN yarn build
 
 # Expose the port the app runs on
@@ -21,3 +21,4 @@ EXPOSE 9002
 
 # Specify the command to run the application
 CMD ["yarn", "start"]
+ 

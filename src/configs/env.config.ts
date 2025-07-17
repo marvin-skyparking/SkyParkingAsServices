@@ -23,6 +23,8 @@ if (EnvConfig.NODE_ENV === 'development') {
   EnvConfig.SENTRY_ENABLE = EnvConfig.SENTRY_ENABLE;
   EnvConfig.JWT_SECRET = EnvConfig.JWT_SECRET;
   EnvConfig.PAYMENT_APP = EnvConfig.PAYMENT_APP;
+  EnvConfig.URL_TOKEN = EnvConfig.URL_TOKEN;
+  EnvConfig.URL_AUTO_ENTRY = EnvConfig.URL_AUTO_ENTRY;
 }
 
 if (EnvConfig.NODE_ENV === 'production') {
@@ -32,5 +34,7 @@ if (EnvConfig.NODE_ENV === 'production') {
   EnvConfig.USERNAME_DB_PROD = EnvConfig.USERNAME_DB_PROD;
   EnvConfig.PASSWORD_DB_PROD = EnvConfig.PASSWORD_DB_PROD;
   EnvConfig.PAYMENT_APP = EnvConfig.PAYMENT_APP;
+  EnvConfig.URL_TOKEN = EnvConfig.URL_TOKEN;
+  EnvConfig.URL_AUTO_ENTRY = EnvConfig.URL_AUTO_ENTRY;
 }
 export default EnvConfig;

@@ -77,6 +77,16 @@ export async function findInquiryTransactionMappingPartner(
   return mapping; // Returns the record if found, otherwise null
 }
 
+export async function findLocationStoreCodeData(StoreCode: string) {
+  const data_location = await InquiryTransactionMapping.findOne({
+    where: {
+      StoreCode: StoreCode
+    }
+  });
+
+  return data_location; // Returns the record if found, otherwise null
+}
+
 export async function findInquiryTransactionMappingByNMID(NMID: string) {
   const mapping = await InquiryTransactionMapping.findOne({
     where: {

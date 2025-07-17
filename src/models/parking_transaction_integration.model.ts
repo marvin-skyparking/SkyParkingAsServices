@@ -13,6 +13,32 @@ export function defaultTransactionData(
   };
 }
 
+interface AutoEntryResponse {
+  transactionNo: string;
+  referenceNo: string;
+  transactionStatus: string;
+  responseStatus: string;
+  responseCode: string;
+  responseDescription: string;
+  messageDetail: string;
+}
+
+export function autoFailedTransactionEntry(
+  transactionNo: string | null = '',
+  referenceNo: string | null = '',
+  transactionStatus: string = 'INVALID'
+): AutoEntryResponse {
+  return {
+    transactionNo: transactionNo || '',
+    referenceNo: referenceNo || '',
+    transactionStatus,
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail: 'The transaction is invalid, or error has occurred'
+  };
+}
+
 export interface TransactionData {
   transactionNo: string;
   referenceNo?: string; // Optional field

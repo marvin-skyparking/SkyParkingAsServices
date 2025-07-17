@@ -15,4 +15,6 @@ export interface IEnvInterface {
   SENTRY_ENABLE: boolean;
   JWT_SECRET: string;
   PAYMENT_APP: string;
+  URL_TOKEN: string;
+  URL_AUTO_ENTRY: string;
 }
