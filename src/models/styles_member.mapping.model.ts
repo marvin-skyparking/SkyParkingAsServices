@@ -1,67 +1,70 @@
+// models/StylesCheckMembershipMapping.ts
+
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
 
-interface PartnerMappingAttributes {
+interface StylesCheckMembershipMappingAttributes {
   Id: number;
   CompanyName?: string;
-  MPAN?: string;
+  MerchantID?: string;
   NMID?: string;
-  StoreCode?: string;
+  LocationCode?: string;
   Login?: string;
   Password?: string;
-  Password_hash?: string;
   SecretKey?: string;
-  URL_RequestInquiryTransaction?: string;
-  ProjectCategoryId?: number;
-  GibberishKey?: string;
+  PartnerKey?: string;
+  ApiUrl?: string;
+  POST?: string;
   RecordStatus?: number;
   CreatedBy?: string;
-  CreatedDate?: Date;
+  CreatedOn?: Date;
   UpdatedBy?: string;
-  UpdatedDate?: Date;
+  UpdatedOn?: Date;
 }
 
-// Define optional attributes
-type PartnerMappingCreationAttributes = Optional<
-  PartnerMappingAttributes,
+type StylesCheckMembershipMappingCreationAttributes = Optional<
+  StylesCheckMembershipMappingAttributes,
   'Id'
 >;
 
-class PartnerMapping
-  extends Model<PartnerMappingAttributes, PartnerMappingCreationAttributes>
-  implements PartnerMappingAttributes
+class StylesCheckMembershipMapping
+  extends Model<
+    StylesCheckMembershipMappingAttributes,
+    StylesCheckMembershipMappingCreationAttributes
+  >
+  implements StylesCheckMembershipMappingAttributes
 {
   public Id!: number;
   public CompanyName?: string;
-  public MPAN?: string;
+  public MerchantID?: string;
   public NMID?: string;
-  public StoreCode?: string;
+  public LocationCode?: string;
   public Login?: string;
   public Password?: string;
-  public Password_hash?: string | undefined;
   public SecretKey?: string;
-  public URL_RequestInquiryTransaction?: string;
-  public ProjectCategoryId?: number;
-  public GibberishKey?: string;
+  public PartnerKey?: string;
+  public ApiUrl?: string;
+  public POST?: string;
   public RecordStatus?: number;
   public CreatedBy?: string;
-  public CreatedDate?: Date;
+  public CreatedOn?: Date;
   public UpdatedBy?: string;
-  public UpdatedDate?: Date;
+  public UpdatedOn?: Date;
 }
 
-PartnerMapping.init(
+StylesCheckMembershipMapping.init(
   {
     Id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
+      primaryKey: true,
       autoIncrement: true,
-      primaryKey: true
+      allowNull: false
     },
     CompanyName: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(200),
       allowNull: true
     },
-    MPAN: {
+    MerchantID: {
       type: DataTypes.STRING(50),
       allowNull: true
     },
@@ -69,8 +72,8 @@ PartnerMapping.init(
       type: DataTypes.STRING(50),
       allowNull: true
     },
-    StoreCode: {
-      type: DataTypes.STRING(15),
+    LocationCode: {
+      type: DataTypes.STRING(50),
       allowNull: true
     },
     Login: {
@@ -81,52 +84,48 @@ PartnerMapping.init(
       type: DataTypes.STRING(50),
       allowNull: true
     },
-    Password_hash: {
-      type: DataTypes.STRING(150),
-      allowNull: true
-    },
     SecretKey: {
       type: DataTypes.STRING(50),
       allowNull: true
     },
-    URL_RequestInquiryTransaction: {
-      type: DataTypes.STRING(100),
+    PartnerKey: {
+      type: DataTypes.STRING(50),
       allowNull: true
     },
-    ProjectCategoryId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+    ApiUrl: {
+      type: DataTypes.STRING(200),
       allowNull: true
     },
-    GibberishKey: {
+    POST: {
       type: DataTypes.STRING(50),
       allowNull: true
     },
     RecordStatus: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true
     },
     CreatedBy: {
-      type: DataTypes.STRING(150),
+      type: DataTypes.STRING(100),
       allowNull: true
     },
-    CreatedDate: {
+    CreatedOn: {
       type: DataTypes.DATE,
       allowNull: true
     },
     UpdatedBy: {
-      type: DataTypes.STRING(150),
+      type: DataTypes.STRING(100),
       allowNull: true
     },
-    UpdatedDate: {
+    UpdatedOn: {
       type: DataTypes.DATE,
       allowNull: true
     }
   },
   {
     sequelize,
-    tableName: 'PartnerMapping',
+    tableName: 'StylesCheckMembershipMapping',
     timestamps: false
   }
 );
 
-export default PartnerMapping;
+export default StylesCheckMembershipMapping;

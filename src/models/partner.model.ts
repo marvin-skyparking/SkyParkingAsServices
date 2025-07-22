@@ -1,5 +1,5 @@
 import { Model, DataTypes, Optional } from 'sequelize';
-import sequelize from '../configs/database'; // Adjust the path to your Sequelize instance
+import sequelize from '../configs/database';
 
 interface PartnerAttributes {
   id: string;

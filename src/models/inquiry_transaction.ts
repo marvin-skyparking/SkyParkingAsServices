@@ -20,6 +20,21 @@ export function defaultTransactionData(
   };
 }
 
+export function defaultTransactionDataAutoEntry(
+  transactionNo: string | null = '',
+  status: string = 'INVALID',
+  licensePlateNo: string | null = '',
+  locationCode: string | null = ''
+): TransactionDataAutoEntry {
+  return {
+    transactionNo: transactionNo || '',
+    licensePlateNo: licensePlateNo || '',
+    locationCode: locationCode || '',
+    customerEmail: '',
+    status: status || ''
+  };
+}
+
 export function defaultTransactionDataPaid(
   transactionNo: string | null = '',
   transactionStatus: string = 'VALID',
@@ -39,6 +54,39 @@ export function defaultTransactionDataPaid(
   };
 }
 
+// Updated 15-07-2025 (Galih Raka Gustiawan)
+// Adding Voucher Module
+export interface GenerateInquirySignature {
+  login: string;
+  password: string;
+  storeID: string;
+  transactionNo: string;
+}
+
+export interface InquirySignature {
+  data: string;
+}
+
+export interface InquiryTarifResponse {
+  transactionNo: string;
+  inTime: string;
+  duration: number;
+  tariff: number;
+  vehicleType: string;
+  outTime: string;
+  gracePeriod: number;
+  location: string;
+  paymentStatus: string;
+}
+
+export interface InquiryResponse {
+  responseCode?: string;
+  responseMessage?: string;
+  signature?: string;
+  data: string;
+}
+// End Update
+
 export interface TransactionData {
   transactionNo: string;
   transactionStatus: string;
@@ -50,6 +98,14 @@ export interface TransactionData {
   gracePeriod: number | null;
   location: string;
   paymentStatus: string;
+}
+
+export interface TransactionDataAutoEntry {
+  transactionNo: string;
+  licensePlateNo: string;
+  locationCode: string;
+  customerEmail: string;
+  status: string;
 }
 
 interface InquiryTransactionAttributes {

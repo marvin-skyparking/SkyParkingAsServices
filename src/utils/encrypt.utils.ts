@@ -14,7 +14,7 @@ export const encryptPayload = (data: Record<string, any>): string => {
     const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
 
     // Append UTC date to the PARTNER_KEY
-    const encryptionKey = utcDate + 'PARTNER_KEY';
+    const encryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
 
     // Ensure secretKey is properly encoded
     // Encrypt the data using the encryption key with UTC date
@@ -31,6 +31,31 @@ export const encryptPayload = (data: Record<string, any>): string => {
 };
 
 export const RealencryptPayload = (data: Record<string, any>): string => {
+  try {
+    const jsonString = JSON.stringify(data);
+
+    // Get the current UTC date in YYYYMMDD format
+    const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+
+    // Append UTC date to the PARTNER_KEY
+    const encryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
+
+    // Encrypt the data using the encryption key with UTC date
+    const encrypted = CryptoJS.AES.encrypt(
+      CryptoJS.enc.Utf8.parse(jsonString),
+      encryptionKey
+    ).toString();
+
+    return encrypted;
+  } catch (error: any) {
+    console.error('Encryption Error:', error.message);
+    throw new Error('Encryption failed');
+  }
+};
+
+export const RealencryptPayloadAutoEntry = (
+  data: Record<string, any>
+): string => {
   try {
     const jsonString = JSON.stringify(data);
 
@@ -141,7 +166,7 @@ export const RealdecryptPayload = (
     const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
 
     // Append UTC date to the PARTNER_KEY
-    const decryptionKey = utcDate + 'PARTNER_KEY';
+    const decryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
 
     // Proceed with AES decryption using the decryption key with UTC date
     const bytes = CryptoJS.AES.decrypt(encryptedData, decryptionKey);
@@ -210,6 +235,106 @@ export function generatePaymentSignature(
   SECRET_KEY: string
 ): string {
   const dataString = `${login}${password}${storeID}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${approvalCode}${SECRET_KEY}`;
+  // Concatenating all parameters into a single string
+  // const dataString =
+  //   login +
+  //   password +
+  //   storeID +
+  //   transactionNo +
+  //   referenceNo +
+  //   amount +
+  //   paymentStatus +
+  //   paymentReferenceNo +
+  //   paymentDate +
+  //   issuerID +
+  //   retrievalReferenceNo +
+  //   approvalCode +
+  //   SECRET_KEY;
+
+  // Generating MD5 hash
+  return crypto.createHash('md5').update(dataString).digest('hex');
+}
+
+export function generateAutoEntrySignature(
+  login: string,
+  password: string,
+  transactionNo: string,
+  licensePlateNo: string,
+  locationCode: string,
+  SECRET_KEY: string
+): string {
+  const dataString = `${login}${password}${transactionNo}${licensePlateNo}${locationCode}${SECRET_KEY}`;
+  // Concatenating all parameters into a single string
+  // const dataString =
+  //   login +
+  //   password +
+  //   storeID +
+  //   transactionNo +
+  //   referenceNo +
+  //   amount +
+  //   paymentStatus +
+  //   paymentReferenceNo +
+  //   paymentDate +
+  //   issuerID +
+  //   retrievalReferenceNo +
+  //   approvalCode +
+  //   SECRET_KEY;
+
+  // Generating MD5 hash
+  return crypto.createHash('md5').update(dataString).digest('hex');
+}
+
+export function generatePaymentPOSTSignature(
+  login: string,
+  password: string,
+  transactionNo: string,
+  referenceNo: string,
+  amount: number,
+  paymentStatus: string,
+  paymentReferenceNo: string,
+  paymentDate: string,
+  issuerID: string,
+  retrievalReferenceNo: string,
+  SECRET_KEY: string
+): string {
+  const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
+  console.log(dataString);
+  // Concatenating all parameters into a single string
+  // const dataString =
+  //   login +
+  //   password +
+  //   storeID +
+  //   transactionNo +
+  //   referenceNo +
+  //   amount +
+  //   paymentStatus +
+  //   paymentReferenceNo +
+  //   paymentDate +
+  //   issuerID +
+  //   retrievalReferenceNo +
+  //   approvalCode +
+  //   SECRET_KEY;
+
+  // Generating MD5 hash
+  return crypto.createHash('md5').update(dataString).digest('hex');
+}
+
+export function generatePaymentPOSTQRISSignature(
+  login: string,
+  password: string,
+  transactionNo: string,
+  referenceNo: string,
+  amount: number,
+  paymentStatus: string,
+  paymentType: string,
+  paymentReferenceNo: string,
+  paymentDate: string,
+  issuerID: string,
+  retrievalReferenceNo: string,
+  SECRET_KEY: string
+): string {
+  const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentType}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
+  console.log(dataString);
   // Concatenating all parameters into a single string
   // const dataString =
   //   login +
