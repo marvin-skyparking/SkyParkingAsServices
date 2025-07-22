@@ -57,12 +57,12 @@ export async function getInAreaDataMANY(
   locationCodes: string[]
 ): Promise<any[]> {
   const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0); // Set the time to midnight of today
+  startOfDay.setHours(0, 0, 0, 0); // Midnight today
 
   try {
     const trafficData = await TransactionParkingIntegration.findAll({
       attributes: [
-        // Total count of vehicles
+        // Total distinct vehicles in area
         [
           Sequelize.fn(
             'COUNT',
@@ -70,16 +70,14 @@ export async function getInAreaDataMANY(
           ),
           'TOTAL_TRAFFIC'
         ],
-
-        // Conditional count for MOBIL
+        // Cars
         [
           Sequelize.literal(
             `COUNT(DISTINCT CASE WHEN VehicleType = 'MOBIL' THEN TransactionNo END)`
           ),
           'CAR_USED_LOT'
         ],
-
-        // Conditional count for MOTOR
+        // Motorcycles
         [
           Sequelize.literal(
             `COUNT(DISTINCT CASE WHEN VehicleType = 'MOTOR' THEN TransactionNo END)`
@@ -98,12 +96,15 @@ export async function getInAreaDataMANY(
           [Op.is]: null
         }
       },
-      raw: true // Ensures raw data is returned
+      raw: true
     });
 
     return trafficData.length > 0 ? trafficData : [];
   } catch (err) {
-    console.error('❌ Error executing query:', (err as Error).message);
+    console.error(
+      '❌ Error executing getInAreaDataMANY:',
+      (err as Error).message
+    );
     return [];
   }
 }

@@ -14,4 +14,5 @@ export interface IEnvInterface {
   SENTRY_URI: string;
   SENTRY_ENABLE: boolean;
   JWT_SECRET: string;
+  DB_NAME_PROD_UNIKAS: string;
 }

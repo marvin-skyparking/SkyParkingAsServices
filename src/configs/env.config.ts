@@ -30,5 +30,6 @@ if (EnvConfig.NODE_ENV === 'production') {
   EnvConfig.PORT = EnvConfig.PORT;
   EnvConfig.USERNAME_DB_PROD = EnvConfig.USERNAME_DB_PROD;
   EnvConfig.PASSWORD_DB_PROD = EnvConfig.PASSWORD_DB_PROD;
+  EnvConfig.DB_NAME_PROD_UNIKAS = EnvConfig.DB_NAME_PROD_UNIKAS;
 }
 export default EnvConfig;

@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../configs/database'; // Adjust path as needed
+// import sequelize from '../configs/database'; // Adjust path as needed
+import { sequelizeUnikas } from '../configs/unikas';
 
 export function defaultTransactionData(
   transactionNo: string | null = '',
@@ -148,7 +149,7 @@ TransactionParkingIntegration.init(
     TrxRefId: {
       type: DataTypes.BIGINT,
       allowNull: false,
-      defaultValue: sequelize.literal(
+      defaultValue: sequelizeUnikas.literal(
         '(SELECT COALESCE(MAX(Id), 0) + 1 FROM TransactionParkingIntegration)'
       )
     },
@@ -350,7 +351,7 @@ TransactionParkingIntegration.init(
     }
   },
   {
-    sequelize,
+    sequelize: sequelizeUnikas,
     tableName: 'TransactionParkingIntegration',
     timestamps: false
   }

@@ -18,7 +18,8 @@ const allowedOrigins = [
   'https://dev-occ.skyparking.online',
   'https://dev-injectmember.skyparking.online',
   'https://devtest01.skyparking.online',
-  'https://sky-company-profile.vercel.app'
+  'https://sky-company-profile.vercel.app',
+  'https://www.skyparking.co.id'
 ];
 
 const corsOptions = {
