@@ -646,7 +646,18 @@ export async function Payment_Confirmation(
         data_payment?.responseStatus === 'Failed'
           ? 'INVALID TRANSACTION'
           : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`,
-      data: data_payment?.data
+      data: {
+        transactionNo: decryptedObject.transactionNo ?? '',
+        referenceNo: data_payment?.data.referenceNo ?? '',
+        transactionStatus: data_payment?.data.transactionStatus ?? '',
+        amount: Number(data_payment?.data.amount),
+        paymentStatus: data_payment?.data.paymentStatus,
+        paymentReferenceNo: data_payment?.data.paymentReferenceNo ?? '',
+        paymentDate: data_payment?.data.paymentDate ?? '',
+        referenceTransactionNo: data_payment?.data.referenceTransactionNo ?? '',
+        issuerID: data_payment?.data.issuerID,
+        retrievalReferenceNo: data_payment?.data.retrievalReferenceNo
+      }
     };
 
     const insert_data = {
