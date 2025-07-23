@@ -1,6 +1,7 @@
 import { Request, response, Response } from 'express';
 import {
   getAllLocations,
+  getLocationsByName,
   getNearbyLocations
 } from '../services/location_area.service';
 import {
@@ -213,6 +214,84 @@ export async function getNearbyLocationsController(
     });
   } catch (error) {
     console.error('Error fetching nearby locations:', error);
+    return res.status(500).json({
+      responseStatus: 'FAILED',
+      responseCode: '500500',
+      responseMessage: 'GENERAL SERVER ERROR'
+    });
+  }
+}
+
+export async function getLocationByNameControllers(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { clientkey, signature, timestamp } = req.headers as {
+      clientkey?: string;
+      signature?: string;
+      timestamp?: string;
+    };
+
+    if (!clientkey || !signature || !timestamp) {
+      return res.status(200).json({
+        responseStatus: 'FAILED',
+        responseCode: '401400',
+        responseMessage: 'Unauthorized, Missing credentials'
+      });
+    }
+
+    const { location_name } = req.body;
+
+    if (!location_name) {
+      return res.status(200).json({
+        responseStatus: 'FAILED',
+        responseCode: '400402',
+        responseMessage: 'Missing required fields: location_name'
+      });
+    }
+
+    const locations = await getLocationsByName(location_name);
+
+    const locationCodes = locations.map((loc) => loc.location_code);
+    const location_realtime = await getInAreaDataMANY(locationCodes);
+
+    console.log(locationCodes);
+
+    // 🧩 Match traffic data to each location
+    const formattedLocations = locations.map((location) => {
+      const realtime = location_realtime.find(
+        (item) => item.LocationCode === location.location_code
+      );
+
+      return {
+        location_code: location.location_code,
+        location_name: location.location_name,
+        address: location.address,
+        coordinate: location.coordinate,
+        category: location.category,
+        parking_lot: [
+          {
+            TOTAL_TRAFFIC: realtime?.TOTAL_TRAFFIC ?? 0,
+            CAR_USED_LOT: realtime?.CAR_USED_LOT ?? 0,
+            MOTOR_USED_LOT: realtime?.MOTOR_USED_LOT ?? 0,
+            CAR_AVAILABLE:
+              (location.total_lot_mobil || 0) - (realtime?.CAR_USED_LOT ?? 0),
+            MOTOR_AVAILABLE:
+              (location.total_lot_motor || 0) - (realtime?.MOTOR_USED_LOT ?? 0)
+          }
+        ]
+      };
+    });
+
+    return res.status(200).json({
+      responseStatus: 'SUCCESS',
+      responseCode: '211000',
+      responseMessage: 'Success Get Nearby Location',
+      data: formattedLocations
+    });
+  } catch (error) {
+    console.error('Error fetching nearby location name', error);
     return res.status(500).json({
       responseStatus: 'FAILED',
       responseCode: '500500',
