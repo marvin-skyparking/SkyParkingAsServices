@@ -1,5 +1,14 @@
 import { Op, Sequelize } from 'sequelize'; // Make sure Op is imported
 import TransactionParkingIntegration from '../models/parking_transaction_integration.model';
+import moment from 'moment-timezone';
+
+// Define the shape of your query result
+interface ParkingLotStat {
+  LocationCode: string;
+  TOTAL_TRAFFIC: number;
+  CAR_USED_LOT: number;
+  MOTOR_USED_LOT: number;
+}
 
 export async function getInAreaData(locationCode: string): Promise<any[]> {
   const startOfDay = new Date();
@@ -55,14 +64,13 @@ export async function getInAreaData(locationCode: string): Promise<any[]> {
 
 export async function getInAreaDataMANY(
   locationCodes: string[]
-): Promise<any[]> {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0); // Midnight today
-
+): Promise<ParkingLotStat[]> {
   try {
-    const trafficData = await TransactionParkingIntegration.findAll({
+    const startOfDay = moment().startOf('day').toDate();
+
+    const data = (await TransactionParkingIntegration.findAll({
       attributes: [
-        // Total distinct vehicles in area
+        'LocationCode',
         [
           Sequelize.fn(
             'COUNT',
@@ -70,14 +78,12 @@ export async function getInAreaDataMANY(
           ),
           'TOTAL_TRAFFIC'
         ],
-        // Cars
         [
           Sequelize.literal(
             `COUNT(DISTINCT CASE WHEN VehicleType = 'MOBIL' THEN TransactionNo END)`
           ),
           'CAR_USED_LOT'
         ],
-        // Motorcycles
         [
           Sequelize.literal(
             `COUNT(DISTINCT CASE WHEN VehicleType = 'MOTOR' THEN TransactionNo END)`
@@ -96,15 +102,13 @@ export async function getInAreaDataMANY(
           [Op.is]: null
         }
       },
+      group: ['LocationCode'],
       raw: true
-    });
+    })) as unknown as ParkingLotStat[];
 
-    return trafficData.length > 0 ? trafficData : [];
+    return data;
   } catch (err) {
-    console.error(
-      '❌ Error executing getInAreaDataMANY:',
-      (err as Error).message
-    );
+    console.error('❌ Error executing query:', (err as Error).message);
     return [];
   }
 }

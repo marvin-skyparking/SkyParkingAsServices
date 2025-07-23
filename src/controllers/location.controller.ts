@@ -154,7 +154,7 @@ export async function getNearbyLocationsController(
       return res.status(200).json({
         responseStatus: 'FAILED',
         responseCode: '401401',
-        responseMessage: 'Unauthorized, Invalid Siganture'
+        responseMessage: 'Unauthorized, Invalid Signature'
       });
     }
 
@@ -170,35 +170,40 @@ export async function getNearbyLocationsController(
       });
     }
 
+    // 🧭 Get nearby locations
     const locations = await getNearbyLocations(lat, lng, rad, category);
 
-    const location_realtime = await getInAreaDataMANY(
-      locations.map((loc) => loc.location_code)
-    );
+    // 🚦 Get parking traffic info
+    const locationCodes = locations.map((loc) => loc.location_code);
+    const location_realtime = await getInAreaDataMANY(locationCodes);
 
-    // ✅ Ensure we are returning a plain object without Sequelize metadata
-    const formattedLocations = locations.map((location) => ({
-      location_code: location.location_code,
-      location_name: location.location_name,
-      address: location.address,
-      coordinate: location.coordinate,
-      category: location.category,
-      parking_lot: location_realtime.map((item) => ({
-        TOTAL_TRAFFIC: item.TOTAL_TRAFFIC ?? 0,
-        CAR_USED_LOT: item.CAR_USED_LOT ?? 0, // You can customize this per item if needed
-        MOTOR_USED_LOT: item.MOTOR_USED_LOT ?? 0,
-        CAR_AVAILABLE: location.total_lot_mobil - item.CAR_USED_LOT,
-        MOTOR_AVAILABLE: location.total_lot_mobil - item.MOTOR_USED_LOT
-      }))
-      // lots:
-      //   (location as any).lots?.map((lot: any) => ({
-      //     lot_name: lot.lot_name,
-      //     vehicle_type: lot.vehicle_type,
-      //     max_lot: lot.max_lot,
-      //     used_lot: lot.used_lot,
-      //     available_lot: lot.available_lot
-      //   })) ?? [] // Ensure `lots` is always an array
-    }));
+    console.log(locationCodes);
+
+    // 🧩 Match traffic data to each location
+    const formattedLocations = locations.map((location) => {
+      const realtime = location_realtime.find(
+        (item) => item.LocationCode === location.location_code
+      );
+
+      return {
+        location_code: location.location_code,
+        location_name: location.location_name,
+        address: location.address,
+        coordinate: location.coordinate,
+        category: location.category,
+        parking_lot: [
+          {
+            TOTAL_TRAFFIC: realtime?.TOTAL_TRAFFIC ?? 0,
+            CAR_USED_LOT: realtime?.CAR_USED_LOT ?? 0,
+            MOTOR_USED_LOT: realtime?.MOTOR_USED_LOT ?? 0,
+            CAR_AVAILABLE:
+              (location.total_lot_mobil || 0) - (realtime?.CAR_USED_LOT ?? 0),
+            MOTOR_AVAILABLE:
+              (location.total_lot_motor || 0) - (realtime?.MOTOR_USED_LOT ?? 0)
+          }
+        ]
+      };
+    });
 
     return res.status(200).json({
       responseStatus: 'SUCCESS',
