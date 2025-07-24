@@ -2092,7 +2092,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     const create_signature = generatePaymentPOSTQRISSignature(
       find_location.Login ?? '',
       find_location.Password ?? '',
-      storeID ?? '',
+      find_location.NMID ?? '',
       transactionNo ?? '',
       referenceNo ?? '',
       amount ?? 0,
@@ -2108,6 +2108,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     const data_send = {
       login: find_location.Login ?? '',
       password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
       transactionNo: transactionNo ?? '',
       referenceNo: referenceNo ?? '',
       amount: amount ?? 0,
