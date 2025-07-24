@@ -2111,6 +2111,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
       referenceNo: referenceNo ?? '',
       amount: amount ?? 0,
       paymentStatus: paymentStatus ?? '',
+      paymentType: paymentType ?? '',
       paymentReferenceNo: paymentReferenceNo ?? '',
       paymentDate: paymentDate ?? '',
       issuerID: issuerID ?? '',
