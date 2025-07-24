@@ -2102,6 +2102,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
       paymentDate ?? '',
       issuerID ?? '',
       retrievalReferenceNo ?? '',
+      approvalCode ?? '',
       find_location.SecretKey ?? ''
     );
 
@@ -2118,6 +2119,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
       paymentDate: paymentDate ?? '',
       issuerID: issuerID ?? '',
       retrievalReferenceNo: retrievalReferenceNo ?? '',
+      approvalCode: approvalCode ?? '',
       signature: create_signature
     };
 
