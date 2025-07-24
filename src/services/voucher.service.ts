@@ -14,6 +14,7 @@ import CircuitBreaker from '../utils/circuit-breaker';
 import {
   Decryption,
   Encryption,
+  getTodayDate,
   md5,
   secretKey
 } from '../utils/encryption.utils';
@@ -38,28 +39,6 @@ import {
   VoucherUsageAttributes
 } from '../models/voucher-usage.model';
 import { VoucherUsageMapping } from '../models/voucher-usage-mapping.model';
-
-export const voucherRedemptionSchema = Joi.object({
-  login: Joi.string().required(),
-  password: Joi.string().required(),
-  merchantID: Joi.string().required(),
-  tenantID: Joi.string().required(),
-  locationCode: Joi.string().required(),
-  transactionNo: Joi.string().required(),
-  transactionReferenceNo: Joi.string().required(),
-  transactionReceiptNo: Joi.string().required(),
-  transactionReceiptAmount: Joi.number().required(),
-  voucherType: Joi.string()
-    .valid(...Object.values(VoucherType))
-    .required(),
-  voucherValue: Joi.string().required(),
-  voucherExpiryDate: Joi.string().isoDate().required(),
-  customerVehicleType: Joi.string().required(),
-  customerVehiclePlateNo: Joi.string().required(),
-  customerMobileNo: Joi.string().required(),
-  customerEmail: Joi.string().email().required(),
-  signature: Joi.string().required()
-});
 
 export interface IVoucherService {
   inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse>;
@@ -86,6 +65,53 @@ interface UpdatePOST<T> {
   status: string;
   data: T;
 }
+
+export const voucherRedemptionSchema = Joi.object({
+  login: Joi.string().required(),
+  password: Joi.string().required(),
+  merchantID: Joi.string().required(),
+  tenantID: Joi.string().required(),
+  locationCode: Joi.string().required(),
+  transactionNo: Joi.string().required(),
+  transactionReferenceNo: Joi.string().required(),
+  transactionReceiptNo: Joi.string().required(),
+  transactionReceiptAmount: Joi.string().required(),
+  voucherType: Joi.string()
+    .valid(...Object.values(VoucherType))
+    .required(),
+  voucherValue: Joi.string().required(),
+  voucherExpiryDate: Joi.string().isoDate().required(),
+  customerVehicleType: Joi.string().optional().allow(''),
+  customerVehiclePlateNo: Joi.string().optional().allow(''),
+  customerMobileNo: Joi.string().optional().allow(''),
+  customerEmail: Joi.string().optional().allow(''),
+  signature: Joi.string().required()
+});
+
+export const voucherUsageSchema = Joi.object({
+  login: Joi.string().required(),
+  password: Joi.string().required(),
+  locationCode: Joi.string().required(),
+  transactionNo: Joi.string().required(),
+  licensePlateNo: Joi.string().required(),
+  inTime: Joi.string()
+    .pattern(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+    .required()
+    .messages({
+      'string.pattern.base': `"inTime" must be in format YYYY-MM-DD HH:mm:ss`
+    }),
+  gateInCode: Joi.string().required(),
+  vehicleType: Joi.string().valid('MOBIL', 'MOTOR').required(),
+  totalTariff: Joi.number().min(0).required(),
+  outTime: Joi.string()
+    .pattern(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+    .required()
+    .messages({
+      'string.pattern.base': `"outTime" must be in format YYYY-MM-DD HH:mm:ss`
+    }),
+  gateOutCode: Joi.string().required(),
+  signature: Joi.string().required()
+});
 
 export interface MerchantInquiryRequest {
   login: string;
@@ -261,13 +287,24 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      const decryptedResponse = await Decryption<
-        ResponseData<VoucherRedemptionPOSTResponse>
-      >(result?.data, gibberishKey);
+      const decrypted = await Decryption<string>(result?.data, gibberishKey);
+      const decryptedResponse: ResponseData<VoucherRedemptionPOSTResponse> =
+        JSON.parse(decrypted);
 
       return {
         status: 'REDEEMED',
-        data: decryptedResponse?.data
+        data: {
+          transactionNo: decryptedResponse.data.transactionNo,
+          transactionReferenceNo: decryptedResponse.data.transactionReferenceNo,
+          voucherType: decryptedResponse.data.voucherType as VoucherType,
+          voucherValue: decryptedResponse.data.voucherValue,
+          voucherStatus: decryptedResponse.data
+            .voucherStatus as RedemptionStatus,
+          gateInCode: decryptedResponse.data.gateInCode,
+          inTime: decryptedResponse.data.inTime,
+          duration: decryptedResponse.data.duration,
+          tariff: decryptedResponse.data.tariff
+        }
       };
     } catch (error: any) {
       throw new Error(error?.message);
@@ -278,7 +315,14 @@ export class VoucherService implements IVoucherService {
     params: VoucherRedemptionMerchantRequest
   ): Promise<EncryptedPayload> {
     try {
+      const { error } = voucherRedemptionSchema.validate(params);
       const secret = secretKey;
+
+      if (error) {
+        const errResponse = await this.encryptedErrorResponse(secret);
+        return { data: errResponse };
+      }
+
       const encryptedPayload = await Encryption(JSON.stringify(params), secret);
 
       return { data: encryptedPayload };
@@ -291,16 +335,18 @@ export class VoucherService implements IVoucherService {
     try {
       // Decrypt Payload
       const secret = secretKey;
-      const decryptedPayload =
-        await Decryption<VoucherRedemptionMerchantRequest>(params.data, secret);
+      const decrypted = await Decryption<string>(params.data, secret);
 
-      if (!decryptedPayload) {
+      if (!decrypted) {
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
           message: '[Redemption Error] Invalid request payload'
         };
       }
+
+      const decryptedPayload: VoucherRedemptionMerchantRequest =
+        JSON.parse(decrypted);
 
       const { error } = voucherRedemptionSchema.validate(decryptedPayload);
 
@@ -351,7 +397,7 @@ export class VoucherService implements IVoucherService {
 
       // Update Tarif (API)
       const postSignature = md5(`
-        ${partner?.Login}${partner?.Password_hash}
+        ${partner?.Login}${partner?.Password}
         ${decryptedPayload.merchantID}
         ${decryptedPayload.tenantID}
         ${decryptedPayload.locationCode}
@@ -370,7 +416,7 @@ export class VoucherService implements IVoucherService {
 
       const postRequest: VoucherRedemptionPOSTRequest = {
         login: partner.Login ?? '',
-        password: partner.Password_hash ?? '',
+        password: partner.Password ?? '',
         locationCode: decryptedPayload.locationCode,
         transactionNo: decryptedPayload.transactionNo,
         transactionReferenceNo: decryptedPayload.transactionReferenceNo,
@@ -395,9 +441,15 @@ export class VoucherService implements IVoucherService {
         };
       }
 
+      const giberishKey = `${getTodayDate()}${partner?.GibberishKey ?? ''}`;
+      const encryptedPayload = await Encryption(
+        JSON.stringify(postRequest),
+        giberishKey
+      );
+
       const result = await this.UpdateTarifPOST(
         postRequest,
-        partner?.GibberishKey ?? '',
+        giberishKey,
         postRole?.url_access ?? ''
       );
 
@@ -517,6 +569,15 @@ export class VoucherService implements IVoucherService {
   ): Promise<EncryptedPayload> {
     try {
       const secret = secretKey;
+      const { error } = voucherUsageSchema.validate(params);
+
+      console.log(error);
+
+      if (error) {
+        const errResponse = await this.encryptedErrorResponse(secret);
+        return { data: errResponse };
+      }
+
       const encryptedPayload = await Encryption(JSON.stringify(params), secret);
 
       return { data: encryptedPayload };
@@ -530,15 +591,25 @@ export class VoucherService implements IVoucherService {
   ): Promise<ServiceResponse> {
     try {
       const secret = secretKey;
-      // Decrypt payload
-      const decrypted = await Decryption<POSTUsageRequest>(params.data, secret);
-      const decryptedPayload = decrypted;
+      const decrypted = await Decryption<string>(params.data, secret);
 
-      if (!decryptedPayload) {
+      if (!decrypted) {
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
           message: '[Usage Notification Error] Invalid request payload'
+        };
+      }
+
+      const decryptedPayload: POSTUsageRequest = JSON.parse(decrypted);
+
+      const { error } = voucherUsageSchema.validate(decryptedPayload);
+
+      if (error) {
+        return {
+          data: await this.encryptedErrorResponse(secret),
+          statusCode: 400,
+          message: '[Usage Notification Error] Invalid payload'
         };
       }
 
@@ -630,7 +701,8 @@ export class VoucherService implements IVoucherService {
 
       const locationRoles = await getRolesByPartnerId(partner.Id);
       const postRole = locationRoles.find(
-        (role) => role.role_name === 'MERCHANT' && role.access_type === 'USAGE'
+        (role) =>
+          role.role_name === 'MERCHANT PARTNER' && role.access_type === 'USAGE'
       );
 
       if (!postRole || !postRole.url_access) {
@@ -649,12 +721,16 @@ export class VoucherService implements IVoucherService {
 
       await VoucherUsage.create(voucherUsageData);
 
-      const response: ResponseData<MerchantUsageRequest> = {
+      const response: ResponseData<MerchantUsageResponse> = {
         responseStatus: 'Success',
         responseCode: '211000',
         responseDescription: 'Transaction Success',
         messageDetail: 'Transaction is valid and saved successfully',
-        data: merchantDataRequest
+        data: {
+          transactionNo: decryptedPayload.transactionNo,
+          licensePlateNo: decryptedPayload.licensePlateNo,
+          transactionStatus: 'VALID'
+        }
       };
 
       const encryptedResponse = await Encryption(
