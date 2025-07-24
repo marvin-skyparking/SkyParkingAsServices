@@ -2170,7 +2170,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     // );
 
     return res.status(200).json({
-      data: encrypted_data_pay
+      data: response_confirm_pay
     });
   } catch (error: any) {
     console.error('Error processing payment transaction:', error);
