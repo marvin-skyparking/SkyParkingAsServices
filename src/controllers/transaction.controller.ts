@@ -2164,13 +2164,13 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
 
     // console.log(PAYencryptedData);
 
-    const data_payment = await DecryptTotPOST(
-      response_confirm_pay.data,
-      find_location.GibberishKey ?? ''
-    );
+    // const data_payment = await DecryptTotPOST(
+    //   response_confirm_pay.data,
+    //   find_location.GibberishKey ?? ''
+    // );
 
     return res.status(200).json({
-      data: data_payment
+      data: encrypted_data_pay
     });
   } catch (error: any) {
     console.error('Error processing payment transaction:', error);
