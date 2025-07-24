@@ -322,6 +322,7 @@ export function generatePaymentPOSTSignature(
 export function generatePaymentPOSTQRISSignature(
   login: string,
   password: string,
+  storeID: string,
   transactionNo: string,
   referenceNo: string,
   amount: number,
@@ -333,7 +334,7 @@ export function generatePaymentPOSTQRISSignature(
   retrievalReferenceNo: string,
   SECRET_KEY: string
 ): string {
-  const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentType}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
+  const dataString = `${login}${password}${storeID}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentType}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
   console.log(dataString);
   // Concatenating all parameters into a single string
   // const dataString =
