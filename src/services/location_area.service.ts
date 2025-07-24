@@ -134,17 +134,24 @@ export async function getLocationsByName(keyword: string): Promise<any[]> {
     const locations = await LocationArea.findAll({
       where: {
         location_name: {
-          [Op.like]: `%${keyword}%` // For MySQL/MariaDB use Op.like. Use Op.iLike for PostgreSQL.
+          [Op.like]: `%${keyword}%` // For MySQL/MariaDB. Use Op.iLike for PostgreSQL.
         }
       },
+      attributes: [
+        'location_code',
+        'location_name',
+        'coordinate',
+        'address',
+        'category'
+      ], // Add category if you need it
       include: [
         {
           model: LocationLot,
           as: 'lots',
-          required: false
+          required: false,
+          attributes: ['total_lot_mobil', 'total_lot_motor'] // 👈 Add lot capacity fields
         }
-      ],
-      attributes: ['location_code', 'location_name', 'coordinate', 'address']
+      ]
     });
 
     return locations;

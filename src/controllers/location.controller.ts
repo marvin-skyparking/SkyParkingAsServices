@@ -253,10 +253,9 @@ export async function getLocationByNameControllers(
 
     const locations = await getLocationsByName(location_name);
 
+    // 🚦 Get parking traffic info
     const locationCodes = locations.map((loc) => loc.location_code);
     const location_realtime = await getInAreaDataMANY(locationCodes);
-
-    console.log(locationCodes);
 
     // 🧩 Match traffic data to each location
     const formattedLocations = locations.map((location) => {
