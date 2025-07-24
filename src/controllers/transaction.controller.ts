@@ -2169,6 +2169,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     //   find_location.GibberishKey ?? ''
     // );
 
+    console.log(response_confirm_pay.data);
     return res.status(200).json({
       data: response_confirm_pay.data
     });
