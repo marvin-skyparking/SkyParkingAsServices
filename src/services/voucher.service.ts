@@ -269,10 +269,14 @@ export class VoucherService implements IVoucherService {
     endpoint: string
   ): Promise<UpdatePOST<VoucherRedemptionPOSTResponse | null>> {
     try {
+      console.log('post payload raw: ', params);
+
       const encryptedPayload = await Encryption(
         JSON.stringify(params),
         gibberishKey
       );
+
+      console.log('sending post payload: ', encryptedPayload);
 
       const result = await cb.fire<any>({
         method: 'POST',
@@ -286,6 +290,8 @@ export class VoucherService implements IVoucherService {
           data: null
         };
       }
+
+      console.log('result: ', result);
 
       let sanitizeResult: EncryptedPayload;
       if (typeof result === 'string') {
@@ -301,7 +307,7 @@ export class VoucherService implements IVoucherService {
       const decryptedResponse: ResponseData<VoucherRedemptionPOSTResponse> =
         JSON.parse(decrypted);
 
-      console.log(decryptedResponse);
+      console.log('decrypted result: ', decryptedResponse);
 
       return {
         status: 'REDEEMED',
@@ -383,7 +389,7 @@ export class VoucherService implements IVoucherService {
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
-          message: '[Redemption Error] Partner not found'
+          message: '[Redemption Error] Partner not founsd'
         };
       }
 
@@ -409,22 +415,22 @@ export class VoucherService implements IVoucherService {
 
       // Update Tarif (API)
       const postSignature = md5(`
-          ${partner?.Login}${partner?.Password}
-          ${decryptedPayload.merchantID}
-          ${decryptedPayload.tenantID}
-          ${decryptedPayload.locationCode}
-          ${decryptedPayload.transactionNo}
-          ${decryptedPayload.transactionReferenceNo}
-          ${decryptedPayload.transactionReceiptNo}
-          ${decryptedPayload.transactionReceiptAmount}
-          ${decryptedPayload.voucherType}
-          ${decryptedPayload.voucherValue}
-          ${decryptedPayload.voucherExpiryDate}
-          ${decryptedPayload.customerVehicleType}
-          ${decryptedPayload.customerVehiclePlateNo}
-          ${decryptedPayload.customerMobileNo}
-          ${decryptedPayload.customerEmail}
-          ${partner?.SecretKey}`);
+        ${partner?.Login}${partner?.Password}
+        ${decryptedPayload.merchantID}
+        ${decryptedPayload.tenantID}
+        ${decryptedPayload.locationCode}
+        ${decryptedPayload.transactionNo}
+        ${decryptedPayload.transactionReferenceNo}
+        ${decryptedPayload.transactionReceiptNo}
+        ${decryptedPayload.transactionReceiptAmount}
+        ${decryptedPayload.voucherType}
+        ${decryptedPayload.voucherValue}
+        ${decryptedPayload.voucherExpiryDate}
+        ${decryptedPayload.customerVehicleType}
+        ${decryptedPayload.customerVehiclePlateNo}
+        ${decryptedPayload.customerMobileNo}
+        ${decryptedPayload.customerEmail}
+        ${partner?.SecretKey}`);
 
       const postRequest: VoucherRedemptionPOSTRequest = {
         login: partner.Login ?? '',
@@ -453,11 +459,11 @@ export class VoucherService implements IVoucherService {
         };
       }
 
+      console.log('before sending post: ', postRole);
+
       const giberishKey = `${getTodayDate()}${partner?.GibberishKey ?? ''}`;
-      const encryptedPayload = await Encryption(
-        JSON.stringify(postRequest),
-        giberishKey
-      );
+
+      console.log('giberish key: ', giberishKey);
 
       const result = await this.UpdateTarifPOST(
         postRequest,
@@ -466,6 +472,8 @@ export class VoucherService implements IVoucherService {
       );
 
       const updatePOST = result?.data;
+
+      console.log('after sending: ', result);
 
       // Write Redemption Log
       const merchantDataResponse: VoucherRedemptionMerchantResponse = {
