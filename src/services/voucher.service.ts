@@ -397,22 +397,22 @@ export class VoucherService implements IVoucherService {
 
       // Update Tarif (API)
       const postSignature = md5(`
-        ${partner?.Login}${partner?.Password}
-        ${decryptedPayload.merchantID}
-        ${decryptedPayload.tenantID}
-        ${decryptedPayload.locationCode}
-        ${decryptedPayload.transactionNo}
-        ${decryptedPayload.transactionReferenceNo}
-        ${decryptedPayload.transactionReceiptNo}
-        ${decryptedPayload.transactionReceiptAmount}
-        ${decryptedPayload.voucherType}
-        ${decryptedPayload.voucherValue}
-        ${decryptedPayload.voucherExpiryDate}
-        ${decryptedPayload.customerVehicleType}
-        ${decryptedPayload.customerVehiclePlateNo}
-        ${decryptedPayload.customerMobileNo}
-        ${decryptedPayload.customerEmail}
-        ${partner?.SecretKey}`);
+          ${partner?.Login}${partner?.Password}
+          ${decryptedPayload.merchantID}
+          ${decryptedPayload.tenantID}
+          ${decryptedPayload.locationCode}
+          ${decryptedPayload.transactionNo}
+          ${decryptedPayload.transactionReferenceNo}
+          ${decryptedPayload.transactionReceiptNo}
+          ${decryptedPayload.transactionReceiptAmount}
+          ${decryptedPayload.voucherType}
+          ${decryptedPayload.voucherValue}
+          ${decryptedPayload.voucherExpiryDate}
+          ${decryptedPayload.customerVehicleType}
+          ${decryptedPayload.customerVehiclePlateNo}
+          ${decryptedPayload.customerMobileNo}
+          ${decryptedPayload.customerEmail}
+          ${partner?.SecretKey}`);
 
       const postRequest: VoucherRedemptionPOSTRequest = {
         login: partner.Login ?? '',
