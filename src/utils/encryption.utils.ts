@@ -48,7 +48,7 @@ export const Decryption = async <T>(
 ): Promise<T> => {
   try {
     const result = await runWorker('decrypt', cipher, secret);
-    return JSON.parse(result) as T;
+    return result as T;
   } catch (error: any) {
     console.log('error', `Decryption failed: ${error.message}`);
     throw new Error(error?.message);
