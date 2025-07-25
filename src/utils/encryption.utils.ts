@@ -12,7 +12,7 @@ const runWorker = (
     const worker = new Worker(path.join(__dirname, 'encryptionWorker.js'), {
       workerData: {
         action,
-        payload: action === 'encrypt' ? JSON.stringify(payload) : payload,
+        payload: action === 'encrypt' ? payload : JSON.stringify(payload),
         secret
       }
     });
