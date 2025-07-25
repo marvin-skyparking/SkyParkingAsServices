@@ -56,11 +56,7 @@ export const Decryption = async <T>(
 };
 
 export function md5(value: string): string {
-  return crypto
-    .createHash('md5')
-    .update(value, 'utf8')
-    .digest('hex')
-    .toUpperCase();
+  return crypto.createHash('md5').update(value, 'utf8').digest('hex');
 }
 
 export function encodeBase64(value: string): string {
