@@ -644,7 +644,7 @@ export class VoucherService implements IVoucherService {
       }
 
       const merchantSignature = md5(`
-        ${partner?.Login}${partner?.Password_hash}
+        ${partner?.Login}${partner?.Password}
         ${partner?.MPAN}
         ${decryptedPayload.locationCode}
         ${decryptedPayload.transactionNo}
