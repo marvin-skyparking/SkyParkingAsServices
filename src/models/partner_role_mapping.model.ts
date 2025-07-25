@@ -22,7 +22,7 @@ class PartnerRoleMapping extends Model<
 > {
   public id!: number;
   public id_partner!: number; // Ensure it's a number
-  public role_name!: 'POST' | 'PAYMENT PARTNER' | 'MERCHANT';
+  public role_name!: 'POST' | 'PAYMENT PARTNER' | 'MERCHANT PARTNER';
   public access_type!: string;
   public url_access!: string;
   public created_at?: Date;
@@ -37,11 +37,11 @@ PartnerRoleMapping.init(
       primaryKey: true
     },
     id_partner: {
-      type: DataTypes.INTEGER.UNSIGNED, // Ensure it's an integer
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false
     },
     role_name: {
-      type: DataTypes.ENUM('POST', 'PAYMENT PARTNER', 'MERCHANT'),
+      type: DataTypes.ENUM('POST', 'PAYMENT PARTNER', 'MERCHANT PARTNER'),
       allowNull: false
     },
     access_type: {

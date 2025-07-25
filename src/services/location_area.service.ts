@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { LocationArea } from '../models/location_area.model';
 import LocationLot from '../models/location_lot.model';
 
@@ -125,5 +126,37 @@ export async function getLocationsByCode(
   } catch (error) {
     console.error('Error fetching locations by code:', error);
     throw new Error('Failed to fetch locations by code');
+  }
+}
+
+export async function getLocationsByName(keyword: string): Promise<any[]> {
+  try {
+    const locations = await LocationArea.findAll({
+      where: {
+        location_name: {
+          [Op.like]: `%${keyword}%` // For MySQL/MariaDB. Use Op.iLike for PostgreSQL.
+        }
+      },
+      attributes: [
+        'location_code',
+        'location_name',
+        'coordinate',
+        'address',
+        'category'
+      ], // Add category if you need it
+      include: [
+        {
+          model: LocationLot,
+          as: 'lots',
+          required: false,
+          attributes: ['total_lot_mobil', 'total_lot_motor'] // 👈 Add lot capacity fields
+        }
+      ]
+    });
+
+    return locations;
+  } catch (error) {
+    console.error('Error fetching locations by name:', error);
+    throw new Error('Failed to fetch locations by name');
   }
 }
