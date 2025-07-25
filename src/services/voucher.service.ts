@@ -274,7 +274,7 @@ export class VoucherService implements IVoucherService {
         gibberishKey
       );
 
-      const result = await cb.fire<EncryptedPayload>({
+      const result = await cb.fire<any>({
         method: 'POST',
         url: endpoint,
         data: { data: encryptedPayload }
@@ -287,9 +287,21 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      const decrypted = await Decryption<string>(result?.data, gibberishKey);
+      let sanitizeResult: EncryptedPayload;
+      if (typeof result === 'string') {
+        sanitizeResult = JSON.parse(result);
+      } else {
+        sanitizeResult = result;
+      }
+
+      const decrypted = await Decryption<string>(
+        sanitizeResult?.data,
+        gibberishKey
+      );
       const decryptedResponse: ResponseData<VoucherRedemptionPOSTResponse> =
         JSON.parse(decrypted);
+
+      console.log(decryptedResponse);
 
       return {
         status: 'REDEEMED',
