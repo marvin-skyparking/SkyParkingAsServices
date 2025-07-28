@@ -414,17 +414,19 @@ export class VoucherService implements IVoucherService {
       }
 
       // Update Tarif (API)
-      const postSignature = md5(`
-        ${partner?.Login}${partner?.Password}
-        ${decryptedPayload.locationCode}
-        ${decryptedPayload.transactionNo}
-        ${decryptedPayload.transactionReferenceNo}
-        ${decryptedPayload.voucherType}
-        ${decryptedPayload.voucherValue}
-        ${decryptedPayload.voucherExpiryDate}
-        ${decryptedPayload.customerVehicleType}
-        ${decryptedPayload.customerVehiclePlateNo}
-        ${partner?.SecretKey}`);
+      const postSignature = md5(
+        (partner?.Login ?? '') +
+          partner?.Password +
+          decryptedPayload.locationCode +
+          decryptedPayload.transactionNo +
+          decryptedPayload.transactionReferenceNo +
+          decryptedPayload.voucherType +
+          String(decryptedPayload.voucherValue) +
+          decryptedPayload.voucherExpiryDate +
+          decryptedPayload.customerVehicleType +
+          decryptedPayload.customerVehiclePlateNo +
+          partner?.SecretKey
+      );
 
       const postRequest: VoucherRedemptionPOSTRequest = {
         login: partner.Login ?? '',
