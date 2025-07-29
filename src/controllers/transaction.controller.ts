@@ -2285,7 +2285,6 @@ export async function Check_Inquiry_QRIS(
       encryptedData,
       credential.GibberishKey ?? ''
     );
-
     // console.log('finalData', finalData);
 
     // await createInquiryTransaction({
@@ -2307,35 +2306,35 @@ export async function Check_Inquiry_QRIS(
 
     // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
     // const isFree = finalData?.tariff === 0;
-    const displayMessage =
-      finalData?.messageDetail ===
-        'Inquiry Tariff has been accepted and verified successfully.' ||
-      finalData?.messageDetail === 'Ticket is VALID but not yet paid'
-        ? 'Ticket is valid but not yet paid'
-        : finalData?.messageDetail;
+    // const displayMessage =
+    //   finalData?.messageDetail ===
+    //     'Inquiry Tariff has been accepted and verified successfully.' ||
+    //   finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+    //     ? 'Ticket is valid but not yet paid'
+    //     : finalData?.messageDetail;
 
-    const responsePayload = {
-      responseStatus: finalData?.responseStatus,
-      responseCode:
-        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
-      responseDescription: finalData?.responseDescription,
-      messageDetail: displayMessage,
-      data: {
-        transactionNo: finalData?.data.transactionNo,
-        transactionStatus: finalData?.data.transactionStatus,
-        inTime: finalData?.data.inTime,
-        duration: Number(finalData?.data.duration),
-        tariff: Number(finalData?.data.tariff),
-        vehicleType: finalData?.data.vehicleType,
-        outTime: finalData?.data.outTime,
-        gracePeriod: Number(finalData?.data.gracePeriod),
-        location: finalData?.data.location,
-        paymentStatus: finalData?.data.paymentStatus
-      }
-    };
+    // const responsePayload = {
+    //   responseStatus: finalData?.responseStatus,
+    //   responseCode:
+    //     finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+    //   responseDescription: finalData?.responseDescription,
+    //   messageDetail: displayMessage,
+    //   data: {
+    //     transactionNo: finalData?.data.transactionNo,
+    //     transactionStatus: finalData?.data.transactionStatus,
+    //     inTime: finalData?.data.inTime,
+    //     duration: Number(finalData?.data.duration),
+    //     tariff: Number(finalData?.data.tariff),
+    //     vehicleType: finalData?.data.vehicleType,
+    //     outTime: finalData?.data.outTime,
+    //     gracePeriod: Number(finalData?.data.gracePeriod),
+    //     location: finalData?.data.location,
+    //     paymentStatus: finalData?.data.paymentStatus
+    //   }
+    // };
 
     return res.status(200).json({
-      data: responsePayload
+      data: finalData
     });
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
