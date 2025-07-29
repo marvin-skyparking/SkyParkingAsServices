@@ -2336,9 +2336,7 @@ export async function Check_Inquiry_QRIS(
     //   }
     // };
 
-    return res.status(200).json({
-      finalData
-    });
+    return res.status(200).json(finalData);
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
