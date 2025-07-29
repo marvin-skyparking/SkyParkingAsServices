@@ -2337,7 +2337,7 @@ export async function Check_Inquiry_QRIS(
     // };
 
     return res.status(200).json({
-      data: finalData
+      finalData
     });
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
