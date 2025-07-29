@@ -2256,6 +2256,8 @@ export async function Check_Inquiry_QRIS(
       data: encryptedRequest
     });
 
+    console.log(apiResponse);
+
     let encryptedData: string | undefined;
 
     if (typeof apiResponse.data === 'string') {
