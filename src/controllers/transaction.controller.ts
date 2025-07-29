@@ -2231,7 +2231,7 @@ export async function Check_Inquiry_QRIS(
       login: credential.Login ?? '',
       password: credential.Password ?? '',
       storeID: credential.NMID ?? '',
-      P2
+      transactionNo: P2
     };
 
     const remoteSignature = generateSignature(
