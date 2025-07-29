@@ -2185,3 +2185,158 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     });
   }
 }
+
+//Inquiry Partner QRIS
+export async function Check_Inquiry_QRIS(
+  req: Request,
+  res: Response
+): Promise<any> {
+  if ((req as any).timedout) return;
+
+  try {
+    const { P1, P2 } = req.body;
+    if (![P1, P2].every(Boolean)) {
+      return res.status(400).json(ERROR_MESSAGES_NEW.INVALID_REQUEST);
+    }
+
+    const credential = await findInquiryTransactionMappingByNMID(P1);
+
+    if (!credential) {
+      return res.status(401).json(ERROR_MESSAGES.INVALID_CREDENTIAL);
+    }
+
+    const roles = await getRolesByPartnerId(credential.Id);
+    const hasInquiryAccess = roles.some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasInquiryAccess) {
+      return res.status(401).json({
+        ...ERROR_MESSAGES_NEW.ACCESS_NOT_PERMITTED,
+        data: defaultTransactionData()
+      });
+    }
+
+    const locationRoles = await getRolesByPartnerId(credential.Id);
+    const postRole = locationRoles.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    if (!postRole || !postRole.url_access) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
+    }
+
+    const signatureData = {
+      login: credential.Login ?? '',
+      password: credential.Password ?? '',
+      storeID: credential.NMID ?? '',
+      P2
+    };
+
+    const remoteSignature = generateSignature(
+      signatureData.login,
+      signatureData.password,
+      signatureData.storeID,
+      P2,
+      credential.SecretKey ?? ''
+    );
+
+    const requestPayload = {
+      ...signatureData,
+      signature: remoteSignature
+    };
+
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      credential.GibberishKey ?? ''
+    );
+
+    const apiResponse = await axios.post(postRole.url_access, {
+      data: encryptedRequest
+    });
+
+    let encryptedData: string | undefined;
+
+    if (typeof apiResponse.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = apiResponse.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        encryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof apiResponse.data === 'object') {
+      // If already parsed as object
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
+
+    const finalData = await DecryptTotPOST(
+      encryptedData,
+      credential.GibberishKey ?? ''
+    );
+
+    // console.log('finalData', finalData);
+
+    // await createInquiryTransaction({
+    //   CompanyName: credential.CompanyName ?? '',
+    //   NMID: credential.NMID ?? '',
+    //   StoreCode: P2.toString().slice(-5),
+    //   TransactionNo: P2,
+    //   ReferenceNo: '',
+    //   ProjectCategoryId: 14,
+    //   ProjectCategoryName: 'Parking',
+    //   DataSend: JSON.stringify(requestPayload),
+    //   DataResponse: JSON.stringify(finalData),
+    //   DataDetailResponse: JSON.stringify(finalData?.data),
+    //   CreatedOn: new Date(),
+    //   UpdatedOn: new Date(),
+    //   CreatedBy: credential.CompanyName ?? '',
+    //   UpdatedBy: credential.CompanyName ?? ''
+    // });
+
+    // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
+    // const isFree = finalData?.tariff === 0;
+    const displayMessage =
+      finalData?.messageDetail ===
+        'Inquiry Tariff has been accepted and verified successfully.' ||
+      finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
+
+    const responsePayload = {
+      responseStatus: finalData?.responseStatus,
+      responseCode:
+        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: finalData?.responseDescription,
+      messageDetail: displayMessage,
+      data: {
+        transactionNo: finalData?.data.transactionNo,
+        transactionStatus: finalData?.data.transactionStatus,
+        inTime: finalData?.data.inTime,
+        duration: Number(finalData?.data.duration),
+        tariff: Number(finalData?.data.tariff),
+        vehicleType: finalData?.data.vehicleType,
+        outTime: finalData?.data.outTime,
+        gracePeriod: Number(finalData?.data.gracePeriod),
+        location: finalData?.data.location,
+        paymentStatus: finalData?.data.paymentStatus
+      }
+    };
+
+    return res.status(200).json({
+      data: responsePayload
+    });
+  } catch (error: any) {
+    console.error('Error processing inquiry:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}

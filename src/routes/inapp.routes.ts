@@ -1,6 +1,7 @@
 import express from 'express';
 import timeout from 'connect-timeout';
 import {
+  Check_Inquiry_QRIS,
   // close_ticket,
   // close_ticket_not_encrypt,
   Inquiry_Transaction,
@@ -56,6 +57,8 @@ innAppRoute.post(
   haltOnTimeout,
   Payment_Confirmation_QRIS
 );
+
+innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
 //Simulator
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
