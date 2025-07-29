@@ -2247,10 +2247,13 @@ export async function Check_Inquiry_QRIS(
       signature: remoteSignature
     };
 
+    console.log('data:', requestPayload);
+
     const encryptedRequest = await EncryptTotPOST(
       requestPayload,
       credential.GibberishKey ?? ''
     );
+    console.log('data encrypt:', encryptedRequest);
 
     const apiResponse = await axios.post(postRole.url_access, {
       data: encryptedRequest
