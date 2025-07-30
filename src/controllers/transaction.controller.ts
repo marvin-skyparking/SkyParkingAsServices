@@ -646,7 +646,18 @@ export async function Payment_Confirmation(
         data_payment?.responseStatus === 'Failed'
           ? 'INVALID TRANSACTION'
           : `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`,
-      data: data_payment?.data
+      data: {
+        transactionNo: decryptedObject.transactionNo ?? '',
+        referenceNo: data_payment?.data.referenceNo ?? '',
+        transactionStatus: data_payment?.data.transactionStatus ?? '',
+        amount: Number(data_payment?.data.amount),
+        paymentStatus: data_payment?.data.paymentStatus,
+        paymentReferenceNo: data_payment?.data.paymentReferenceNo ?? '',
+        paymentDate: data_payment?.data.paymentDate ?? '',
+        referenceTransactionNo: data_payment?.data.referenceTransactionNo ?? '',
+        issuerID: data_payment?.data.issuerID,
+        retrievalReferenceNo: data_payment?.data.retrievalReferenceNo
+      }
     };
 
     const insert_data = {
@@ -2081,6 +2092,7 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     const create_signature = generatePaymentPOSTQRISSignature(
       find_location.Login ?? '',
       find_location.Password ?? '',
+      find_location.NMID ?? '',
       transactionNo ?? '',
       referenceNo ?? '',
       amount ?? 0,
@@ -2090,20 +2102,24 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
       paymentDate ?? '',
       issuerID ?? '',
       retrievalReferenceNo ?? '',
+      approvalCode ?? '',
       find_location.SecretKey ?? ''
     );
 
     const data_send = {
       login: find_location.Login ?? '',
       password: find_location.Password ?? '',
+      storeID: find_location.NMID ?? '',
       transactionNo: transactionNo ?? '',
       referenceNo: referenceNo ?? '',
       amount: amount ?? 0,
       paymentStatus: paymentStatus ?? '',
+      paymentType: paymentType ?? '',
       paymentReferenceNo: paymentReferenceNo ?? '',
       paymentDate: paymentDate ?? '',
       issuerID: issuerID ?? '',
       retrievalReferenceNo: retrievalReferenceNo ?? '',
+      approvalCode: approvalCode ?? '',
       signature: create_signature
     };
 
@@ -2128,38 +2144,39 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
       data: encrypted_data_pay
     });
 
-    let PAYencryptedData: string | undefined;
+    // let PAYencryptedData: string | undefined;
 
-    if (typeof response_confirm_pay.data === 'string') {
-      try {
-        // Remove control characters and parse the string as JSON
-        const cleanString = response_confirm_pay.data.replace(
-          /[\u0000-\u001F\u007F-\u009F]/g,
-          ''
-        );
-        const parsed = JSON.parse(cleanString);
-        PAYencryptedData = parsed?.data;
-      } catch (err) {
-        console.error('Failed to parse string response as JSON:', err);
-      }
-    } else if (typeof response_confirm_pay.data === 'object') {
-      // If already parsed as object
-      PAYencryptedData = response_confirm_pay.data?.data;
-    }
+    // if (typeof response_confirm_pay.data === 'string') {
+    //   try {
+    //     // Remove control characters and parse the string as JSON
+    //     const cleanString = response_confirm_pay.data.replace(
+    //       /[\u0000-\u001F\u007F-\u009F]/g,
+    //       ''
+    //     );
+    //     const parsed = JSON.parse(cleanString);
+    //     PAYencryptedData = parsed?.data;
+    //   } catch (err) {
+    //     console.error('Failed to parse string response as JSON:', err);
+    //   }
+    // } else if (typeof response_confirm_pay.data === 'object') {
+    //   // If already parsed as object
+    //   PAYencryptedData = response_confirm_pay.data?.data;
+    // }
 
-    if (!PAYencryptedData) {
-      throw new Error('Encrypted data not found in API response.');
-    }
+    // if (!PAYencryptedData) {
+    //   throw new Error('Encrypted data not found in API response.');
+    // }
 
-    console.log(PAYencryptedData);
+    // console.log(PAYencryptedData);
 
-    const data_payment = await DecryptTotPOST(
-      PAYencryptedData,
-      find_location.GibberishKey ?? ''
-    );
+    // const data_payment = await DecryptTotPOST(
+    //   response_confirm_pay.data,
+    //   find_location.GibberishKey ?? ''
+    // );
 
+    console.log(response_confirm_pay.data);
     return res.status(200).json({
-      data: data_payment
+      data: response_confirm_pay.data
     });
   } catch (error: any) {
     console.error('Error processing payment transaction:', error);
