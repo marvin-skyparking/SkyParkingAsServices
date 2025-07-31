@@ -39,6 +39,7 @@ import {
   VoucherUsageAttributes
 } from '../models/voucher-usage.model';
 import { VoucherUsageMapping } from '../models/voucher-usage-mapping.model';
+import { Op } from 'sequelize';
 
 export interface IVoucherService {
   inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse>;
@@ -304,8 +305,16 @@ export class VoucherService implements IVoucherService {
         sanitizeResult?.data,
         gibberishKey
       );
+
       const decryptedResponse: ResponseData<VoucherRedemptionPOSTResponse> =
         JSON.parse(decrypted);
+
+      if (decryptedResponse.responseCode !== '211000') {
+        return {
+          status: 'ISSUED',
+          data: decryptedResponse.data
+        };
+      }
 
       console.log('decrypted result: ', decryptedResponse);
 
@@ -393,25 +402,49 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      // Checking Transaction
-      const checkRedemption = await VoucherRedemption.findOne({
+      // Checking Transaction Refrence No
+      const existingTransactions = await VoucherRedemption.findAll({
         where: {
-          TransactionNo: decryptedPayload.transactionNo
-        }
+          [Op.or]: [
+            { TransactionReferenceNo: decryptedPayload.transactionReferenceNo },
+            { TransactionReceiptNo: decryptedPayload.transactionReceiptNo }
+          ]
+        },
+        attributes: [
+          'TransactionReferenceNo',
+          'TransactionReceiptNo',
+          'POSTDataResponse'
+        ]
       });
 
-      if (checkRedemption) {
-        const postResponse: ResponseData<VoucherRedemptionPOSTResponse> =
-          JSON.parse(checkRedemption?.POSTDataResponse ?? '');
-
-        if (postResponse.data.voucherStatus === RedemptionStatus.REDEEMED) {
-          return {
-            data: await this.encryptedErrorResponse(secret),
-            statusCode: 400,
-            message: '[Redemption Error] Transaction already used'
-          };
-        }
+      if (existingTransactions.length > 0) {
+        return {
+          data: await this.encryptedErrorResponse(secret),
+          statusCode: 400,
+          message: `[Redemption Error] Voucher already used`
+        };
       }
+
+      // Check if any existing transaction is already redeemed
+      // for (const transaction of existingTransactions) {
+      //   try {
+      //     const postResponse: ResponseData<VoucherRedemptionPOSTResponse> =
+      //       JSON.parse(transaction.POSTDataResponse ?? '{}');
+
+      //     if (postResponse.data?.voucherStatus === RedemptionStatus.REDEEMED) {
+      //       const isReferenceMatch = transaction.TransactionReferenceNo === decryptedPayload.transactionReferenceNo;
+      //       const errorType = isReferenceMatch ? 'Reference' : 'Receipt';
+
+      //       return {
+      //         data: await this.encryptedErrorResponse(secret),
+      //         statusCode: 200,
+      //         message: `[Redemption Error] Transaction ${errorType} Number already used`
+      //       };
+      //     }
+      //   } catch (error) {
+      //     console.error('Error parsing POSTDataResponse:', error);
+      //   }
+      // }
 
       // Update Tarif (API)
       const postSignature = md5(
@@ -659,19 +692,21 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      const merchantSignature = md5(`
-        ${partner?.Login}${partner?.Password}
-        ${partner?.MPAN}
-        ${decryptedPayload.locationCode}
-        ${decryptedPayload.transactionNo}
-        ${decryptedPayload.licensePlateNo}
-        ${decryptedPayload.inTime}
-        ${decryptedPayload.gateInCode}
-        ${decryptedPayload.vehicleType}
-        ${decryptedPayload.totalTariff}
-        ${decryptedPayload.outTime}
-        ${decryptedPayload.gateOutCode}
-        ${partner?.SecretKey}`);
+      const merchantSignature = md5(
+        (partner?.Login ?? '') +
+          (partner?.Password ?? '') +
+          partner?.MPAN +
+          decryptedPayload.locationCode +
+          decryptedPayload.transactionNo +
+          decryptedPayload.licensePlateNo +
+          decryptedPayload.inTime +
+          decryptedPayload.gateInCode +
+          decryptedPayload.vehicleType +
+          String(decryptedPayload.totalTariff) +
+          decryptedPayload.outTime +
+          decryptedPayload.gateOutCode +
+          partner?.SecretKey
+      );
 
       const merchantDataRequest: MerchantUsageRequest = {
         login: decryptedPayload.login,
