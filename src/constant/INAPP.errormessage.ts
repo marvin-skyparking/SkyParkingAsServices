@@ -81,5 +81,11 @@ export const ERROR_MESSAGES = {
     responseDescription: 'Invalid Transaction',
     messageDetail:
       'Ticket has closed and the vehicle has left the parking location'
+  },
+  TOO_MANY_REQUESTS: {
+    responseStatus: 'Failed',
+    statusCode: '429001',
+    responseDescription: 'Too many requests',
+    messageDetail: 'Too many requests please try again later.'
   }
 };

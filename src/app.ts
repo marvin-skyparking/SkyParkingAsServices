@@ -10,7 +10,53 @@ import cors from 'cors';
 import timeout from 'connect-timeout';
 import { haltOnTimeout } from './middleware/timeout.middleware';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
+import { defaultTransactionData } from './models/parking_transaction_integration.model';
+import { EncryptTotPOST } from './utils/encrypt.utils';
+import { ERROR_MESSAGES } from './constant/INAPP.errormessage';
 const app = express().disable('x-powered-by');
+
+// ✅ Rate limiter config (e.g. 100 requests per 15 minutes per IP)
+
+// Async helper wrapper for Express-compatible middleware
+const asyncHandler = (fn: Function) => (req: any, res: any, next: any) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+// Your encryptAndRespond function (placed above limiter if in same file)
+const encryptAndRespond = async (
+  req: any,
+  res: any,
+  payload: any,
+  key: string,
+  transactionNo?: string
+) => {
+  const encrypted = await EncryptTotPOST(payload, key);
+  return res.status(429).json({ data: encrypted }); // 429 for rate limiting
+};
+
+// Apply rate limiter with async handler
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: asyncHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const referenceId =
+        req.headers['x-reference-id']?.toString() || 'unknown-ref';
+
+      await encryptAndRespond(
+        req,
+        res,
+        ERROR_MESSAGES.TOO_MANY_REQUESTS,
+        referenceId
+      );
+    }
+  )
+});
+
+// ✅ Apply rate limiting globally
+app.use(limiter);
 
 const allowedOrigins = [
   'http://localhost:3000',
