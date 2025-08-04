@@ -1913,6 +1913,81 @@ export async function close_ticket(req: Request, res: Response): Promise<any> {
   }
 }
 
+// export async function B2B_TOKEN_IN_APP(
+//   req: Request,
+//   res: Response
+// ): Promise<any> {
+//   try {
+//     // Check if req.body is empty
+//     if (!req.body || Object.keys(req.body).length === 0) {
+//       return res.status(400).send({
+//         responseCode: '400',
+//         responseMessage: 'Payload is missing or empty'
+//       });
+//     }
+
+//     const timestamp = req.header('X-TIMESTAMP'); // Directly using the header name
+//     const signature = req.header('X-SIGNATURE'); // Directly using the header name
+//     const clientKey = req.header('X-CLIENT-KEY') || req.header('X-PARTNER-ID');
+//     const contentType = req.header('content-type'); // Directly using the header name
+//     const { grantType } = req.body;
+
+//     if (!contentType) {
+//       return res.status(400).send(NOBU_Message.Invalid_Format_Content_Type);
+//     }
+//     if (!clientKey) {
+//       return res.status(400).send(NOBU_Message.Invalid_Client_Key);
+//     }
+//     if (!timestamp) {
+//       return res.status(400).send(NOBU_Message.Null_Format_XSTAMP);
+//     }
+//     if (!signature) {
+//       return res.status(400).send(NOBU_Message.Invalid_Signature);
+//     }
+//     if (!grantType || grantType.trim() === '') {
+//       return res.status(400).send(NOBU_Message.NO_GRANT_TYPE);
+//     }
+//     if (grantType !== 'client_credentials') {
+//       return res.status(400).send(NOBU_Message.GRANT_TYPE_NOT_VALID);
+//     }
+
+//     const stringToSign = generateStringToSign(clientKey, timestamp);
+//     const signatures = signAsymmetricSignatures(stringToSign);
+
+//     console.log(signatures);
+
+//     const verify_signature = await verifyAsymmetricSignatures(
+//       signature,
+//       stringToSign
+//     );
+
+//     if (!verify_signature) {
+//       return res.status(400).send(NOBU_Message.Invalid_Signature);
+//     }
+
+//     if (verify_signature) {
+//       const token = await generateAccessToken(clientKey);
+
+//       const responseData = {
+//         responseCode: '2007300', // Replace with your service code
+//         responseMessage: 'Request has been processed successfully',
+//         accessToken: token,
+//         tokenType: 'Bearer',
+//         expiresIn: '1440', // 24 hours
+//         additionalInfo: {}
+//       };
+
+//       return res.status(200).json(responseData);
+//     }
+//   } catch (error: any) {
+//     // Some other error (e.g., network error or unexpected error)
+//     return res.status(500).json({
+//       message: 'Internal server error',
+//       error: error.message || 'An unknown error occurred'
+//     });
+//   }
+// }
+
 export async function Inquiry_Transaction_Snap(
   req: Request,
   res: Response
