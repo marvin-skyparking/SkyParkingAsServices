@@ -722,8 +722,9 @@ export async function processInquiryTransaction(
         ...ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
         data: defaultTransactionData()
       });
-
     const decryptedObject = RealdecryptPayload(data);
+
+    console.log(decryptedObject);
     if (!decryptedObject)
       return res.status(200).json({
         ...ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
@@ -744,7 +745,7 @@ export async function processInquiryTransaction(
         ...ERROR_MESSAGES.INVALID_CREDENTIAL,
         data: defaultTransactionData(transactionNo)
       };
-      return res.status(200).json({ data: RealencryptPayload(response) });
+      return res.status(200).json(response);
     }
 
     const expectedSignature = generateSignature(
@@ -760,15 +761,17 @@ export async function processInquiryTransaction(
         data: defaultTransactionData(transactionNo)
       });
 
-    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
-      (role) => role.access_type === 'INQUIRY'
-    );
-    if (!hasAccess)
-      return res
-        .status(401)
-        .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+    // const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+    //   (role) => role.access_type === 'INQUIRY'
+    // );
+    // if (!hasAccess)
+    //   return res
+    //     .status(401)
+    //     .json({ responseCode: '401401', responseMessage: 'Access Denied' });
 
     const data_ticket = await findTicket(transactionNo);
+
+    console.log(data_ticket);
     if (!data_ticket)
       return res.status(200).json({
         responseStatus: 'Failed',
@@ -980,7 +983,7 @@ export async function processPaymentTransaction(
     const expectedSignature = generatePaymentSignature(
       login,
       password,
-      secretKeyData.NMID ?? '',
+      storeID,
       transactionNo,
       referenceNo,
       amount,
@@ -993,6 +996,8 @@ export async function processPaymentTransaction(
       SecretKeys
     );
 
+    console.log(signature, expectedSignature);
+
     // Ensure both signatures are lowercase for comparison
     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
       return res.status(200).json({
@@ -1003,16 +1008,16 @@ export async function processPaymentTransaction(
 
     const check_role = await getRolesByPartnerId(secretKeyData.Id);
 
-    const hasPaymentAccess = check_role.some(
-      (role) => role.access_type === 'PAYMENT'
-    );
+    // const hasPaymentAccess = check_role.some(
+    //   (role) => role.access_type === 'PAYMENT'
+    // );
 
-    if (!hasPaymentAccess) {
-      return res.status(200).json({
-        responseCode: '401401',
-        responseMessage: 'You Not Allowed To Access This Feature'
-      });
-    }
+    // if (!hasPaymentAccess) {
+    //   return res.status(200).json({
+    //     responseCode: '401401',
+    //     responseMessage: 'You Not Allowed To Access This Feature'
+    //   });
+    // }
     const data_ticket = await findTicket(decryptedObject.transactionNo);
 
     if (!data_ticket) {
