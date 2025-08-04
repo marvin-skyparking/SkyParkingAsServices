@@ -38,16 +38,16 @@ const innAppRoute = express.Router();
 // innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
 
 // POST TEST
-// innAppRoute.post(
-//   '/Partner/InquiryTariffREG',
-//   haltOnTimeout,
-//   Inquiry_Transaction
-// );
-// innAppRoute.post(
-//   '/Partner/PaymentConfirmationREG',
-//   haltOnTimeout,
-//   Payment_Confirmation
-// );
+innAppRoute.post(
+  '/Partner/InquiryTariffREG',
+  haltOnTimeout,
+  processInquiryTransactionEncrypt
+);
+innAppRoute.post(
+  '/Partner/PaymentConfirmationREG',
+  haltOnTimeout,
+  processPaymentTransactionEncrypt
+);
 
 // innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
