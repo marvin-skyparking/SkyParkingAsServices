@@ -12,37 +12,37 @@ import { ERROR_MESSAGES } from './constant/INAPP.errormessage';
 
 const app = express().disable('x-powered-by');
 
-const asyncHandler = (fn: Function) => (req: any, res: any, next: any) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
+// const asyncHandler = (fn: Function) => (req: any, res: any, next: any) =>
+//   Promise.resolve(fn(req, res, next)).catch(next);
 
-// 🔐 Cached encrypted response to avoid high CPU usage
-let cachedEncryptedResponse: string | null = null;
-async function getCachedEncryptedResponse(key: string): Promise<string> {
-  if (!cachedEncryptedResponse) {
-    cachedEncryptedResponse = await EncryptTotPOST(
-      ERROR_MESSAGES.TOO_MANY_REQUESTS,
-      key
-    );
-  }
-  return cachedEncryptedResponse;
-}
+// // 🔐 Cached encrypted response to avoid high CPU usage
+// let cachedEncryptedResponse: string | null = null;
+// async function getCachedEncryptedResponse(key: string): Promise<string> {
+//   if (!cachedEncryptedResponse) {
+//     cachedEncryptedResponse = await EncryptTotPOST(
+//       ERROR_MESSAGES.TOO_MANY_REQUESTS,
+//       key
+//     );
+//   }
+//   return cachedEncryptedResponse;
+// }
 
-// 📉 Rate limiter config
-const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // Max 10 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: asyncHandler(async (req: Request, res: Response) => {
-    const referenceId =
-      req.headers['x-reference-id']?.toString() || 'unknown-ref';
-    const encrypted = await getCachedEncryptedResponse(referenceId);
-    return res.status(429).json({ data: encrypted }); // 429 = Too Many Requests
-  })
-});
+// // 📉 Rate limiter config
+// const limiter = rateLimit({
+//   windowMs: 1 * 60 * 1000, // 1 minute
+//   max: 10, // Max 10 requests per window
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   handler: asyncHandler(async (req: Request, res: Response) => {
+//     const referenceId =
+//       req.headers['x-reference-id']?.toString() || 'unknown-ref';
+//     const encrypted = await getCachedEncryptedResponse(referenceId);
+//     return res.status(429).json({ data: encrypted }); // 429 = Too Many Requests
+//   })
+// });
 
 // ✅ Apply rate limiter
-app.use(limiter);
+// app.use(limiter);
 
 // 🌐 Allowed CORS origins
 const allowedOrigins = [
