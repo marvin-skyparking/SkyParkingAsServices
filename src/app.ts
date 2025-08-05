@@ -1,9 +1,4 @@
-import express, {
-  Request,
-  Response,
-  NextFunction,
-  ErrorRequestHandler
-} from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
 import indexRoutes from './routes';
 import cors from 'cors';
@@ -14,50 +9,42 @@ import rateLimit from 'express-rate-limit';
 import { defaultTransactionData } from './models/parking_transaction_integration.model';
 import { EncryptTotPOST } from './utils/encrypt.utils';
 import { ERROR_MESSAGES } from './constant/INAPP.errormessage';
+
 const app = express().disable('x-powered-by');
 
-// ✅ Rate limiter config (e.g. 100 requests per 15 minutes per IP)
-
-// Async helper wrapper for Express-compatible middleware
 const asyncHandler = (fn: Function) => (req: any, res: any, next: any) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-// Your encryptAndRespond function (placed above limiter if in same file)
-const encryptAndRespond = async (
-  req: any,
-  res: any,
-  payload: any,
-  key: string,
-  transactionNo?: string
-) => {
-  const encrypted = await EncryptTotPOST(payload, key);
-  return res.status(429).json({ data: encrypted }); // 429 for rate limiting
-};
+// 🔐 Cached encrypted response to avoid high CPU usage
+let cachedEncryptedResponse: string | null = null;
+async function getCachedEncryptedResponse(key: string): Promise<string> {
+  if (!cachedEncryptedResponse) {
+    cachedEncryptedResponse = await EncryptTotPOST(
+      ERROR_MESSAGES.TOO_MANY_REQUESTS,
+      key
+    );
+  }
+  return cachedEncryptedResponse;
+}
 
-// Apply rate limiter with async handler
+// 📉 Rate limiter config
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 15 minutes
-  max: 10,
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // Max 10 requests per window
   standardHeaders: true,
   legacyHeaders: false,
-  handler: asyncHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
-      const referenceId =
-        req.headers['x-reference-id']?.toString() || 'unknown-ref';
-
-      await encryptAndRespond(
-        req,
-        res,
-        ERROR_MESSAGES.TOO_MANY_REQUESTS,
-        referenceId
-      );
-    }
-  )
+  handler: asyncHandler(async (req: Request, res: Response) => {
+    const referenceId =
+      req.headers['x-reference-id']?.toString() || 'unknown-ref';
+    const encrypted = await getCachedEncryptedResponse(referenceId);
+    return res.status(429).json({ data: encrypted }); // 429 = Too Many Requests
+  })
 });
 
-// ✅ Apply rate limiting globally
+// ✅ Apply rate limiter
 app.use(limiter);
 
+// 🌐 Allowed CORS origins
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:9001',
@@ -68,12 +55,13 @@ const allowedOrigins = [
   'https://skyparking.co.id'
 ];
 
+// 🛡️ CORS setup
 const corsOptions = {
   origin: (
     origin: string | undefined,
     callback: (error: Error | null, success?: boolean) => void
   ) => {
-    if (allowedOrigins.indexOf(origin!) !== -1 || !origin) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -82,18 +70,20 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 };
-
 app.use(cors(corsOptions));
+
+// 📦 Middleware setup
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static files (like index.html)
+// 🗂️ Serve static files (e.g., index.html)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// // Handling Timeout
+// ⏱️ Optional: Timeout handling
 // app.use(timeout('2000ms'));
-//Routes Flow
-app.use('/v1', indexRoutes);
 // app.use(haltOnTimeout);
+
+// 📌 API routes
+app.use('/v1', indexRoutes);
 
 export default app;

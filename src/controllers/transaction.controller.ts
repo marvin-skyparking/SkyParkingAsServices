@@ -46,6 +46,8 @@ import {
   SUCCESS_MESSAGES_NEW
 } from '../constant/inapp-message';
 import { generateCustomCode } from '../utils/helper.utils';
+import { INAPP_ERROR_MESSAGES } from '../constant/inapp.message';
+import { generateStringToSign } from '../utils/snap.encryption';
 
 /**
  * Process Inquiry Transaction
@@ -1933,25 +1935,25 @@ export async function close_ticket(req: Request, res: Response): Promise<any> {
 //     const { grantType } = req.body;
 
 //     if (!contentType) {
-//       return res.status(400).send(NOBU_Message.Invalid_Format_Content_Type);
+//       return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Format_Content_Type);
 //     }
 //     if (!clientKey) {
-//       return res.status(400).send(NOBU_Message.Invalid_Client_Key);
+//       return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Client_Key);
 //     }
 //     if (!timestamp) {
-//       return res.status(400).send(NOBU_Message.Null_Format_XSTAMP);
+//       return res.status(400).send(INAPP_ERROR_MESSAGES.Null_Format_XSTAMP);
 //     }
 //     if (!signature) {
-//       return res.status(400).send(NOBU_Message.Invalid_Signature);
+//       return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Signature);
 //     }
 //     if (!grantType || grantType.trim() === '') {
-//       return res.status(400).send(NOBU_Message.NO_GRANT_TYPE);
+//       return res.status(400).send(INAPP_ERROR_MESSAGES.NO_GRANT_TYPE);
 //     }
 //     if (grantType !== 'client_credentials') {
-//       return res.status(400).send(NOBU_Message.GRANT_TYPE_NOT_VALID);
+//       return res.status(400).send(INAPP_ERROR_MESSAGES.GRANT_TYPE_NOT_VALID);
 //     }
 
-//     const stringToSign = generateStringToSign(clientKey, timestamp);
+//     const stringToSign = generateStringToSign(clientKey, timestamp, SECRET_KEY);
 //     const signatures = signAsymmetricSignatures(stringToSign);
 
 //     console.log(signatures);
@@ -1988,108 +1990,108 @@ export async function close_ticket(req: Request, res: Response): Promise<any> {
 //   }
 // }
 
-export async function Inquiry_Transaction_Snap(
-  req: Request,
-  res: Response
-): Promise<any> {
-  try {
-    const { P1, P2 } = req.body;
+// export async function Inquiry_Transaction_Snap(
+//   req: Request,
+//   res: Response
+// ): Promise<any> {
+//   try {
+//     const { P1, P2 } = req.body;
 
-    // Validate required fields
-    if (!P1 || !P2) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES_NEW.INVALID_REQUEST,
-        data: defaultTransactionData()
-      });
-    }
+//     // Validate required fields
+//     if (!P1 || !P2) {
+//       return res.status(200).json({
+//         ...ERROR_MESSAGES_NEW.INVALID_REQUEST,
+//         data: defaultTransactionData()
+//       });
+//     }
 
-    // Find Location
-    const location = await findInquiryTransactionMappingByNMID(P1);
+//     // Find Location
+//     const location = await findInquiryTransactionMappingByNMID(P1);
 
-    if (!location) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES_NEW.INVALID_LOCATION,
-        data: defaultTransactionData()
-      });
-    }
+//     if (!location) {
+//       return res.status(200).json({
+//         ...ERROR_MESSAGES_NEW.INVALID_LOCATION,
+//         data: defaultTransactionData()
+//       });
+//     }
 
-    const locationRoles = await getRolesByPartnerId(location.Id);
-    const postRole = locationRoles.find(
-      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
-    );
-    if (!postRole || !postRole.url_access) {
-      return res.status(200).json({
-        responseCode: '401401',
-        responseMessage: 'Access Denied'
-      });
-    }
-    const signature_data = {
-      login: location.Login ?? '',
-      password: location.Password ?? '',
-      storeID: location.NMID ?? '',
-      transactionNo: P2
-    };
+//     const locationRoles = await getRolesByPartnerId(location.Id);
+//     const postRole = locationRoles.find(
+//       (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+//     );
+//     if (!postRole || !postRole.url_access) {
+//       return res.status(200).json({
+//         responseCode: '401401',
+//         responseMessage: 'Access Denied'
+//       });
+//     }
+//     const signature_data = {
+//       login: location.Login ?? '',
+//       password: location.Password ?? '',
+//       storeID: location.NMID ?? '',
+//       transactionNo: P2
+//     };
 
-    const generate_signature = generateSignature(
-      location.Login ?? '',
-      location.Password ?? '',
-      location.NMID ?? '',
-      P2 ?? '',
-      location.SecretKey ?? ''
-    );
+//     const generate_signature = generateSignature(
+//       location.Login ?? '',
+//       location.Password ?? '',
+//       location.NMID ?? '',
+//       P2 ?? '',
+//       location.SecretKey ?? ''
+//     );
 
-    const requestPayload = {
-      ...signature_data,
-      signature: generate_signature
-    };
+//     const requestPayload = {
+//       ...signature_data,
+//       signature: generate_signature
+//     };
 
-    const encryptedRequest = await EncryptTotPOST(
-      requestPayload,
-      location.GibberishKey ?? ''
-    );
+//     const encryptedRequest = await EncryptTotPOST(
+//       requestPayload,
+//       location.GibberishKey ?? ''
+//     );
 
-    const apiResponse = await axios.post(postRole.url_access, {
-      data: encryptedRequest
-    });
+//     const apiResponse = await axios.post(postRole.url_access, {
+//       data: encryptedRequest
+//     });
 
-    let encryptedData: string | undefined;
+//     let encryptedData: string | undefined;
 
-    if (typeof apiResponse.data === 'string') {
-      try {
-        // Remove control characters and parse the string as JSON
-        const cleanString = apiResponse.data.replace(
-          /[\u0000-\u001F\u007F-\u009F]/g,
-          ''
-        );
-        const parsed = JSON.parse(cleanString);
-        encryptedData = parsed?.data;
-      } catch (err) {
-        console.error('Failed to parse string response as JSON:', err);
-      }
-    } else if (typeof apiResponse.data === 'object') {
-      // If already parsed as object
-      encryptedData = apiResponse.data?.data;
-    }
+//     if (typeof apiResponse.data === 'string') {
+//       try {
+//         // Remove control characters and parse the string as JSON
+//         const cleanString = apiResponse.data.replace(
+//           /[\u0000-\u001F\u007F-\u009F]/g,
+//           ''
+//         );
+//         const parsed = JSON.parse(cleanString);
+//         encryptedData = parsed?.data;
+//       } catch (err) {
+//         console.error('Failed to parse string response as JSON:', err);
+//       }
+//     } else if (typeof apiResponse.data === 'object') {
+//       // If already parsed as object
+//       encryptedData = apiResponse.data?.data;
+//     }
 
-    if (!encryptedData) {
-      throw new Error('Encrypted data not found in API response.');
-    }
+//     if (!encryptedData) {
+//       throw new Error('Encrypted data not found in API response.');
+//     }
 
-    const finalData = await DecryptTotPOST(
-      encryptedData,
-      location.GibberishKey ?? ''
-    );
+//     const finalData = await DecryptTotPOST(
+//       encryptedData,
+//       location.GibberishKey ?? ''
+//     );
 
-    return res.status(200).json({
-      data: finalData
-    });
-  } catch (error) {
-    console.error('Error processing payment transaction:', error);
-    return res.status(500).json({
-      data: RealencryptPayload({ error: 'Internal Server Error' })
-    });
-  }
-}
+//     return res.status(200).json({
+//       data: finalData
+//     });
+//   } catch (error) {
+//     console.error('Error processing payment transaction:', error);
+//     return res.status(500).json({
+//       data: RealencryptPayload({ error: 'Internal Server Error' })
+//     });
+//   }
+// }
 
 export async function Payment_Confirmation_Snap(
   req: Request,

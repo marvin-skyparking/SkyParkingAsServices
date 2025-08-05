@@ -5,7 +5,7 @@ import {
   // close_ticket,
   // close_ticket_not_encrypt,
   Inquiry_Transaction,
-  Inquiry_Transaction_Snap,
+  // Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
   Payment_Confirmation,
   Payment_Confirmation_QRIS
@@ -84,11 +84,11 @@ innAppRoute.post('/GenerateTicket', createTicketHandler);
 // innAppRoute.post('/POST/Simulator/Close-Ticket/', close_ticket_not_encrypt);
 
 //Version 2
-innAppRoute.post(
-  '/Partner/ticket/InquiryTariffREG',
-  verifyClientAuthAccess,
-  Inquiry_Transaction_Snap
-);
+// innAppRoute.post(
+//   '/Partner/ticket/InquiryTariffREG',
+//   verifyClientAuthAccess,
+//   Inquiry_Transaction_Snap
+// );
 // innAppRoute.post('/Partner/PaymentConfrimationREG', processPaymentTransaction);
 
 export default innAppRoute;

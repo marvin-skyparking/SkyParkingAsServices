@@ -38,3 +38,18 @@ export async function generateStringToSignInquiry(
   // Return the constructed string to sign
   return `${httpMethod}:${relativePath}:${accessToken}:${lowercaseHashBody}:${timestamp}`;
 }
+
+export function generateStringToSign(
+  clientKey: string,
+  timestamp: string
+): string {
+  return `${clientKey}|${timestamp}`;
+}
+
+// Function to sign the string using SHA256withRSA (RSA-SHA256)
+export function signWithRSA(stringToSign: string, SECRET_KEY: string): string {
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(stringToSign);
+  sign.end();
+  return sign.sign(SECRET_KEY, 'base64'); // Generate RSA signature and encode in base64
+}
