@@ -39,26 +39,26 @@ const innAppRoute = express.Router();
 // innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
 
 // POST TEST
-// innAppRoute.post(
-//   '/Partner/InquiryTariffREG',
-//   haltOnTimeout,
-//   Inquiry_Transaction
-// );
-// innAppRoute.post(
-//   '/Partner/PaymentConfirmationREG',
-//   haltOnTimeout,
-//   Payment_Confirmation
-// );
+innAppRoute.post(
+  '/Partner/InquiryTariffREG',
+  haltOnTimeout,
+  Inquiry_Transaction
+);
+innAppRoute.post(
+  '/Partner/PaymentConfirmationREG',
+  haltOnTimeout,
+  Payment_Confirmation
+);
 
 innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
-innAppRoute.post(
-  '/Partner/PaymentConfirmationQRIS',
-  haltOnTimeout,
-  Payment_Confirmation_QRIS
-);
+// innAppRoute.post(
+//   '/Partner/PaymentConfirmationQRIS',
+//   haltOnTimeout,
+//   Payment_Confirmation_QRIS
+// );
 
-innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
+// innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
 //Simulator
 // innAppRoute.post('/Signature-Inquiry', sigantureKey);

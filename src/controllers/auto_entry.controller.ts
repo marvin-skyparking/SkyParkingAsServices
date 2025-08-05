@@ -36,7 +36,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
     if (!payload.data) {
       payload.data = defaultTransactionDataAutoEntry(transactionNo);
     }
-    const encrypted = await EncryptTotPOST(payload, key);
+    const encrypted = EncryptTotPOST(payload, key);
     return res.status(200).json({ data: encrypted });
   };
 

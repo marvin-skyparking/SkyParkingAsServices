@@ -93,6 +93,8 @@ export async function Inquiry_Transaction(
     }
 
     const decryptedObject = RealdecryptPayload(data);
+
+    console.log(decryptedObject);
     if (!decryptedObject) {
       Sentry.captureException(new Error('INVALID ENCRYPTION DATA'), {
         extra: { requestBody: data, headers: req.headers, ip: req.ip }
@@ -276,8 +278,6 @@ export async function Inquiry_Transaction(
         paymentStatus: finalData?.data.paymentStatus
       }
     };
-
-    console.log(responsePayload);
 
     return encryptAndRespond(
       responsePayload,
@@ -476,7 +476,6 @@ export async function Payment_Confirmation(
         transactionNo
       );
     }
-    console.log(data_send_recheck);
 
     const encrypted_data = await EncryptTotPOST(
       data_send_recheck,
@@ -517,7 +516,6 @@ export async function Payment_Confirmation(
       throw new Error('Encrypted data not found in API response.');
     }
 
-    console.log(encryptedData);
     const data_inquiry = await DecryptTotPOST(
       encryptedData,
       find_location.GibberishKey ?? ''
@@ -564,7 +562,6 @@ export async function Payment_Confirmation(
       find_location.GibberishKey ?? ''
     );
 
-    console.log(data_send);
     const paymentAccess = access_post.find(
       (role) => role.role_name === 'POST' && role.access_type === 'PAYMENT'
     );
@@ -579,7 +576,6 @@ export async function Payment_Confirmation(
       data: encrypted_data_pay
     });
 
-    console.log(response_confirm_pay);
     // const parsedDataPay = JSON.parse(
     //   response_confirm_pay.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
     // );
@@ -605,8 +601,6 @@ export async function Payment_Confirmation(
     if (!PAYencryptedData) {
       throw new Error('Encrypted data not found in API response.');
     }
-
-    console.log(PAYencryptedData);
 
     const data_payment = await DecryptTotPOST(
       PAYencryptedData,
@@ -1734,7 +1728,6 @@ export async function close_ticket_not_encrypt(
   try {
     const { transactionNo } = req.body;
 
-    console.log(req.body.transactionNo);
     if (!transactionNo) {
       return res.status(200).json({
         responseCode: '400200',
