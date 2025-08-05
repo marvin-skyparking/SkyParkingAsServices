@@ -52,13 +52,13 @@ innAppRoute.post(
 
 innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
-// innAppRoute.post(
-//   '/Partner/PaymentConfirmationQRIS',
-//   haltOnTimeout,
-//   Payment_Confirmation_QRIS
-// );
+innAppRoute.post(
+  '/Partner/PaymentConfirmationQRIS',
+  haltOnTimeout,
+  Payment_Confirmation_QRIS
+);
 
-// innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
+innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
 //Simulator
 // innAppRoute.post('/Signature-Inquiry', sigantureKey);
