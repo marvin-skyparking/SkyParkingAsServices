@@ -40,12 +40,12 @@ const innAppRoute = express.Router();
 
 // POST TEST
 innAppRoute.post(
-  '/Partner/InquiryTariffREG',
+  '/Partner/InquiryTariffREGSS',
   haltOnTimeout,
   Inquiry_Transaction
 );
 innAppRoute.post(
-  '/Partner/PaymentConfirmationREG',
+  '/Partner/PaymentConfirmationREGSS',
   haltOnTimeout,
   Payment_Confirmation
 );
