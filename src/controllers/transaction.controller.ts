@@ -53,14 +53,14 @@ import { generateStringToSign } from '../utils/snap.encryption';
  * Process Inquiry Transaction
  */
 
-axiosRetry(axios, {
-  retries: 3, // Number of retries
-  retryDelay: (retryCount) => retryCount * 1000, // Exponential backoff (1s, 2s, 3s)
-  retryCondition: (error: any) => {
-    // Retry only on network errors or 5xx server errors
-    return error.response?.status >= 500 || error.code === 'ECONNABORTED';
-  }
-});
+// axiosRetry(axios, {
+//   retries: 3, // Number of retries
+//   retryDelay: (retryCount) => retryCount * 1000, // Exponential backoff (1s, 2s, 3s)
+//   retryCondition: (error: any) => {
+//     // Retry only on network errors or 5xx server errors
+//     return error.response?.status >= 500 || error.code === 'ECONNABORTED';
+//   }
+// });
 
 //Inquiry Partner - NOBU
 export async function Inquiry_Transaction(
