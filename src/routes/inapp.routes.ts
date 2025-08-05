@@ -58,7 +58,7 @@ innAppRoute.post(
   Payment_Confirmation_QRIS
 );
 
-innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
+// innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
 //Simulator
 // innAppRoute.post('/Signature-Inquiry', sigantureKey);
