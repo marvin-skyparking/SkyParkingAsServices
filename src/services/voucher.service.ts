@@ -39,6 +39,7 @@ import {
   VoucherUsageAttributes
 } from '../models/voucher-usage.model';
 import { VoucherUsageMapping } from '../models/voucher-usage-mapping.model';
+import { Op } from 'sequelize';
 
 export interface IVoucherService {
   inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse>;
@@ -269,12 +270,16 @@ export class VoucherService implements IVoucherService {
     endpoint: string
   ): Promise<UpdatePOST<VoucherRedemptionPOSTResponse | null>> {
     try {
+      console.log('post payload raw: ', params);
+
       const encryptedPayload = await Encryption(
         JSON.stringify(params),
         gibberishKey
       );
 
-      const result = await cb.fire<EncryptedPayload>({
+      console.log('sending post payload: ', encryptedPayload);
+
+      const result = await cb.fire<any>({
         method: 'POST',
         url: endpoint,
         data: { data: encryptedPayload }
@@ -287,9 +292,31 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      const decrypted = await Decryption<string>(result?.data, gibberishKey);
+      console.log('result: ', result);
+
+      let sanitizeResult: EncryptedPayload;
+      if (typeof result === 'string') {
+        sanitizeResult = JSON.parse(result);
+      } else {
+        sanitizeResult = result;
+      }
+
+      const decrypted = await Decryption<string>(
+        sanitizeResult?.data,
+        gibberishKey
+      );
+
       const decryptedResponse: ResponseData<VoucherRedemptionPOSTResponse> =
         JSON.parse(decrypted);
+
+      if (decryptedResponse.responseCode !== '211000') {
+        return {
+          status: 'ISSUED',
+          data: decryptedResponse.data
+        };
+      }
+
+      console.log('decrypted result: ', decryptedResponse);
 
       return {
         status: 'REDEEMED',
@@ -371,48 +398,68 @@ export class VoucherService implements IVoucherService {
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
-          message: '[Redemption Error] Partner not found'
+          message: '[Redemption Error] Partner not founsd'
         };
       }
 
-      // Checking Transaction
-      const checkRedemption = await VoucherRedemption.findOne({
+      // Checking Transaction Refrence No
+      const existingTransactions = await VoucherRedemption.findAll({
         where: {
-          TransactionNo: decryptedPayload.transactionNo
-        }
+          [Op.or]: [
+            { TransactionReferenceNo: decryptedPayload.transactionReferenceNo },
+            { TransactionReceiptNo: decryptedPayload.transactionReceiptNo }
+          ]
+        },
+        attributes: [
+          'TransactionReferenceNo',
+          'TransactionReceiptNo',
+          'POSTDataResponse'
+        ]
       });
 
-      if (checkRedemption) {
-        const postResponse: ResponseData<VoucherRedemptionPOSTResponse> =
-          JSON.parse(checkRedemption?.POSTDataResponse ?? '');
-
-        if (postResponse.data.voucherStatus === RedemptionStatus.REDEEMED) {
-          return {
-            data: await this.encryptedErrorResponse(secret),
-            statusCode: 400,
-            message: '[Redemption Error] Transaction already used'
-          };
-        }
+      if (existingTransactions.length > 0) {
+        return {
+          data: await this.encryptedErrorResponse(secret),
+          statusCode: 400,
+          message: `[Redemption Error] Voucher already used`
+        };
       }
 
+      // Check if any existing transaction is already redeemed
+      // for (const transaction of existingTransactions) {
+      //   try {
+      //     const postResponse: ResponseData<VoucherRedemptionPOSTResponse> =
+      //       JSON.parse(transaction.POSTDataResponse ?? '{}');
+
+      //     if (postResponse.data?.voucherStatus === RedemptionStatus.REDEEMED) {
+      //       const isReferenceMatch = transaction.TransactionReferenceNo === decryptedPayload.transactionReferenceNo;
+      //       const errorType = isReferenceMatch ? 'Reference' : 'Receipt';
+
+      //       return {
+      //         data: await this.encryptedErrorResponse(secret),
+      //         statusCode: 200,
+      //         message: `[Redemption Error] Transaction ${errorType} Number already used`
+      //       };
+      //     }
+      //   } catch (error) {
+      //     console.error('Error parsing POSTDataResponse:', error);
+      //   }
+      // }
+
       // Update Tarif (API)
-      const postSignature = md5(`
-        ${partner?.Login}${partner?.Password}
-        ${decryptedPayload.merchantID}
-        ${decryptedPayload.tenantID}
-        ${decryptedPayload.locationCode}
-        ${decryptedPayload.transactionNo}
-        ${decryptedPayload.transactionReferenceNo}
-        ${decryptedPayload.transactionReceiptNo}
-        ${decryptedPayload.transactionReceiptAmount}
-        ${decryptedPayload.voucherType}
-        ${decryptedPayload.voucherValue}
-        ${decryptedPayload.voucherExpiryDate}
-        ${decryptedPayload.customerVehicleType}
-        ${decryptedPayload.customerVehiclePlateNo}
-        ${decryptedPayload.customerMobileNo}
-        ${decryptedPayload.customerEmail}
-        ${partner?.SecretKey}`);
+      const postSignature = md5(
+        (partner?.Login ?? '') +
+          partner?.Password +
+          decryptedPayload.locationCode +
+          decryptedPayload.transactionNo +
+          decryptedPayload.transactionReferenceNo +
+          decryptedPayload.voucherType +
+          String(decryptedPayload.voucherValue) +
+          decryptedPayload.voucherExpiryDate +
+          decryptedPayload.customerVehicleType +
+          decryptedPayload.customerVehiclePlateNo +
+          partner?.SecretKey
+      );
 
       const postRequest: VoucherRedemptionPOSTRequest = {
         login: partner.Login ?? '',
@@ -441,11 +488,11 @@ export class VoucherService implements IVoucherService {
         };
       }
 
+      console.log('before sending post: ', postRole);
+
       const giberishKey = `${getTodayDate()}${partner?.GibberishKey ?? ''}`;
-      const encryptedPayload = await Encryption(
-        JSON.stringify(postRequest),
-        giberishKey
-      );
+
+      console.log('giberish key: ', giberishKey);
 
       const result = await this.UpdateTarifPOST(
         postRequest,
@@ -454,6 +501,8 @@ export class VoucherService implements IVoucherService {
       );
 
       const updatePOST = result?.data;
+
+      console.log('after sending: ', result);
 
       // Write Redemption Log
       const merchantDataResponse: VoucherRedemptionMerchantResponse = {
@@ -643,19 +692,21 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      const merchantSignature = md5(`
-        ${partner?.Login}${partner?.Password}
-        ${partner?.MPAN}
-        ${decryptedPayload.locationCode}
-        ${decryptedPayload.transactionNo}
-        ${decryptedPayload.licensePlateNo}
-        ${decryptedPayload.inTime}
-        ${decryptedPayload.gateInCode}
-        ${decryptedPayload.vehicleType}
-        ${decryptedPayload.totalTariff}
-        ${decryptedPayload.outTime}
-        ${decryptedPayload.gateOutCode}
-        ${partner?.SecretKey}`);
+      const merchantSignature = md5(
+        (partner?.Login ?? '') +
+          (partner?.Password ?? '') +
+          partner?.MPAN +
+          decryptedPayload.locationCode +
+          decryptedPayload.transactionNo +
+          decryptedPayload.licensePlateNo +
+          decryptedPayload.inTime +
+          decryptedPayload.gateInCode +
+          decryptedPayload.vehicleType +
+          String(decryptedPayload.totalTariff) +
+          decryptedPayload.outTime +
+          decryptedPayload.gateOutCode +
+          partner?.SecretKey
+      );
 
       const merchantDataRequest: MerchantUsageRequest = {
         login: decryptedPayload.login,

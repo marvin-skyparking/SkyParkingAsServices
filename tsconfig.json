@@ -13,8 +13,10 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
+    "allowJs": true,                 // ✅ allow .js files
+    "checkJs": false,                 // ❌ skip type-checking for .js files (optional)
     "typeRoots": ["./node_modules/@types"] // Temporarily exclude custom types
   },
-  "include": ["./src/**/*.ts", "./src/uploads/**/*"],
+  "include": ["./src/**/*.ts", "./src/uploads/**/*", "./src/**/*.js"],
   "exclude": ["node_modules", "dist"]
 }

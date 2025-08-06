@@ -12,7 +12,7 @@ const runWorker = (
     const worker = new Worker(path.join(__dirname, 'encryptionWorker.js'), {
       workerData: {
         action,
-        payload: action === 'encrypt' ? JSON.stringify(payload) : payload,
+        payload: action === 'encrypt' ? payload : payload,
         secret
       }
     });
@@ -48,7 +48,7 @@ export const Decryption = async <T>(
 ): Promise<T> => {
   try {
     const result = await runWorker('decrypt', cipher, secret);
-    return JSON.parse(result) as T;
+    return result as T;
   } catch (error: any) {
     console.log('error', `Decryption failed: ${error.message}`);
     throw new Error(error?.message);
@@ -56,11 +56,7 @@ export const Decryption = async <T>(
 };
 
 export function md5(value: string): string {
-  return crypto
-    .createHash('md5')
-    .update(value, 'utf8')
-    .digest('hex')
-    .toUpperCase();
+  return crypto.createHash('md5').update(value, 'utf8').digest('hex');
 }
 
 export function encodeBase64(value: string): string {
