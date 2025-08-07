@@ -24,7 +24,7 @@ COPY . .
 RUN yarn build
 
 # Expose the port the app runs on
-EXPOSE 9002
+EXPOSE 9000
 
 # Run the app using PM2 (in production mode)
 CMD ["pm2-runtime", "dist/app.js"]
