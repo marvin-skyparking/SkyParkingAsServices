@@ -26,5 +26,5 @@ EXPOSE 9002
 ENV PM2_PUBLIC_KEY tlgfd06ksdbv7s6
 ENV PM2_SECRET_KEY k4p0r7198v3bx13
 
-# Run with PM2 in runtime mode (for Docker)
-CMD ["pm2-runtime", "dist/app.js"]
+# Run yarn start (which runs pm2-runtime internally)
+CMD ["yarn", "start"]

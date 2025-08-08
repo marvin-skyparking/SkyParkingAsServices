@@ -9,7 +9,7 @@
     "lint:build": "npx eslint . --fix && yarn build ",
     "prepare": "husky",
     "build": "tsc",
-    "start": "yarn build && node dist/server.js",
+    "start": "yarn build && pm2-runtime dist/server.js",
     "start:pm2": "pm2 start process.json",
     "dev": "yarn prettier:format && ts-node-dev --respawn --transpile-only src/server.ts",
     "migration:generate": "sequelize-cli migration:generate",
