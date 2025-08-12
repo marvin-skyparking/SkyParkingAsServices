@@ -1,16 +1,19 @@
-'use strict'
-
-/**
- * New Relic agent configuration.
- */
 exports.config = {
-  app_name: ['Your App Name'],
-  license_key: 'YOUR_NEW_RELIC_LICENSE_KEY',
+  app_name: ['IN-APP'],
+  license_key: '2efbafc35c0c43b5b53b1547a7f583b3FFFFNRAL',
+  distributed_tracing: {
+    enabled: true
+  },
+
   logging: {
     level: 'info'
   },
-  allow_all_headers: true,
+  allow_all_headers: true, // allow custom HTTP headers
   attributes: {
+    include: [
+      'request.parameters.*', // query params
+      'request.headers.*',    // all headers
+    ],
     exclude: [
       'request.headers.cookie',
       'request.headers.authorization',
@@ -24,4 +27,4 @@ exports.config = {
       'response.headers.x*'
     ]
   }
-}
+};
