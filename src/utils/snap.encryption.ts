@@ -53,3 +53,37 @@ export function signWithRSA(stringToSign: string, SECRET_KEY: string): string {
   sign.end();
   return sign.sign(SECRET_KEY, 'base64'); // Generate RSA signature and encode in base64
 }
+
+export function signAsymmetricSignatures(
+  stringToSign: string,
+  secret_key: string
+): string {
+  return crypto
+    .createHmac('sha256', secret_key)
+    .update(stringToSign)
+    .digest('base64');
+}
+
+export function verifysymmetricSignatures(
+  signature: string,
+  stringToSign: string,
+  secretKey: string
+): boolean {
+  const expectedSignature = crypto
+    .createHmac('sha256', secretKey)
+    .update(stringToSign)
+    .digest('base64');
+
+  return signature === expectedSignature;
+}
+
+export function generateHMACSignatures(
+  stringToSign: string,
+  secretKey: string
+): string {
+  const hmac = crypto.createHmac('sha512', secretKey);
+  hmac.update(stringToSign);
+  const signature = hmac.digest('base64');
+  console.log('Generated Signature:', signature); // Debugging
+  return signature;
+}

@@ -1,11 +1,12 @@
 import express from 'express';
 import timeout from 'connect-timeout';
 import {
+  B2B_TOKEN_IN_APP,
   Check_Inquiry_QRIS,
   // close_ticket,
   // close_ticket_not_encrypt,
   Inquiry_Transaction,
-  // Inquiry_Transaction_Snap,
+  Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
   Payment_Confirmation,
   Payment_Confirmation_QRIS
@@ -84,11 +85,9 @@ innAppRoute.post(
 // innAppRoute.post('/POST/Simulator/Close-Ticket/', close_ticket_not_encrypt);
 
 //Version 2
-// innAppRoute.post(
-//   '/Partner/ticket/InquiryTariffREG',
-//   verifyClientAuthAccess,
-//   Inquiry_Transaction_Snap
-// );
+innAppRoute.post('/Partner/B2B/Token', B2B_TOKEN_IN_APP);
+
+innAppRoute.post('/Partner/ticket/InquiryTariffREG', Inquiry_Transaction_Snap);
 // innAppRoute.post('/Partner/PaymentConfrimationREG', processPaymentTransaction);
 
 export default innAppRoute;
