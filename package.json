@@ -10,7 +10,6 @@
     "prepare": "husky",
     "build": "tsc",
     "start": "yarn build && pm2-runtime --name INAPP -i 3 dist/server.js",
-
     "start:pm2": "pm2 start process.json",
     "dev": "yarn prettier:format && ts-node-dev --respawn --transpile-only src/server.ts",
     "migration:generate": "sequelize-cli migration:generate",
@@ -28,7 +27,6 @@
   },
   "dependencies": {
     "@sentry/node": "^9.9.0",
-    "newrelic": "latest",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.11",
     "@types/validator": "^13.12.0",
@@ -53,6 +51,7 @@
     "moment-timezone": "^0.5.45",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.10.3",
+    "newrelic": "^13.0.0",
     "node-fetch": "^3.3.2",
     "patch-package": "^8.0.0",
     "pm2": "^6.0.8",
