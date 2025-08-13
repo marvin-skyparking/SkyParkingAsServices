@@ -629,6 +629,9 @@ export class VoucherService implements IVoucherService {
 
       const encryptedPayload = await Encryption(JSON.stringify(params), secret);
 
+      console.log('secret key usage encrypt: ', secret);
+      console.log('usage encrypt: ', encryptedPayload);
+
       return { data: encryptedPayload };
     } catch (error: any) {
       throw new Error(error?.message);
@@ -670,6 +673,8 @@ export class VoucherService implements IVoucherService {
       });
 
       if (!redemption) {
+        console.log('[Usage Notification Error] Invalid transaction');
+
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
@@ -685,6 +690,8 @@ export class VoucherService implements IVoucherService {
       });
 
       if (!partner) {
+        console.log('[Redemption Error] Partner not found');
+
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
@@ -788,6 +795,9 @@ export class VoucherService implements IVoucherService {
         JSON.stringify(response),
         secret
       );
+
+      console.log('secret key that used to encrypt payload: ', secret);
+      console.log('encrypted payload: ', encryptedResponse);
 
       return {
         data: encryptedResponse,
