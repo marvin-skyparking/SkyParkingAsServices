@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import InquiryTransactionMapping from '../models/partner_mapping.model';
+import newrelic from 'newrelic';
+import { logResponse, sendWithLogs } from '../utils/helper.utils';
 import {
   decryptPayload,
   DecryptTotPOST,
@@ -1920,55 +1922,74 @@ export async function B2B_TOKEN_IN_APP(
   req: Request,
   res: Response
 ): Promise<any> {
+  const startTime = Date.now();
+
   try {
+    // 📌 Log incoming request to New Relic
+    newrelic.addCustomAttributes({
+      endpoint: 'B2B_TOKEN_IN_APP',
+      request_method: req.method,
+      request_url: req.originalUrl,
+      request_headers: JSON.stringify(req.headers),
+      request_body: JSON.stringify(req.body) // ⚠️ redact sensitive info if needed
+    });
+
     // Check if req.body is empty
     if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).send({
+      const resp = {
         responseCode: '400',
         responseMessage: 'Payload is missing or empty'
-      });
+      };
+      logResponse(resp, res.statusCode, startTime);
+      return res.status(400).send(resp);
     }
 
-    const timestamp = req.header('X-TIMESTAMP'); // Directly using the header name
-    const signature = req.header('X-SIGNATURE'); // Directly using the header name
+    const timestamp = req.header('X-TIMESTAMP');
+    const signature = req.header('X-SIGNATURE');
     const clientKey = req.header('X-CLIENT-KEY') || req.header('X-PARTNER-ID');
-    const contentType = req.header('content-type'); // Directly using the header name
+    const contentType = req.header('content-type');
     const { grantType } = req.body;
 
     if (!contentType) {
-      return res
-        .status(400)
-        .send(INAPP_ERROR_MESSAGES.Invalid_Format_Content_Type);
+      const resp = INAPP_ERROR_MESSAGES.Invalid_Format_Content_Type;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
     if (!clientKey) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Client_Key);
+      const resp = INAPP_ERROR_MESSAGES.Invalid_Client_Key;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
     if (!timestamp) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Null_Format_XSTAMP);
+      const resp = INAPP_ERROR_MESSAGES.Null_Format_XSTAMP;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
     if (!signature) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Signature);
+      const resp = INAPP_ERROR_MESSAGES.Invalid_Signature;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
     if (!grantType || grantType.trim() === '') {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.NO_GRANT_TYPE);
+      const resp = INAPP_ERROR_MESSAGES.NO_GRANT_TYPE;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
     if (grantType !== 'client_credentials') {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.GRANT_TYPE_NOT_VALID);
+      const resp = INAPP_ERROR_MESSAGES.GRANT_TYPE_NOT_VALID;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
 
     const fetch_secret = await getSecretKeyByClientId(clientKey);
-
     if (!fetch_secret) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Client_Key);
+      const resp = INAPP_ERROR_MESSAGES.Invalid_Client_Key;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
 
     const stringToSign = generateStringToSign(clientKey, timestamp);
-
-    console.log('stringToSign', stringToSign);
-
     const signatures = signAsymmetricSignatures(stringToSign, fetch_secret);
-
-    console.log('signatures', signatures);
 
     const verify_signature = await verifysymmetricSignatures(
       signature,
@@ -1977,29 +1998,33 @@ export async function B2B_TOKEN_IN_APP(
     );
 
     if (!verify_signature) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Signature);
+      const resp = INAPP_ERROR_MESSAGES.Invalid_Signature;
+      logResponse(resp, 400, startTime);
+      return res.status(400).send(resp);
     }
 
     if (verify_signature) {
       const token = await generateAccessToken(clientKey, fetch_secret);
 
       const responseData = {
-        responseCode: '2007300', // Replace with your service code
+        responseCode: '2007300',
         responseMessage: 'Request has been processed successfully',
         accessToken: token,
         tokenType: 'Bearer',
-        expiresIn: '1440', // 24 hours
+        expiresIn: '1440',
         additionalInfo: {}
       };
 
+      logResponse(responseData, 200, startTime);
       return res.status(200).json(responseData);
     }
   } catch (error: any) {
-    // Some other error (e.g., network error or unexpected error)
-    return res.status(500).json({
+    const resp = {
       message: 'Internal server error',
       error: error.message || 'An unknown error occurred'
-    });
+    };
+    logResponse(resp, 500, startTime);
+    return res.status(500).json(resp);
   }
 }
 
@@ -2007,81 +2032,120 @@ export async function Inquiry_Transaction_Snap(
   req: Request,
   res: Response
 ): Promise<any> {
+  const startTime = Date.now();
+
   try {
-    const timestamp = req.header('X-TIMESTAMP'); // Directly using the header name
-    const signature = req.header('X-SIGNATURE'); // Directly using the header name
+    // Match B2B log style: log request headers & body
+    newrelic.addCustomAttributes({
+      endpoint: 'Inquiry_Transaction_Snap',
+      request_method: req.method,
+      request_url: req.originalUrl,
+      request_headers: JSON.stringify(req.headers || {}),
+      request_body: JSON.stringify(req.body || {})
+    });
+
+    const timestamp = req.header('X-TIMESTAMP');
+    const signature = req.header('X-SIGNATURE');
     const clientKey = req.header('X-CLIENT-KEY') || req.header('X-PARTNER-ID');
-    const contentType = req.header('content-type'); // Directly using the header name
+    const contentType = req.header('content-type');
     const accessToken = req.header('Authorization');
+
     if (!contentType) {
-      return res
-        .status(400)
-        .send(INAPP_ERROR_MESSAGES.Invalid_Format_Content_Type);
+      return sendWithLogs(
+        res,
+        INAPP_ERROR_MESSAGES.Invalid_Format_Content_Type,
+        400,
+        startTime
+      );
     }
     if (!clientKey) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Client_Key);
+      return sendWithLogs(
+        res,
+        INAPP_ERROR_MESSAGES.Invalid_Client_Key,
+        400,
+        startTime
+      );
     }
     if (!timestamp) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Null_Format_XSTAMP);
+      return sendWithLogs(
+        res,
+        INAPP_ERROR_MESSAGES.Null_Format_XSTAMP,
+        400,
+        startTime
+      );
     }
     if (!signature) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Signature);
+      return sendWithLogs(
+        res,
+        INAPP_ERROR_MESSAGES.Invalid_Signature,
+        400,
+        startTime
+      );
     }
-    const fetch_secret = await getSecretKeyByClientId(clientKey);
 
+    const fetch_secret = await getSecretKeyByClientId(clientKey);
     if (!fetch_secret) {
-      return res.status(400).send(INAPP_ERROR_MESSAGES.Invalid_Client_Key);
+      return sendWithLogs(
+        res,
+        INAPP_ERROR_MESSAGES.Invalid_Client_Key,
+        400,
+        startTime
+      );
     }
 
     const { P1, P2 } = req.body;
-
-    // Validate required fields
     if (!P1 || !P2) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES_NEW.INVALID_REQUEST,
-        data: defaultTransactionData()
-      });
+      return sendWithLogs(
+        res,
+        {
+          ...ERROR_MESSAGES_NEW.INVALID_REQUEST,
+          data: defaultTransactionData()
+        },
+        200,
+        startTime
+      );
     }
 
-    //REQUEST VERIFY
     const httpMethod = 'POST';
     const relativeUrl = '/Partner/ticket/InquiryTariffREG';
     const token = accessToken?.split(' ')[1];
     const requestBody = req.body;
-    const timestamps = timestamp; // Directly using the header name
 
-    // Directly using the header name
     const stringToSign = await generateStringToSignInquiry(
       httpMethod,
       relativeUrl,
-      token ?? '', // fallback to empty string
+      token ?? '',
       requestBody,
-      timestamps ?? ''
+      timestamp ?? ''
     );
 
     const expectedSignature = generateHMACSignatures(
       stringToSign,
       fetch_secret
     );
-
-    console.log('stringToSign', stringToSign);
-    console.log('expectedSignature', expectedSignature);
-
     if (signature != expectedSignature) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES_NEW.INVALID_SIGNATURE,
-        data: defaultTransactionData()
-      });
+      return sendWithLogs(
+        res,
+        {
+          ...ERROR_MESSAGES_NEW.INVALID_SIGNATURE,
+          data: defaultTransactionData()
+        },
+        200,
+        startTime
+      );
     }
 
-    // Find Location
     const location = await findInquiryTransactionMappingByNMID(P1);
-
     if (!location) {
-      return res.status(200).json({
-        ...ERROR_MESSAGES_NEW.INVALID_LOCATION,
-        data: defaultTransactionData()
-      });
+      return sendWithLogs(
+        res,
+        {
+          ...ERROR_MESSAGES_NEW.INVALID_LOCATION,
+          data: defaultTransactionData()
+        },
+        200,
+        startTime
+      );
     }
 
     const locationRoles = await getRolesByPartnerId(location.Id);
@@ -2089,11 +2153,17 @@ export async function Inquiry_Transaction_Snap(
       (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
     );
     if (!postRole || !postRole.url_access) {
-      return res.status(200).json({
-        responseCode: '401401',
-        responseMessage: 'Access Denied'
-      });
+      return sendWithLogs(
+        res,
+        {
+          responseCode: '401401',
+          responseMessage: 'Access Denied'
+        },
+        200,
+        startTime
+      );
     }
+
     const signature_data = {
       login: location.Login ?? '',
       password: location.Password ?? '',
@@ -2109,11 +2179,7 @@ export async function Inquiry_Transaction_Snap(
       location.SecretKey ?? ''
     );
 
-    const requestPayload = {
-      ...signature_data,
-      signature: generate_signature
-    };
-
+    const requestPayload = { ...signature_data, signature: generate_signature };
     const encryptedRequest = await EncryptTotPOST(
       requestPayload,
       location.GibberishKey ?? ''
@@ -2121,17 +2187,13 @@ export async function Inquiry_Transaction_Snap(
 
     const apiResponse = await axios.post(
       postRole.url_access,
-      {
-        data: encryptedRequest
-      },
+      { data: encryptedRequest },
       { timeout: 10000 }
-    ); // <-- add 10 seconds timeout
+    );
 
     let encryptedData: string | undefined;
-
     if (typeof apiResponse.data === 'string') {
       try {
-        // Remove control characters and parse the string as JSON
         const cleanString = apiResponse.data.replace(
           /[\u0000-\u001F\u007F-\u009F]/g,
           ''
@@ -2142,7 +2204,6 @@ export async function Inquiry_Transaction_Snap(
         console.error('Failed to parse string response as JSON:', err);
       }
     } else if (typeof apiResponse.data === 'object') {
-      // If already parsed as object
       encryptedData = apiResponse.data?.data;
     }
 
@@ -2154,22 +2215,29 @@ export async function Inquiry_Transaction_Snap(
       encryptedData,
       location.GibberishKey ?? ''
     );
-
-    return res.status(200).json({
-      data: finalData
-    });
+    return sendWithLogs(res, { data: finalData }, 200, startTime);
   } catch (error: any) {
     if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
-      return res.status(408).json({
-        responseCode: '408408',
-        responseMessage: 'Request Timeout'
-      });
+      return sendWithLogs(
+        res,
+        {
+          responseCode: '408408',
+          responseMessage: 'Request Timeout'
+        },
+        408,
+        startTime
+      );
     }
     console.error('Error processing payment transaction:', error);
-    return res.status(500).json({
-      responseCode: '5002400',
-      responseMessage: 'General Errror'
-    });
+    return sendWithLogs(
+      res,
+      {
+        responseCode: '5002400',
+        responseMessage: 'General Errror'
+      },
+      500,
+      startTime
+    );
   }
 }
 
