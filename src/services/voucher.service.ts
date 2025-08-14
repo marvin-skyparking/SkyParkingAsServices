@@ -164,6 +164,10 @@ export interface POSTInquiryResponse {
   paymentStatus: string;
 }
 
+interface MerchantResponse<T> {
+  data: T;
+}
+
 export class VoucherService implements IVoucherService {
   async inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse> {
     try {

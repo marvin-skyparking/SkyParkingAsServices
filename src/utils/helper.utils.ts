@@ -1,4 +1,6 @@
 import moment from 'moment-timezone';
+import newrelic from 'newrelic';
+import { Request, Response } from 'express';
 
 export function generateRandomNumber(length: number): string {
   const digits = '0123456789';
@@ -138,4 +140,34 @@ export function generateCustomCode(sequence: number): string {
   const randomPart = Math.floor(1000 + Math.random() * 9000); // 4-digit random number
 
   return `${dateTimePart}${staticPart}-${datePart}${sequencePart}-${randomPart}`;
+}
+
+/**
+ * Helper function to log API responses into New Relic
+ */
+export function logResponse(
+  responseData: any,
+  statusCode: number,
+  startTime: number
+) {
+  newrelic.addCustomAttributes({
+    response_status: statusCode,
+    response_body: JSON.stringify(responseData),
+    response_time_ms: Date.now() - startTime
+  });
+}
+
+// Same helper pattern as B2B to log responses
+export function sendWithLogs(
+  res: Response,
+  responseData: any,
+  statusCode: number,
+  startTime: number
+) {
+  newrelic.addCustomAttributes({
+    response_status: statusCode,
+    response_body: JSON.stringify(responseData || {}),
+    response_time_ms: Date.now() - startTime
+  });
+  return res.status(statusCode).json(responseData);
 }
