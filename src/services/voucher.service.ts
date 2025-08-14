@@ -693,7 +693,7 @@ export class VoucherService implements IVoucherService {
       // Find Merchant
       const partner = await PartnerMapping.findOne({
         where: {
-          StoreCode: decryptedPayload.locationCode
+          MPAN: redemption.MerchantID
         }
       });
 
