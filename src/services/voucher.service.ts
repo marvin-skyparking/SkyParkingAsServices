@@ -642,10 +642,14 @@ export class VoucherService implements IVoucherService {
     params: EncryptedPayload
   ): Promise<ServiceResponse> {
     try {
+      console.log('incoming payload: ', params);
+
       const secret = secretKey;
       const decrypted = await Decryption<string>(params.data, secret);
 
       if (!decrypted) {
+        console.log('[Usage Notification Error] Invalid request payload');
+
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
@@ -655,9 +659,13 @@ export class VoucherService implements IVoucherService {
 
       const decryptedPayload: POSTUsageRequest = JSON.parse(decrypted);
 
+      console.log('usage payload from post: ', decryptedPayload);
+
       const { error } = voucherUsageSchema.validate(decryptedPayload);
 
       if (error) {
+        console.log('[Usage Notification Error] Invalid payload', error);
+
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
@@ -764,6 +772,8 @@ export class VoucherService implements IVoucherService {
       );
 
       if (!postRole || !postRole.url_access) {
+        console.log('[Usage Notification Error] Access Denied');
+
         return {
           data: await this.encryptedErrorResponse(secret),
           statusCode: 400,
