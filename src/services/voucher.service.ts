@@ -613,6 +613,7 @@ export class VoucherService implements IVoucherService {
         ResponseData<MerchantUsageResponse>
       >(result?.data, gibberishKey);
 
+      console.log('decrypt key: ', gibberishKey);
       console.log('berhasil decrypt: ', decryptedResponse);
 
       return decryptedResponse.data;
