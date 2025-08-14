@@ -164,10 +164,6 @@ export interface POSTInquiryResponse {
   paymentStatus: string;
 }
 
-interface MerchantResponse<T> {
-  data: T;
-}
-
 export class VoucherService implements IVoucherService {
   async inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse> {
     try {
@@ -608,10 +604,10 @@ export class VoucherService implements IVoucherService {
       }
 
       const decryptedResponse = await Decryption<
-        MerchantResponse<ResponseData<MerchantUsageResponse>>
+        ResponseData<MerchantUsageResponse>
       >(result?.data, gibberishKey);
 
-      return decryptedResponse.data.data;
+      return decryptedResponse.data;
     } catch (error: any) {
       throw new Error(error?.message);
     }
