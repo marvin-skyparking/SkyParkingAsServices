@@ -607,12 +607,17 @@ export class VoucherService implements IVoucherService {
         throw new Error('Service inquiry ticket bussy!');
       }
 
+      console.log('response from merchant usage: ', result);
+
       const decryptedResponse = await Decryption<
         MerchantResponse<ResponseData<MerchantUsageResponse>>
       >(result?.data, gibberishKey);
 
-      return decryptedResponse.data.data;
+      console.log('berhasil decrypt: ', decryptedResponse);
+
+      return decryptedResponse.data;
     } catch (error: any) {
+      console.log('error ketika send ke merchant: ', error?.message);
       throw new Error(error?.message);
     }
   }
@@ -728,8 +733,8 @@ export class VoucherService implements IVoucherService {
       );
 
       const merchantDataRequest: MerchantUsageRequest = {
-        login: decryptedPayload.login,
-        password: decryptedPayload.password,
+        login: partner.Login ?? '',
+        password: partner.Password ?? '',
         merchantID: partner.MPAN ?? '',
         locationCode: decryptedPayload.locationCode,
         transactionNo: decryptedPayload.transactionNo,
