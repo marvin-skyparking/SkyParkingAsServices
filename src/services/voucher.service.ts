@@ -610,7 +610,7 @@ export class VoucherService implements IVoucherService {
       console.log('response from merchant usage: ', result);
 
       const decryptedResponse = await Decryption<
-        MerchantResponse<ResponseData<MerchantUsageResponse>>
+        ResponseData<MerchantUsageResponse>
       >(result?.data, gibberishKey);
 
       console.log('berhasil decrypt: ', decryptedResponse);
