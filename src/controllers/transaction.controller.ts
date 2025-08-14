@@ -2577,8 +2577,20 @@ export async function Check_Inquiry_QRIS(
 
 export async function CallbackSimulator(req: Request, res: Response) {
   try {
+    const result_final = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Transaction is valid and saved successfully',
+      data: {
+        transactionNo: '2023092510000012345600MSK',
+        licensePlateNo: 'B1234XYZ',
+        transactionStatus: 'VALID'
+      }
+    };
+
     console.log('req:', req.body);
-    return res.status(200).json();
+    return res.status(200).json(EncryptResponse(result_final, 'PARTNER_KEY'));
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
