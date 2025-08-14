@@ -2215,7 +2215,14 @@ export async function Inquiry_Transaction_Snap(
       encryptedData,
       location.GibberishKey ?? ''
     );
-    return sendWithLogs(res, { data: finalData }, 200, startTime);
+
+    const response_final = {
+      responseCode: finalData?.responseCode,
+      responseMessage: finalData?.responseMessage,
+      data: finalData?.data
+    };
+
+    return sendWithLogs(res, response_final, 200, startTime);
   } catch (error: any) {
     if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
       return sendWithLogs(
