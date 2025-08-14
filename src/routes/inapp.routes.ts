@@ -2,6 +2,7 @@ import express from 'express';
 import timeout from 'connect-timeout';
 import {
   B2B_TOKEN_IN_APP,
+  CallbackSimulator,
   Check_Inquiry_QRIS,
   // close_ticket,
   // close_ticket_not_encrypt,
@@ -58,6 +59,8 @@ innAppRoute.post(
   haltOnTimeout,
   Payment_Confirmation_QRIS
 );
+
+innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
 
 // innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
