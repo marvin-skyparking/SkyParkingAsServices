@@ -2578,7 +2578,7 @@ export async function Check_Inquiry_QRIS(
 export async function CallbackSimulator(req: Request, res: Response) {
   try {
     console.log('req:', req.body);
-    return res.status(200).json('OK');
+    return res.status(200).json();
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
