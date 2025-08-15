@@ -752,7 +752,7 @@ export class VoucherService implements IVoucherService {
       const voucherUsageData: VoucherUsageAttributes = {
         CompanyName: partner.CompanyName,
         MerchantID: partner.MPAN,
-        LocationCode: partner.StoreCode,
+        LocationCode: decryptedPayload.locationCode,
         TransactionNo: decryptedPayload.transactionNo,
         LicensePlateNo: decryptedPayload.licensePlateNo,
         InTime: moment
