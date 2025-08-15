@@ -164,6 +164,6 @@ VoucherUsage.init(
   {
     sequelize,
     tableName: 'VoucherUsage',
-    timestamps: true
+    timestamps: false
   }
 );
