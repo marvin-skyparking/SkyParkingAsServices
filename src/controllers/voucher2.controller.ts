@@ -53,7 +53,7 @@ export class VoucherController {
       );
 
       console.log('Voucher Redemption: ', result.message);
-      return res.status(result.statusCode).json({ data: result?.data });
+      return res.status(200).json({ data: result?.data });
     } catch (err: any) {
       return res.status(500).json({
         status: 'ERROR',
@@ -88,7 +88,7 @@ export class VoucherController {
         await voucherService.VoucherUsageNotification(req.body);
 
       console.log('Voucher Usage: ', result.message);
-      return res.status(result.statusCode).json({ data: result?.data });
+      return res.status(200).json({ data: result?.data });
     } catch (err: any) {
       return res.status(500).json({
         status: 'ERROR',
