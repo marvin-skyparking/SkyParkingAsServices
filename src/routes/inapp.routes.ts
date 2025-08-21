@@ -65,7 +65,7 @@ innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
 // innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
 //Simulator
-// innAppRoute.post('/Signature-Inquiry', sigantureKey);
+innAppRoute.post('/Signature-Inquiry', sigantureKey);
 // innAppRoute.post('/Signature-Payment', getPaymentSignature);
 // innAppRoute.post('/GenerateTicket', createTicketHandler);
 // innAppRoute.post(
