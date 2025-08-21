@@ -96,4 +96,16 @@ export class VoucherController {
       });
     }
   }
+
+  static async SimulatorVoucherUsage(req: Request, res: Response) {
+    try {
+      const usage = await voucherService.simulatorUsageVoucher(req.body);
+      return res.status(200).json({ data: usage.data });
+    } catch (error: any) {
+      return res.status(500).json({
+        status: 'ERROR',
+        message: error.message
+      });
+    }
+  }
 }

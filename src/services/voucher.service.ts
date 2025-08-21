@@ -40,6 +40,7 @@ import {
 } from '../models/voucher-usage.model';
 import { VoucherUsageMapping } from '../models/voucher-usage-mapping.model';
 import { Op } from 'sequelize';
+import TicketGenerator from '../models/ticket_generatore.model';
 
 export interface IVoucherService {
   inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse>;
@@ -166,6 +167,13 @@ export interface POSTInquiryResponse {
 
 interface MerchantResponse<T> {
   data: T;
+}
+
+interface SimulatorUsage {
+  transactionNo: string;
+  voucherCode: string;
+  voucherType: string;
+  voucherValue: number;
 }
 
 export class VoucherService implements IVoucherService {
@@ -889,5 +897,50 @@ export class VoucherService implements IVoucherService {
     );
 
     return encryptedResponse;
+  }
+
+  async simulatorUsageVoucher(
+    params: EncryptedPayload
+  ): Promise<ServiceResponse> {
+    const secret = secretKey;
+
+    const decryptedPayload: SimulatorUsage = await Decryption(
+      params.data,
+      secret
+    );
+
+    let voucherAmount = decryptedPayload.voucherValue;
+
+    const findTicket = await TicketGenerator.findOne({
+      where: { transactionNo: decryptedPayload.transactionNo }
+    });
+
+    if (!findTicket) {
+      throw new Error('Invalid ticket!');
+    }
+
+    await TicketGenerator.update(
+      { tarif: findTicket.tarif - voucherAmount },
+      { where: { transactionNo: decryptedPayload.transactionNo } }
+    );
+
+    const response: ResponseData<string> = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Transaction is valid and saved successfully',
+      data: 'Voucher Usage Successfully'
+    };
+
+    const encryptedResponse = await Encryption(
+      JSON.stringify(response),
+      secret
+    );
+
+    return {
+      data: encryptedResponse,
+      statusCode: 200,
+      message: 'Voucher Usage Successfully'
+    };
   }
 }
