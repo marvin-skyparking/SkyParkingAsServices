@@ -317,8 +317,10 @@ export class VoucherService implements IVoucherService {
 
       let sanitizeResult: EncryptedPayload;
       if (typeof result === 'string') {
+        console.log('found string type: ', typeof result);
         sanitizeResult = JSON.parse(result);
       } else {
+        console.log('found type: ', typeof result);
         sanitizeResult = result;
       }
 
@@ -903,13 +905,37 @@ export class VoucherService implements IVoucherService {
     params: EncryptedPayload
   ): Promise<ServiceResponse> {
     const secret = secretKey;
+    const decrypted = await Decryption<string>(params.data, secret);
 
-    const decryptedPayload: SimulatorUsage = await Decryption(
-      params.data,
-      secret
-    );
+    if (!decrypted) {
+      return {
+        data: await this.encryptedErrorResponse(
+          secret,
+          '[Redemption Error] Invalid request payload'
+        ),
+        statusCode: 400,
+        message: '[Redemption Error] Invalid request payload'
+      };
+    }
 
-    let voucherAmount = decryptedPayload.voucherValue;
+    const decryptedPayload: VoucherRedemptionMerchantRequest =
+      JSON.parse(decrypted);
+
+    const { error } = voucherRedemptionSchema.validate(decryptedPayload);
+
+    if (error) {
+      console.log('validation error: ', error);
+      return {
+        data: await this.encryptedErrorResponse(
+          secret,
+          '[Redemption Error] Invalid payload'
+        ),
+        statusCode: 400,
+        message: '[Redemption Error] Invalid payload'
+      };
+    }
+
+    let voucherAmount = Number(decryptedPayload.voucherValue);
 
     const findTicket = await TicketGenerator.findOne({
       where: { transactionNo: decryptedPayload.transactionNo }
@@ -919,7 +945,7 @@ export class VoucherService implements IVoucherService {
       throw new Error('Invalid ticket!');
     }
 
-    await TicketGenerator.update(
+    const update = await TicketGenerator.update(
       { tarif: findTicket.tarif - voucherAmount },
       { where: { transactionNo: decryptedPayload.transactionNo } }
     );
