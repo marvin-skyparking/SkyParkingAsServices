@@ -2590,7 +2590,9 @@ export async function CallbackSimulator(req: Request, res: Response) {
     };
 
     console.log('req:', req.body);
-    return res.status(200).json(EncryptResponse(result_final, 'PARTNER_KEY'));
+    return res
+      .status(200)
+      .json({ data: EncryptResponse(result_final, 'PARTNER_KEY') });
   } catch (error: any) {
     console.error('Error processing inquiry:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
