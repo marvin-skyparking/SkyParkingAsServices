@@ -318,7 +318,10 @@ export class VoucherService implements IVoucherService {
       let sanitizeResult: EncryptedPayload;
       if (typeof result === 'string') {
         console.log('found string type: ', typeof result);
-        sanitizeResult = JSON.parse(result);
+
+        const cleanString = result.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+
+        sanitizeResult = JSON.parse(cleanString);
       } else {
         console.log('found type: ', typeof result);
         sanitizeResult = result;
