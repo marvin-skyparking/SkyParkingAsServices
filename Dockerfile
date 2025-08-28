@@ -23,10 +23,10 @@ COPY newrelic.js ./newrelic.js
 RUN yarn build
 
 # Expose the port the app runs on
-EXPOSE 9002
+EXPOSE 9000
 
 # Set New Relic environment variables (replace with your values)
-ENV NEW_RELIC_APP_NAME="IN-APP"
+ENV NEW_RELIC_APP_NAME="AUTOENTRY"
 ENV NEW_RELIC_LICENSE_KEY="2efbafc35c0c43b5b53b1547a7f583b3FFFFNRAL"
 ENV NEW_RELIC_NO_CONFIG_FILE=true
 ENV NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=true
