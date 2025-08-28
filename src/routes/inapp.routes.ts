@@ -90,7 +90,7 @@ innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
 //Version 2
 innAppRoute.post('/Partner/B2B/Token', B2B_TOKEN_IN_APP);
 
-innAppRoute.post('/Partner/ticket/InquiryTariffREG', Inquiry_Transaction_Snap);
+innAppRoute.post('/Partner/ticket/InquiryTarif', Inquiry_Transaction_Snap);
 // innAppRoute.post('/Partner/PaymentConfrimationREG', processPaymentTransaction);
 
 export default innAppRoute;

@@ -2107,7 +2107,7 @@ export async function Inquiry_Transaction_Snap(
     }
 
     const httpMethod = 'POST';
-    const relativeUrl = '/Partner/ticket/InquiryTariffREG';
+    const relativeUrl = '/Partner/ticket/InquiryTarif';
     const token = accessToken?.split(' ')[1];
     const requestBody = req.body;
 
@@ -2123,6 +2123,9 @@ export async function Inquiry_Transaction_Snap(
       stringToSign,
       fetch_secret
     );
+
+    console.log('stringToSign:', stringToSign);
+    console.log('expectedSignature:', expectedSignature);
     if (signature != expectedSignature) {
       return sendWithLogs(
         res,
