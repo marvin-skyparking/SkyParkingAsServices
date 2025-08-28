@@ -179,8 +179,10 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       QRTicket: send_data.ParkingTicket,
       ResponseCode: validate_entry.data.Code,
       ResponseStatus: validate_entry.data.Code === '200' ? 1 : 0,
-      POSTDataRequest: JSON.stringify(send_data),
-      POSTDataResponse: JSON.stringify(validate_entry.data),
+      MerchantDataRequest: JSON.stringify(send_data),
+      MerchantDataResponse: JSON.stringify(validate_entry.data),
+      POSTDataRequest: JSON.stringify(decryptedObject),
+      POSTDataResponse: '',
       RecordStatus: 1,
       CreatedBy: 'AUTO_ENTRY',
       CreatedOn: new Date()

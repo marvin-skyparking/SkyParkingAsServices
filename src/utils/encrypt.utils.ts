@@ -14,7 +14,7 @@ export const encryptPayload = (data: Record<string, any>): string => {
     const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
 
     // Append UTC date to the PARTNER_KEY
-    const encryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
+    const encryptionKey = utcDate + 'PARTNER_KEY';
 
     // Ensure secretKey is properly encoded
     // Encrypt the data using the encryption key with UTC date
@@ -38,7 +38,7 @@ export const RealencryptPayload = (data: Record<string, any>): string => {
     const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
 
     // Append UTC date to the PARTNER_KEY
-    const encryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
+    const encryptionKey = utcDate + 'PARTNER_KEY';
 
     // Encrypt the data using the encryption key with UTC date
     const encrypted = CryptoJS.AES.encrypt(
@@ -162,23 +162,23 @@ export const RealdecryptPayload = (
   encryptedData: string
 ): Record<string, any> | null => {
   try {
-    // Get the current UTC date in YYYYMMDD format
-    const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+    // Get current UTC date in YYYYMMDD format
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    const utcDate = `${year}${month}${day}`; // e.g., 20250804
 
-    // Append UTC date to the PARTNER_KEY
-    const decryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
+    const decryptionKey = utcDate + 'PARTNER_KEY';
 
-    // Proceed with AES decryption using the decryption key with UTC date
+    // Decrypt
     const bytes = CryptoJS.AES.decrypt(encryptedData, decryptionKey);
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
 
-    // If decryption fails (empty result), throw an error
     if (!decrypted) throw new Error('Decryption failed: Empty result');
 
-    // Parse the decrypted string into a JSON object
     return JSON.parse(decrypted);
   } catch (error: any) {
-    // Log and return null if an error occurs
     console.error('Decryption Error:', error.message);
     return null;
   }
