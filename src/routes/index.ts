@@ -14,8 +14,8 @@ const router = express.Router();
 // router.use('/productPurchase', purchaseProduct);
 // router.use('/connection', healthRoute);
 // router.use('/partner', partnerRoute);
-router.use('/realtime', lotRoute);
+// router.use('/realtime', lotRoute);
+// router.use('/vouchers', voucherRoute);
 router.use('/parking', innAppRoute);
-router.use('/vouchers', voucherRoute);
 
 export default router;
