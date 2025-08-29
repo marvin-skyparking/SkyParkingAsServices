@@ -2601,3 +2601,230 @@ export async function CallbackSimulator(req: Request, res: Response) {
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
+
+export async function INQUIRY_TICKET(
+  req: Request,
+  res: Response
+): Promise<any> {
+  if ((req as any).timedout) return;
+
+  const encryptAndRespond = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) payload.data = defaultTransactionData(transactionNo);
+    const encrypted = await EncryptTotPOST(payload, key);
+    return res.status(200).json({ data: encrypted });
+  };
+
+  try {
+    const { data } = req.body;
+    if (!data) {
+      Sentry.captureException(new Error('Missing encrypted data'), {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
+      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        '87e5df62d35aae739dc3b68ccb47383a',
+        undefined
+      );
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+
+    console.log(decryptedObject);
+    if (!decryptedObject) {
+      Sentry.captureException(new Error('INVALID ENCRYPTION DATA'), {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
+      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        '87e5df62d35aae739dc3b68ccb47383a'
+      );
+    }
+
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
+    if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_FIELDS,
+        '',
+        transactionNo
+      );
+    }
+
+    const credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+    if (!credential) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_CREDENTIAL,
+        '',
+        transactionNo
+      );
+    }
+
+    const expectedSig = generateSignature(
+      login,
+      password,
+      storeID,
+      transactionNo,
+      credential.SecretKey ?? ''
+    );
+    if (signature.toLowerCase() !== expectedSig.toLowerCase()) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_SIGNATURE,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const location = await findInquiryTransactionMappingByNMID(storeID);
+    if (!location) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_LOCATION,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const roles = await getRolesByPartnerId(credential.Id);
+    const hasInquiryAccess = roles.some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasInquiryAccess) {
+      return encryptAndRespond(
+        ACCESS_ERROR_MESSAGES.ACCESS_DENIED,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const locationRoles = await getRolesByPartnerId(location.Id);
+    const postRole = locationRoles.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    if (!postRole || !postRole.url_access) {
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
+    }
+
+    const signatureData = {
+      login: location.Login ?? '',
+      password: location.Password ?? '',
+      storeID: location.NMID ?? '',
+      transactionNo
+    };
+
+    const remoteSignature = generateSignature(
+      signatureData.login,
+      signatureData.password,
+      signatureData.storeID,
+      transactionNo,
+      location.SecretKey ?? ''
+    );
+
+    const requestPayload = {
+      ...signatureData,
+      signature: remoteSignature
+    };
+
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      location.GibberishKey ?? ''
+    );
+
+    const apiResponse = await axios.post(postRole.url_access, {
+      data: encryptedRequest
+    });
+
+    let encryptedData: string | undefined;
+
+    if (typeof apiResponse.data === 'string') {
+      try {
+        // Remove control characters and parse the string as JSON
+        const cleanString = apiResponse.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        encryptedData = parsed?.data;
+      } catch (err) {
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof apiResponse.data === 'object') {
+      // If already parsed as object
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      throw new Error('Encrypted data not found in API response.');
+    }
+
+    const finalData = await DecryptTotPOST(
+      encryptedData,
+      location.GibberishKey ?? ''
+    );
+
+    // console.log('finalData', finalData);
+
+    await createInquiryTransaction({
+      CompanyName: location.CompanyName ?? '',
+      NMID: location.NMID ?? '',
+      StoreCode: transactionNo.toString().slice(-5),
+      TransactionNo: transactionNo,
+      ReferenceNo: '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(requestPayload),
+      DataResponse: JSON.stringify(finalData),
+      DataDetailResponse: JSON.stringify(finalData?.data),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
+      CreatedBy: location.CompanyName ?? '',
+      UpdatedBy: location.CompanyName ?? ''
+    });
+
+    // const isPaid = apiResponse?.data?.paymentStatus === 'PAID';
+    // const isFree = finalData?.tariff === 0;
+    const displayMessage =
+      finalData?.messageDetail ===
+        'Inquiry Tariff has been accepted and verified successfully.' ||
+      finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
+
+    const responsePayload = {
+      responseStatus: finalData?.responseStatus,
+      responseCode:
+        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: finalData?.responseDescription,
+      messageDetail: displayMessage,
+      data: {
+        transactionNo: finalData?.data.transactionNo,
+        transactionStatus: finalData?.data.transactionStatus,
+        inTime: finalData?.data.inTime,
+        duration: Number(finalData?.data.duration),
+        tariff: Number(finalData?.data.tariff),
+        vehicleType: finalData?.data.vehicleType,
+        outTime: finalData?.data.outTime,
+        gracePeriod: Number(finalData?.data.gracePeriod),
+        location: finalData?.data.location,
+        paymentStatus: finalData?.data.paymentStatus
+      }
+    };
+
+    return encryptAndRespond(
+      responsePayload,
+      credential.GibberishKey ?? '',
+      transactionNo
+    );
+  } catch (error: any) {
+    console.error('Error processing inquiry:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
