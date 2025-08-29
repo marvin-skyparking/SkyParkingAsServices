@@ -218,8 +218,16 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
         transactionNo
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AUTO_ENTRY ERROR]', error);
+
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return res.status(504).json({
+        data: RealencryptPayload({
+          error: 'LIPPO MALLS - TIMEOUT EXCEED 3000 MS'
+        })
+      });
+    }
     return res.status(500).json({
       data: RealencryptPayload({ error: 'Internal Server Error' })
     });
