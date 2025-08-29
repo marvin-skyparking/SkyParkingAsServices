@@ -23,6 +23,7 @@ import {
 } from '../constant/LIPPO_MALLS_ACCESS';
 import EnvConfig from '../configs/env.config';
 import { createStylesCheckMembership } from '../services/auto_entry.service';
+import newrelic from 'newrelic';
 
 /**
  * Auto Entry Handler
@@ -40,6 +41,11 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
     return res.status(200).json({ data: encrypted });
   };
 
+  let decryptedObject: any = null;
+  let locationData: any = null;
+  let get_token: any = null;
+  let validate_entry: any = null;
+
   try {
     const { data } = req.body;
 
@@ -50,7 +56,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       );
     }
 
-    const decryptedObject = DecryptTotPOST(data, 'PARTNER_KEY');
+    decryptedObject = DecryptTotPOST(data, 'PARTNER_KEY');
 
     if (!decryptedObject) {
       return encryptAndRespondAutoEntry(
@@ -99,7 +105,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       );
     }
 
-    const locationData = await findLocationStoreCodeData(locationCode);
+    locationData = await findLocationStoreCodeData(locationCode);
 
     if (!locationData) {
       return encryptAndRespondAutoEntry(
@@ -126,9 +132,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       );
     }
 
-    const headers = {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    };
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
 
     const data_token = qs.stringify({
       grant_type: ACCESS_CREDENTIAL.grant_type,
@@ -136,7 +140,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       password: ACCESS_CREDENTIAL.password
     });
 
-    const get_token = await axios.post(EnvConfig.URL_TOKEN, data_token, {
+    get_token = await axios.post(EnvConfig.URL_TOKEN, data_token, {
       headers,
       timeout: 3000
     });
@@ -160,14 +164,10 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       Authorization: `Bearer ${get_token.data.access_token}`
     };
 
-    const validate_entry = await axios.post(
-      EnvConfig.URL_AUTO_ENTRY,
-      send_data,
-      {
-        headers: headers_auto_entry,
-        timeout: 3000
-      }
-    );
+    validate_entry = await axios.post(EnvConfig.URL_AUTO_ENTRY, send_data, {
+      headers: headers_auto_entry,
+      timeout: 3000
+    });
 
     // Save log to DB
     await createStylesCheckMembership({
@@ -221,13 +221,52 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
   } catch (error: any) {
     console.error('[AUTO_ENTRY ERROR]', error);
 
-    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    // Build timeout details if present
+    const timeoutInfo =
+      error.code === 'ECONNABORTED' || error.message?.includes('timeout')
+        ? {
+            timeout: true,
+            timeoutMs: error.config?.timeout,
+            url: error.config?.url,
+            method: error.config?.method
+          }
+        : { timeout: false };
+
+    // log everything to New Relic
+    try {
+      newrelic.noticeError(error, {
+        endpoint: 'auto_entry',
+        requestBody: req.body,
+        requestQuery: req.query,
+        requestParams: req.params,
+        decryptedPayload: decryptedObject,
+        locationData,
+        get_token: {
+          status: get_token?.status,
+          data: get_token?.data,
+          headers: get_token?.headers
+        },
+        validate_entry: {
+          status: validate_entry?.status,
+          data: validate_entry?.data,
+          headers: validate_entry?.headers
+        },
+        timeoutInfo,
+        timestamp: new Date().toISOString()
+      });
+    } catch (nrError) {
+      console.error('[NEW RELIC ERROR]', nrError);
+    }
+
+    // respond safely
+    if (timeoutInfo.timeout) {
       return res.status(504).json({
         data: RealencryptPayload({
-          error: 'LIPPO MALLS - TIMEOUT EXCEED 3000 MS'
+          error: `LIPPO MALLS - TIMEOUT EXCEED ${timeoutInfo.timeoutMs ?? 0} MS`
         })
       });
     }
+
     return res.status(500).json({
       data: RealencryptPayload({ error: 'Internal Server Error' })
     });
