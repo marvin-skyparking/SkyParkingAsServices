@@ -54,7 +54,7 @@ innAppRoute.post(
   Payment_Confirmation
 );
 
-//GOPAY IN-APP
+//GOPAY IN-APP - NEW
 innAppRoute.post(
   '/Partner/GOPAY/InquiryTransaction',
   haltOnTimeout,
