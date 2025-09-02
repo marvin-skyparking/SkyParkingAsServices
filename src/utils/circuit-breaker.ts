@@ -23,7 +23,7 @@ export default class CircuitBreaker {
     this.states = {};
     this.failureThreshold = options.failureThreshold ?? 5;
     this.coolDownPeriod = options.coolDownPeriod ?? 10;
-    this.requestTimeout = options.requestTimeout ?? 5;
+    this.requestTimeout = options.requestTimeout ?? 30;
   }
 
   async fire<T>(request: AxiosRequestConfig): Promise<T | false> {

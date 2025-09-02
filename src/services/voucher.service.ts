@@ -40,6 +40,7 @@ import {
 } from '../models/voucher-usage.model';
 import { VoucherUsageMapping } from '../models/voucher-usage-mapping.model';
 import { Op } from 'sequelize';
+import TicketGenerator from '../models/ticket_generatore.model';
 
 export interface IVoucherService {
   inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse>;
@@ -168,6 +169,13 @@ interface MerchantResponse<T> {
   data: T;
 }
 
+interface SimulatorUsage {
+  transactionNo: string;
+  voucherCode: string;
+  voucherType: string;
+  voucherValue: number;
+}
+
 export class VoucherService implements IVoucherService {
   async inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse> {
     try {
@@ -179,7 +187,10 @@ export class VoucherService implements IVoucherService {
 
       if (!decryptedPayload) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Inquiry Error] Invalid request payload'
+          ),
           statusCode: 400,
           message: '[Inquiry Error] Invalid request payload'
         };
@@ -194,7 +205,10 @@ export class VoucherService implements IVoucherService {
 
       if (!partner) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Partner not found'
+          ),
           statusCode: 400,
           message: '[Redemption Error] Partner not found'
         };
@@ -207,7 +221,10 @@ export class VoucherService implements IVoucherService {
 
       if (!postRole || !postRole.url_access) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Access Denied'
+          ),
           statusCode: 400,
           message: '[Redemption Error] Access Denied'
         };
@@ -300,8 +317,13 @@ export class VoucherService implements IVoucherService {
 
       let sanitizeResult: EncryptedPayload;
       if (typeof result === 'string') {
-        sanitizeResult = JSON.parse(result);
+        console.log('found string type: ', typeof result);
+
+        const cleanString = result.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+
+        sanitizeResult = JSON.parse(cleanString);
       } else {
+        console.log('found type: ', typeof result);
         sanitizeResult = result;
       }
 
@@ -350,7 +372,10 @@ export class VoucherService implements IVoucherService {
       const secret = secretKey;
 
       if (error) {
-        const errResponse = await this.encryptedErrorResponse(secret);
+        const errResponse = await this.encryptedErrorResponse(
+          secret,
+          JSON.stringify(error)
+        );
         return { data: errResponse };
       }
 
@@ -370,7 +395,10 @@ export class VoucherService implements IVoucherService {
 
       if (!decrypted) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Invalid request payload'
+          ),
           statusCode: 400,
           message: '[Redemption Error] Invalid request payload'
         };
@@ -383,7 +411,10 @@ export class VoucherService implements IVoucherService {
 
       if (error) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Invalid payload'
+          ),
           statusCode: 400,
           message: '[Redemption Error] Invalid payload'
         };
@@ -400,9 +431,12 @@ export class VoucherService implements IVoucherService {
 
       if (!partner) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Partner not found'
+          ),
           statusCode: 400,
-          message: '[Redemption Error] Partner not founsd'
+          message: '[Redemption Error] Partner not found'
         };
       }
 
@@ -423,7 +457,10 @@ export class VoucherService implements IVoucherService {
 
       if (existingTransactions.length > 0) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            `[Redemption Error] Voucher already used`
+          ),
           statusCode: 400,
           message: `[Redemption Error] Voucher already used`
         };
@@ -486,7 +523,10 @@ export class VoucherService implements IVoucherService {
 
       if (!postRole || !postRole.url_access) {
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Access Denied'
+          ),
           statusCode: 400,
           message: '[Redemption Error] Access Denied'
         };
@@ -633,7 +673,10 @@ export class VoucherService implements IVoucherService {
       console.log(error);
 
       if (error) {
-        const errResponse = await this.encryptedErrorResponse(secret);
+        const errResponse = await this.encryptedErrorResponse(
+          secret,
+          JSON.stringify(error)
+        );
         return { data: errResponse };
       }
 
@@ -661,7 +704,10 @@ export class VoucherService implements IVoucherService {
         console.log('[Usage Notification Error] Invalid request payload');
 
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Usage Notification Error] Invalid request payload'
+          ),
           statusCode: 400,
           message: '[Usage Notification Error] Invalid request payload'
         };
@@ -677,7 +723,10 @@ export class VoucherService implements IVoucherService {
         console.log('[Usage Notification Error] Invalid payload', error);
 
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Usage Notification Error] Invalid payload'
+          ),
           statusCode: 400,
           message: '[Usage Notification Error] Invalid payload'
         };
@@ -694,7 +743,10 @@ export class VoucherService implements IVoucherService {
         console.log('[Usage Notification Error] Invalid transaction');
 
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Usage Notification Error] Invalid transaction'
+          ),
           statusCode: 400,
           message: '[Usage Notification Error] Invalid transaction'
         };
@@ -711,7 +763,10 @@ export class VoucherService implements IVoucherService {
         console.log('[Redemption Error] Partner not found');
 
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Redemption Error] Partner not found'
+          ),
           statusCode: 400,
           message: '[Redemption Error] Partner not found'
         };
@@ -785,7 +840,10 @@ export class VoucherService implements IVoucherService {
         console.log('[Usage Notification Error] Access Denied');
 
         return {
-          data: await this.encryptedErrorResponse(secret),
+          data: await this.encryptedErrorResponse(
+            secret,
+            '[Usage Notification Error] Access Denied'
+          ),
           statusCode: 400,
           message: '[Usage Notification Error] Access Denied'
         };
@@ -829,13 +887,13 @@ export class VoucherService implements IVoucherService {
     }
   }
 
-  async encryptedErrorResponse(secret: string) {
+  async encryptedErrorResponse(secret: string, message: string) {
     const response: ResponseData<string> = {
       responseStatus: 'Failed',
       responseCode: '211001',
       responseDescription: 'Transaction Failed',
       messageDetail: 'Transaction invalid and saved successfully',
-      data: 'Invalid Transaction'
+      data: message
     };
 
     const encryptedResponse = await Encryption(
@@ -844,5 +902,74 @@ export class VoucherService implements IVoucherService {
     );
 
     return encryptedResponse;
+  }
+
+  async simulatorUsageVoucher(
+    params: EncryptedPayload
+  ): Promise<ServiceResponse> {
+    const secret = secretKey;
+    const decrypted = await Decryption<string>(params.data, secret);
+
+    if (!decrypted) {
+      return {
+        data: await this.encryptedErrorResponse(
+          secret,
+          '[Redemption Error] Invalid request payload'
+        ),
+        statusCode: 400,
+        message: '[Redemption Error] Invalid request payload'
+      };
+    }
+
+    const decryptedPayload: VoucherRedemptionMerchantRequest =
+      JSON.parse(decrypted);
+
+    const { error } = voucherRedemptionSchema.validate(decryptedPayload);
+
+    if (error) {
+      console.log('validation error: ', error);
+      return {
+        data: await this.encryptedErrorResponse(
+          secret,
+          '[Redemption Error] Invalid payload'
+        ),
+        statusCode: 400,
+        message: '[Redemption Error] Invalid payload'
+      };
+    }
+
+    let voucherAmount = Number(decryptedPayload.voucherValue);
+
+    const findTicket = await TicketGenerator.findOne({
+      where: { transactionNo: decryptedPayload.transactionNo }
+    });
+
+    if (!findTicket) {
+      throw new Error('Invalid ticket!');
+    }
+
+    const update = await TicketGenerator.update(
+      { tarif: findTicket.tarif - voucherAmount },
+      { where: { transactionNo: decryptedPayload.transactionNo } }
+    );
+
+    const response: ResponseData<string> = {
+      responseStatus: 'Success',
+      responseCode: '211000',
+      responseDescription: 'Transaction Success',
+      messageDetail: 'Transaction is valid and saved successfully',
+      data: 'Voucher Usage Successfully'
+    };
+
+    const encryptedResponse = await Encryption(
+      JSON.stringify(response),
+      secret
+    );
+
+    return {
+      data: encryptedResponse,
+      statusCode: 200,
+      message: 'Voucher Usage Successfully'
+    };
   }
 }
