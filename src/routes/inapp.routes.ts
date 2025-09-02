@@ -7,9 +7,11 @@ import {
   // close_ticket,
   // close_ticket_not_encrypt,
   Inquiry_Transaction,
+  Inquiry_Transaction_GOPAY,
   Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
   Payment_Confirmation,
+  PAYMENT_CONFIRMATION_GOPAY,
   Payment_Confirmation_QRIS
   // processInquiryTransaction,
   // processInquiryTransactionEncrypt,
@@ -50,6 +52,18 @@ innAppRoute.post(
   '/Partner/PaymentConfirmationREG',
   haltOnTimeout,
   Payment_Confirmation
+);
+
+//GOPAY IN-APP
+innAppRoute.post(
+  '/Partner/GOPAY/InquiryTransaction',
+  haltOnTimeout,
+  Inquiry_Transaction_GOPAY
+);
+innAppRoute.post(
+  '/Partner/GOPAY/PaymentConfirmation',
+  haltOnTimeout,
+  PAYMENT_CONFIRMATION_GOPAY
 );
 
 innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
