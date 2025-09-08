@@ -14,7 +14,7 @@ export const encryptPayload = (data: Record<string, any>): string => {
     const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
 
     // Append UTC date to the PARTNER_KEY
-    const encryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
+    const encryptionKey = utcDate + 'SKY_IN-APP_INTEGRATION';
 
     // Ensure secretKey is properly encoded
     // Encrypt the data using the encryption key with UTC date
@@ -38,7 +38,7 @@ export const RealencryptPayload = (data: Record<string, any>): string => {
     const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
 
     // Append UTC date to the PARTNER_KEY
-    const encryptionKey = utcDate + '87e5df62d35aae739dc3b68ccb47383a';
+    const encryptionKey = utcDate + 'SKY_IN-APP_INTEGRATION';
 
     // Encrypt the data using the encryption key with UTC date
     const encrypted = CryptoJS.AES.encrypt(
