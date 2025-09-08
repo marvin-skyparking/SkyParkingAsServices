@@ -96,3 +96,15 @@ export async function findInquiryTransactionMappingByNMID(NMID: string) {
 
   return mapping;
 }
+
+export async function findInquiryTransactionMappingByLocationCode(
+  locationCode: string
+) {
+  const mapping = await InquiryTransactionMapping.findOne({
+    where: {
+      StoreCode: locationCode
+    }
+  });
+
+  return mapping;
+}

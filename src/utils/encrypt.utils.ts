@@ -219,6 +219,19 @@ export const generateSignature = (
   return crypto.createHash('md5').update(rawString).digest('hex');
 };
 
+export const generateSignatureVoucherTicket = (
+  login: string,
+  password: string,
+  merchantID: string,
+  tenantID: string,
+  locationCode: string,
+  transactionNo: string,
+  secretKey: string
+): string => {
+  const rawString = `${login}${password}${merchantID}${tenantID}${locationCode}${transactionNo}${secretKey}`;
+  return crypto.createHash('md5').update(rawString).digest('hex');
+};
+
 export function generatePaymentSignature(
   login: string,
   password: string,

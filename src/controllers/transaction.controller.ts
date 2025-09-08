@@ -11,10 +11,12 @@ import {
   generatePaymentPOSTSignature,
   generatePaymentSignature,
   generateSignature,
+  generateSignatureVoucherTicket,
   RealdecryptPayload,
   RealencryptPayload
 } from '../utils/encrypt.utils';
 import {
+  findInquiryTransactionMappingByLocationCode,
   findInquiryTransactionMappingByNMID,
   findInquiryTransactionMappingPartner
 } from '../services/inquiry_transaction_mapping.service';
@@ -3910,13 +3912,16 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       );
     }
 
-    // if (data_inquiry?.data.tariff !== decryptedObject.amount) {
-    //   return encryptAndRespond(
-    //     ERROR_MESSAGES.INVALID_AMOUNT,
-    //     validate_credential.GibberishKey ?? '',
-    //     transactionNo
-    //   );
-    // }
+    const tariff = parseFloat(data_inquiry?.data.tariff ?? '0');
+    const amounts = parseFloat(decryptedObject.amount ?? '0');
+
+    if (tariff !== amounts) {
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_AMOUNT,
+        validate_credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     const data_send = {
       login: find_location.Login ?? '',
@@ -4070,6 +4075,313 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
     );
   } catch (error: any) {
     console.error('Error processing transaction:', error);
+    return encryptAndRespond(
+      {
+        responseCode: '500500',
+        responseMessage: 'General Server Error'
+      },
+      '',
+      ''
+    );
+  }
+}
+
+export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
+  req: Request,
+  res: Response
+): Promise<any> {
+  if ((req as any).timedout) return;
+
+  const encryptAndRespond = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) payload.data = defaultTransactionData(transactionNo);
+    const encrypted = await EncryptTotPOST(payload, key);
+    return res.status(200).json({ data: encrypted });
+  };
+
+  try {
+    const { data } = req.body;
+    if (!data) {
+      const err = new Error('Missing encrypted data');
+      Sentry.captureException(err, {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
+      });
+      newrelic.noticeError(err, { stage: 'validation', requestBody: data });
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        '87e5df62d35aae739dc3b68ccb47383a',
+        undefined
+      );
+    }
+
+    const decryptedObject = RealdecryptPayload(data);
+
+    if (!decryptedObject) {
+      const err = new Error('INVALID ENCRYPTION DATA');
+      Sentry.captureException(err, {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
+      });
+      newrelic.noticeError(err, { stage: 'decryption', rawData: data });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        '87e5df62d35aae739dc3b68ccb47383a'
+      );
+    }
+
+    const {
+      login,
+      password,
+      merchantID,
+      tenantID,
+      locationCode,
+      transactionNo,
+      signature
+    } = decryptedObject;
+
+    if (
+      ![
+        login,
+        password,
+        merchantID,
+        tenantID,
+        locationCode,
+        transactionNo,
+        signature
+      ].every(Boolean)
+    ) {
+      const err = new Error('Missing required fields');
+      newrelic.noticeError(err, {
+        stage: 'field-validation',
+        payload: decryptedObject
+      });
+      return encryptAndRespond(
+        ERROR_MESSAGES.MISSING_FIELDS,
+        '',
+        transactionNo
+      );
+    }
+
+    const credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+    if (!credential) {
+      const err = new Error('Invalid credential');
+      newrelic.noticeError(err, { stage: 'credential', login, locationCode });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_CREDENTIAL,
+        '',
+        transactionNo
+      );
+    }
+
+    const expectedSig = generateSignatureVoucherTicket(
+      login,
+      password,
+      merchantID,
+      tenantID,
+      locationCode,
+      transactionNo,
+      credential.SecretKey ?? ''
+    );
+    if (signature.toLowerCase() !== expectedSig.toLowerCase()) {
+      const err = new Error('Invalid signature');
+      newrelic.noticeError(err, { stage: 'signature-check', transactionNo });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_SIGNATURE,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const location =
+      await findInquiryTransactionMappingByLocationCode(locationCode);
+    if (!location) {
+      const err = new Error('Invalid location');
+      newrelic.noticeError(err, { stage: 'location-check', locationCode });
+      return encryptAndRespond(
+        ERROR_MESSAGES.INVALID_LOCATION,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const roles = await getRolesByPartnerId(credential.Id);
+    const hasInquiryAccess = roles.some(
+      (role) => role.access_type === 'TICKETINQUIRY'
+    );
+    if (!hasInquiryAccess) {
+      const err = new Error('Access denied for partner');
+      newrelic.noticeError(err, {
+        stage: 'role-check',
+        partnerId: credential.Id
+      });
+      return encryptAndRespond(
+        ACCESS_ERROR_MESSAGES.ACCESS_DENIED,
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    const locationRoles = await getRolesByPartnerId(location.Id);
+    const postRole = locationRoles.find(
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+    );
+    if (!postRole || !postRole.url_access) {
+      const err = new Error('Post role missing or no access URL');
+      newrelic.noticeError(err, {
+        stage: 'post-role',
+        locationId: location.Id
+      });
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
+    }
+
+    // ✅ remote request
+    const signatureData = {
+      login: location.Login ?? '',
+      password: location.Password ?? '',
+      storeID: location.NMID ?? '',
+      transactionNo
+    };
+
+    const remoteSignature = generateSignature(
+      signatureData.login,
+      signatureData.password,
+      signatureData.storeID,
+      transactionNo,
+      location.SecretKey ?? ''
+    );
+
+    const requestPayload = { ...signatureData, signature: remoteSignature };
+
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      location.GibberishKey ?? ''
+    );
+
+    let apiResponse;
+    try {
+      apiResponse = await axios.post(
+        postRole.url_access,
+        { data: encryptedRequest },
+        { timeout: 5000 } // ⏱ set timeout
+      );
+    } catch (err: any) {
+      newrelic.noticeError(err, {
+        stage: 'remote-request',
+        url: postRole.url_access,
+        transactionNo,
+        locationId: location.Id,
+        type: err.code === 'ECONNABORTED' ? 'timeout' : 'http-error'
+      });
+
+      console.error('Remote API call failed:', err.message);
+
+      return encryptAndRespond(
+        {
+          responseStatus: 'Failed',
+          responseCode: '211002',
+          responseDescription:
+            err.code === 'ECONNABORTED'
+              ? 'Request to POST timed out'
+              : 'Error calling POST service',
+          messageDetail: err.message
+        },
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
+
+    let encryptedData: string | undefined;
+
+    if (typeof apiResponse.data === 'string') {
+      try {
+        const cleanString = apiResponse.data.replace(
+          /[\u0000-\u001F\u007F-\u009F]/g,
+          ''
+        );
+        const parsed = JSON.parse(cleanString);
+        encryptedData = parsed?.data;
+      } catch (err) {
+        newrelic.noticeError(err as Error, { stage: 'response-parse' });
+        console.error('Failed to parse string response as JSON:', err);
+      }
+    } else if (typeof apiResponse.data === 'object') {
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      const err = new Error('Encrypted data not found in API response');
+      newrelic.noticeError(err, {
+        stage: 'api-response',
+        rawResponse: apiResponse.data
+      });
+      throw err;
+    }
+
+    const finalData = await DecryptTotPOST(
+      encryptedData,
+      location.GibberishKey ?? ''
+    );
+
+    await createInquiryTransaction({
+      CompanyName: location.CompanyName ?? '',
+      NMID: location.NMID ?? '',
+      StoreCode: transactionNo.toString().slice(-5),
+      TransactionNo: transactionNo,
+      ReferenceNo: '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(requestPayload),
+      DataResponse: JSON.stringify(finalData),
+      DataDetailResponse: JSON.stringify(finalData?.data),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
+      CreatedBy: location.CompanyName ?? '',
+      UpdatedBy: location.CompanyName ?? ''
+    });
+
+    const displayMessage =
+      finalData?.messageDetail ===
+        'Inquiry Tariff has been accepted and verified successfully.' ||
+      finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
+
+    const responsePayload = {
+      responseStatus: finalData?.responseStatus,
+      responseCode:
+        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: finalData?.responseDescription,
+      messageDetail: displayMessage,
+      data: {
+        transactionNo: finalData?.data.transactionNo,
+        transactionStatus: finalData?.data.transactionStatus,
+        inTime: finalData?.data.inTime,
+        duration: Number(finalData?.data.duration),
+        tariff: Number(finalData?.data.tariff),
+        vehicleType: finalData?.data.vehicleType,
+        outTime: finalData?.data.outTime,
+        gracePeriod: Number(finalData?.data.gracePeriod),
+        location: finalData?.data.location,
+        paymentStatus: finalData?.data.paymentStatus
+      }
+    };
+
+    return encryptAndRespond(
+      responsePayload,
+      credential.GibberishKey ?? '',
+      transactionNo
+    );
+  } catch (error: any) {
+    console.error('Error processing inquiry:', error);
+    newrelic.noticeError(error, { stage: 'catch-block' });
     return encryptAndRespond(
       {
         responseCode: '500500',
