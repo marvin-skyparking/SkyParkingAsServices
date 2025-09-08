@@ -12,6 +12,7 @@ import {
   generatePaymentSignature,
   generateSignature,
   generateSignatureVoucherTicket,
+  RealdecryptGOPAYPayload,
   RealdecryptPayload,
   RealencryptPayload
 } from '../utils/encrypt.utils';
@@ -3447,7 +3448,7 @@ export async function Inquiry_Transaction_GOPAY(
       );
     }
 
-    const decryptedObject = RealdecryptPayload(data);
+    const decryptedObject = RealdecryptGOPAYPayload(data);
 
     if (!decryptedObject) {
       const err = new Error('INVALID ENCRYPTION DATA');
@@ -3695,7 +3696,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       );
     }
 
-    const decryptedObject = RealdecryptPayload(data);
+    const decryptedObject = RealdecryptGOPAYPayload(data);
 
     if (!decryptedObject) {
       return encryptAndRespond(
