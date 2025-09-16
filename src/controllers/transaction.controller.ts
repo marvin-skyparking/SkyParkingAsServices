@@ -1535,7 +1535,7 @@ export async function processPaymentTransactionEncrypt(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      issuerID,
+      partnerID,
       retrievalReferenceNo,
       approvalCode,
       signature
@@ -1552,7 +1552,7 @@ export async function processPaymentTransactionEncrypt(
         paymentStatus,
         paymentReferenceNo,
         paymentDate,
-        issuerID,
+        partnerID,
         retrievalReferenceNo,
         approvalCode,
         signature
@@ -1594,6 +1594,8 @@ export async function processPaymentTransactionEncrypt(
     }
 
     const SecretKeys = secretKeyData.SecretKey;
+
+    const issuerID = partnerID;
 
     const expectedSignature = generatePaymentSignature(
       login,
