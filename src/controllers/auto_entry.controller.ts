@@ -28,6 +28,254 @@ import newrelic from 'newrelic';
 /**
  * Auto Entry Handler
  */
+// export async function auto_entry(req: Request, res: Response): Promise<any> {
+//   const encryptAndRespondAutoEntry = async (
+//     payload: any,
+//     key: string,
+//     transactionNo?: string
+//   ) => {
+//     if (!payload.data) {
+//       payload.data = defaultTransactionDataAutoEntry(transactionNo);
+//     }
+//     const encrypted = EncryptTotPOST(payload, key);
+//     return res.status(200).json({ data: encrypted });
+//   };
+
+//   let decryptedObject: any = null;
+//   let locationData: any = null;
+//   let get_token: any = null;
+//   let validate_entry: any = null;
+
+//   try {
+//     const { data } = req.body;
+
+//     if (!data) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+//         'PARTNER_KEY'
+//       );
+//     }
+
+//     decryptedObject = DecryptTotPOST(data, 'PARTNER_KEY');
+
+//     if (!decryptedObject) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+//         'PARTNER_KEY',
+//         ''
+//       );
+//     }
+
+//     const {
+//       login,
+//       password,
+//       transactionNo,
+//       licensePlateNo,
+//       locationCode,
+//       signature
+//     } = decryptedObject;
+
+//     if (
+//       ![
+//         login,
+//         password,
+//         transactionNo,
+//         licensePlateNo,
+//         locationCode,
+//         signature
+//       ].every(Boolean)
+//     ) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_MESSAGES.MISSING_FIELDS,
+//         'PARTNER_KEY',
+//         transactionNo
+//       );
+//     }
+
+//     const validateCredential = await findInquiryTransactionMappingPartner(
+//       login,
+//       password
+//     );
+
+//     if (!validateCredential) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_MESSAGES.INVALID_CREDENTIAL,
+//         'PARTNER_KEY',
+//         transactionNo
+//       );
+//     }
+
+//     locationData = await findLocationStoreCodeData(locationCode);
+
+//     if (!locationData) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_MESSAGES.INVALID_LOCATION,
+//         'PARTNER_KEY',
+//         transactionNo
+//       );
+//     }
+
+//     const expectedSignature = generateAutoEntrySignature(
+//       login,
+//       password,
+//       transactionNo,
+//       licensePlateNo,
+//       locationCode,
+//       locationData.SecretKey || ''
+//     );
+
+//     if (signature.toLowerCase() !== expectedSignature.toLowerCase()) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_MESSAGES.INVALID_SIGNATURE,
+//         locationData.GibberishKey || '',
+//         transactionNo
+//       );
+//     }
+
+//     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+
+//     const data_token = qs.stringify({
+//       grant_type: ACCESS_CREDENTIAL.grant_type,
+//       username: ACCESS_CREDENTIAL.username,
+//       password: ACCESS_CREDENTIAL.password
+//     });
+
+//     get_token = await axios.post(EnvConfig.URL_TOKEN, data_token, {
+//       headers,
+//       timeout: 3000
+//     });
+
+//     if (get_token.status !== 200) {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_ON_LIPPO_MALLS.FAILED_TO_GET_TOKEN,
+//         locationData.GibberishKey || '',
+//         transactionNo
+//       );
+//     }
+
+//     const send_data = {
+//       LicenseNumber: licensePlateNo,
+//       ParkingTicket: `https://billing.skyparking.online/Ebilling?p1=${locationData.NMID}&p2=${transactionNo}`,
+//       Location: locationData.CompanyName
+//     };
+
+//     const headers_auto_entry = {
+//       'Content-Type': 'application/json',
+//       Authorization: `Bearer ${get_token.data.access_token}`
+//     };
+
+//     validate_entry = await axios.post(EnvConfig.URL_AUTO_ENTRY, send_data, {
+//       headers: headers_auto_entry,
+//       timeout: 3000
+//     });
+
+//     // Save log to DB
+//     await createStylesCheckMembership({
+//       CompanyName: locationData.CompanyName,
+//       NMID: locationData.NMID,
+//       LocationCode: locationData.StoreCode,
+//       TransactionNo: transactionNo,
+//       LicensePlateNo: licensePlateNo,
+//       QRTicket: send_data.ParkingTicket,
+//       ResponseCode: validate_entry.data.Code,
+//       ResponseStatus: validate_entry.data.Code === '200' ? 1 : 0,
+//       MerchantDataRequest: JSON.stringify(send_data),
+//       MerchantDataResponse: JSON.stringify(validate_entry.data),
+//       POSTDataRequest: JSON.stringify(decryptedObject),
+//       POSTDataResponse: '',
+//       RecordStatus: 1,
+//       CreatedBy: 'AUTO_ENTRY',
+//       CreatedOn: new Date()
+//     });
+
+//     if (validate_entry.data.Code === '404') {
+//       return encryptAndRespondAutoEntry(
+//         ERROR_ON_LIPPO_MALLS.NOT_MEMBER_STYLES,
+//         locationData.GibberishKey || '',
+//         transactionNo
+//       );
+//     }
+
+//     if (validate_entry.data.Code === '200') {
+//       const res_final = {
+//         responseStatus: 'Success',
+//         responseCode: '211000',
+//         responseDescription: 'Transaction Success',
+//         messageDetail:
+//           'The vehicle license plate is registered as valid Styles membership',
+//         data: {
+//           transactionNo,
+//           licensePlateNo,
+//           locationCode,
+//           customerEmail: validate_entry.data.EmailHide,
+//           status: 'VALID'
+//         }
+//       };
+
+//       return encryptAndRespondAutoEntry(
+//         res_final,
+//         locationData.GibberishKey ?? '',
+//         transactionNo
+//       );
+//     }
+//   } catch (error: any) {
+//     console.error('[AUTO_ENTRY ERROR]', error);
+
+//     // Build timeout details if present
+//     const timeoutInfo =
+//       error.code === 'ECONNABORTED' || error.message?.includes('timeout')
+//         ? {
+//             timeout: true,
+//             timeoutMs: error.config?.timeout,
+//             url: error.config?.url,
+//             method: error.config?.method
+//           }
+//         : { timeout: false };
+
+//     // log everything to New Relic
+//     try {
+//       newrelic.noticeError(error, {
+//         endpoint: 'auto_entry',
+//         requestBody: req.body,
+//         requestQuery: req.query,
+//         requestParams: req.params,
+//         decryptedPayload: decryptedObject,
+//         locationData,
+//         get_token: {
+//           status: get_token?.status,
+//           data: get_token?.data,
+//           headers: get_token?.headers
+//         },
+//         validate_entry: {
+//           status: validate_entry?.status,
+//           data: validate_entry?.data,
+//           headers: validate_entry?.headers
+//         },
+//         timeoutInfo,
+//         timestamp: new Date().toISOString()
+//       });
+//     } catch (nrError) {
+//       console.error('[NEW RELIC ERROR]', nrError);
+//     }
+
+//     // respond safely
+//     if (timeoutInfo.timeout) {
+//       return res.status(504).json({
+//         data: RealencryptPayload({
+//           error: `LIPPO MALLS - TIMEOUT EXCEED ${timeoutInfo.timeoutMs ?? 0} MS`
+//         })
+//       });
+//     }
+
+//     return res.status(500).json({
+//       data: RealencryptPayload({ error: 'Internal Server Error' })
+//     });
+//   }
+// }
+/**
+ * Auto Entry Handler
+ */
+
 export async function auto_entry(req: Request, res: Response): Promise<any> {
   const encryptAndRespondAutoEntry = async (
     payload: any,
@@ -45,6 +293,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
   let locationData: any = null;
   let get_token: any = null;
   let validate_entry: any = null;
+  let send_data: any = null; // ✅ supaya bisa dipakai di catch
 
   try {
     const { data } = req.body;
@@ -153,7 +402,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
       );
     }
 
-    const send_data = {
+    send_data = {
       LicenseNumber: licensePlateNo,
       ParkingTicket: `https://billing.skyparking.online/Ebilling?p1=${locationData.NMID}&p2=${transactionNo}`,
       Location: locationData.CompanyName
@@ -231,6 +480,31 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
             method: error.config?.method
           }
         : { timeout: false };
+
+    // ✅ Save error/timeout log ke DB
+    try {
+      await createStylesCheckMembership({
+        CompanyName: locationData?.CompanyName ?? '',
+        NMID: locationData?.NMID ?? '',
+        LocationCode: locationData?.StoreCode ?? '',
+        TransactionNo: decryptedObject?.transactionNo ?? '',
+        LicensePlateNo: decryptedObject?.licensePlateNo ?? '',
+        QRTicket: send_data?.ParkingTicket ?? '',
+        ResponseCode: timeoutInfo.timeout ? 'TIMEOUT' : 'ERROR',
+        ResponseStatus: 0,
+        MerchantDataRequest: JSON.stringify(send_data ?? {}),
+        MerchantDataResponse: timeoutInfo.timeout
+          ? JSON.stringify({ error: 'Timeout', ...timeoutInfo })
+          : JSON.stringify({ error: error.message }),
+        POSTDataRequest: JSON.stringify(decryptedObject ?? {}),
+        POSTDataResponse: '',
+        RecordStatus: 0,
+        CreatedBy: 'AUTO_ENTRY',
+        CreatedOn: new Date()
+      });
+    } catch (dbError) {
+      console.error('[DB LOG ERROR]', dbError);
+    }
 
     // log everything to New Relic
     try {
