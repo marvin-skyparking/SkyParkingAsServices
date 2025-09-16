@@ -9,12 +9,14 @@ import {
   generatePaymentPOSTSignature,
   generatePaymentSignature,
   generateSignature,
+  generateSignatureLMI,
   RealdecryptPayload,
   RealencryptPayload
 } from '../utils/encrypt.utils';
 import {
   findInquiryTransactionMappingByNMID,
-  findInquiryTransactionMappingPartner
+  findInquiryTransactionMappingPartner,
+  findLocationStoreCodeData
 } from '../services/inquiry_transaction_mapping.service';
 import {
   close_ticket_update,
@@ -46,6 +48,9 @@ import {
   SUCCESS_MESSAGES_NEW
 } from '../constant/inapp-message';
 import { generateCustomCode } from '../utils/helper.utils';
+import { secretKey } from '../utils/encryption.utils';
+import EnvConfig from '../configs/env.config';
+import { createVoucherUsage } from '../services/voucher.service';
 
 /**
  * Process Inquiry Transaction
@@ -2188,5 +2193,98 @@ export async function Payment_Confirmation_QRIS(req: Request, res: Response) {
     return res.status(500).json({
       data: RealencryptPayload({ error: 'Internal Server Error' })
     });
+  }
+}
+
+export async function SendVoucherToLMI(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const {
+      login,
+      password,
+      merchantID,
+      locationCode,
+      transactionNo,
+      licensePlateNo,
+      inTime,
+      gateInCode,
+      vehicleType,
+      totalTariff,
+      outTime,
+      gateOutCode
+    } = req.body;
+
+    const secretKey = 'SECRET_KEY';
+    const partner_key = 'PARTNER_KEY';
+
+    // 1. Generate signature
+    const remoteSignature = generateSignatureLMI(
+      login,
+      password,
+      merchantID,
+      locationCode,
+      transactionNo,
+      licensePlateNo,
+      inTime,
+      gateInCode,
+      vehicleType,
+      totalTariff,
+      outTime,
+      gateOutCode,
+      secretKey
+    );
+
+    // 2. Combine data + signature
+    const data = {
+      ...req.body,
+      signature: remoteSignature
+    };
+
+    //Find Location
+    const location = await findLocationStoreCodeData(locationCode);
+
+    if (!location) {
+      return res.status(404).json({
+        message: 'Location Invalid'
+      });
+    }
+
+    // 3. Encrypt and send
+    const encryptdata = EncryptTotPOST(data, partner_key);
+
+    const send_to_LMI = await axios.post(EnvConfig.URL_VOUCHER_USAGE_LMI, {
+      data: encryptdata
+    });
+
+    console.log(send_to_LMI.data.data);
+    // 4. Decrypt response
+    const decrypt_response = DecryptTotPOST(send_to_LMI.data.data, partner_key);
+
+    // 5. Insert into database
+    await createVoucherUsage({
+      CompanyName: location.CompanyName, // optional: adjust as needed
+      MerchantID: merchantID,
+      LocationCode: locationCode,
+      TransactionNo: transactionNo,
+      LicensePlateNo: licensePlateNo,
+      InTime: new Date(inTime),
+      GateInCode: gateInCode,
+      VehicleType: vehicleType,
+      TotalTariff: totalTariff,
+      OutTime: new Date(outTime),
+      GateOutCode: gateOutCode,
+      MerchantDataRequest: JSON.stringify(data),
+      MerchantDataResponse: JSON.stringify(decrypt_response),
+      CreatedBy: login,
+      CreatedOn: new Date()
+    });
+
+    // 6. Return API response
+    return res.status(200).json(decrypt_response);
+  } catch (err) {
+    console.error('Voucher usage error:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 }
