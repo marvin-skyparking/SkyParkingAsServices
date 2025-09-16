@@ -1296,7 +1296,10 @@ export async function processInquiryTransactionEncrypt(
         .json({ data: RealencryptPayload(response_invalid_credential) });
     }
 
-    if (decryptedObject.storeID !== 'ID2020028029516') {
+    if (
+      decryptedObject.storeID !== 'ID2020028029516' ||
+      decryptedObject.storeID !== '007SK'
+    ) {
       const response_invalid_credential = {
         ...ERROR_MESSAGES.INVALID_CREDENTIAL_POST,
         data: defaultTransactionData(transactionNo)
@@ -1568,7 +1571,10 @@ export async function processPaymentTransactionEncrypt(
       password
     );
 
-    if (decryptedObject.storeID !== 'ID2020028029516') {
+    if (
+      decryptedObject.storeID !== 'ID2020028029516' ||
+      decryptedObject.storeID !== '007SK'
+    ) {
       const response_invalid_credential = {
         ...ERROR_MESSAGES.INVALID_CREDENTIAL_POST,
         data: defaultTransactionData(transactionNo)
