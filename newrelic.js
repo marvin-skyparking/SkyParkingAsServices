@@ -1,5 +1,5 @@
 exports.config = {
-  app_name: ['IN-APP'],
+  app_name: ['AUTOENTRY'],
   license_key: '2efbafc35c0c43b5b53b1547a7f583b3FFFFNRAL',
   distributed_tracing: {
     enabled: true
@@ -27,4 +27,7 @@ exports.config = {
       'response.headers.x*'
     ]
   }
+
+
+  
 };
