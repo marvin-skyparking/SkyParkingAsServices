@@ -1297,7 +1297,7 @@ export async function processInquiryTransactionEncrypt(
     }
 
     if (
-      decryptedObject.storeID !== 'ID2020028029516' ||
+      decryptedObject.storeID !== 'ID2020028029516' &&
       decryptedObject.storeID !== '007SK'
     ) {
       const response_invalid_credential = {
@@ -1572,7 +1572,7 @@ export async function processPaymentTransactionEncrypt(
     );
 
     if (
-      decryptedObject.storeID !== 'ID2020028029516' ||
+      decryptedObject.storeID !== 'ID2020028029516' &&
       decryptedObject.storeID !== '007SK'
     ) {
       const response_invalid_credential = {
