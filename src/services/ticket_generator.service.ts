@@ -25,7 +25,7 @@ export async function createTicket() {
     vehicle_type: 'MOBIL',
     reference_no: generateReferenceNo(24),
     grace_period: 5, // Default 15 minutes
-    inTime: moment().toDate(), // Current date-time
+    inTime: moment().tz('Asia/Jakarta').toDate(),
     status: 'UNPAID',
     ticket_close: false
   });
@@ -90,8 +90,8 @@ export async function updateTicketStatus(transactionNo: string) {
     const updateData = {
       tarif: 0,
       status: 'PAID' as const, // Explicitly define the type
-      outTime: new Date(),
-      paid_at: new Date()
+      outTime: moment().tz('Asia/Jakarta').toDate(),
+      paid_at: moment().tz('Asia/Jakarta').toDate()
     };
 
     await ticket.update(updateData);
