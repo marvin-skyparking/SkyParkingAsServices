@@ -1425,7 +1425,7 @@ export async function processInquiryTransactionEncrypt(
       return res.status(200).json({ data: RealencryptPayload(response) });
     }
 
-    const inTime = moment(data_ticket.inTime);
+    const inTime = moment(data_ticket.inTime).tz('Asia/Jakarta');
     const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
     const gracePeriodEnd = inTime
       .clone()
@@ -1463,7 +1463,7 @@ export async function processInquiryTransactionEncrypt(
         messageDetail: 'Ticket is valid, please continue for payment',
         data: {
           transactionNo: update_tarif.transactionNo,
-          inTime: update_tarif.inTime,
+          inTime: formattedInTime,
           duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
           tariff: update_tarif.tarif,
           vehicleType: update_tarif.vehicle_type,
