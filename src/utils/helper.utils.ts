@@ -100,7 +100,7 @@ export function generateRandomNumberFromPlate(plateNumber: string): string {
   return numericPart + randomPart;
 }
 
-export const inTime = moment().format('YYYY-MM-DD HH:mm:ss');
+export const inTime = moment().tz('Asia/Jakarta').format('YYYY-MM-DD HH:mm:ss');
 
 export function generateReferenceNo(length = 24): string {
   const characters = '0123456789ABCDEF';
