@@ -12,7 +12,8 @@ const sequelize = new Sequelize(
     dialect: 'mariadb',
     logging: false,
     dialectOptions: {
-      connectTimeout: 100000
+      connectTimeout: 100000,
+      useUTC: false
     },
     pool: {
       max: 50, // allow up to 50 concurrent DB connections
@@ -20,7 +21,7 @@ const sequelize = new Sequelize(
       acquire: 60000, // wait up to 60 seconds for a connection
       idle: 10000 // release connection if idle for 10 seconds
     },
-    timezone: '+14:00'
+    timezone: '+07:00'
   }
 );
 
