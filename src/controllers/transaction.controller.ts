@@ -1463,7 +1463,7 @@ export async function processInquiryTransactionEncrypt(
         messageDetail: 'Ticket is valid, please continue for payment',
         data: {
           transactionNo: update_tarif.transactionNo,
-          inTime: formattedInTime,
+          inTime: update_tarif.inTime,
           duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
           tariff: update_tarif.tarif,
           vehicleType: update_tarif.vehicle_type,
