@@ -1442,7 +1442,7 @@ export async function processInquiryTransactionEncrypt(
         data: {
           transactionNo: data_ticket.transactionNo,
           inTime: formattedInTime,
-          duration: 0,
+          duration: moment().diff(moment(formattedInTime), 'minutes'),
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
           outTime: data_ticket.outTime
