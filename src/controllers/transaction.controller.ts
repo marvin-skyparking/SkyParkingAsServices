@@ -848,7 +848,7 @@ export async function processInquiryTransaction(
             ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
             : '',
           gracePeriod: data_ticket.grace_period,
-          location: 'SKY PLUIT VILLAGE',
+          location: 'LIPPO MALL PURI',
           paymentStatus: 'FREE'
         }
       };
@@ -869,7 +869,7 @@ export async function processInquiryTransaction(
             ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
             : '',
           gracePeriod: update_tarif.grace_period,
-          location: 'SKY PLUIT VILLAGE',
+          location: 'LIPPO MALL PURI',
           paymentStatus: update_tarif.status
         }
       };
