@@ -1445,9 +1445,10 @@ export async function processInquiryTransactionEncrypt(
           duration: moment().diff(moment(formattedInTime), 'minutes'),
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
-          outTime: data_ticket.outTime
-            ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
-            : '',
+          outTime:
+            data_ticket.ticket_close && data_ticket.outTime
+              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              : '',
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
           paymentStatus: 'FREE'
