@@ -90,7 +90,7 @@ export async function updateTicketStatus(transactionNo: string) {
     const updateData = {
       tarif: 0,
       status: 'PAID' as const, // Explicitly define the type
-      outTime: new Date(),
+      // outTime: new Date(),
       paid_at: new Date()
     };
 
@@ -108,6 +108,6 @@ export async function close_ticket_update(transactionNo: string) {
     throw new Error('Ticket not found');
   }
   ticket.ticket_close = true;
-  await ticket.save();
+  (ticket.outTime = new Date()), await ticket.save();
   return ticket;
 }
