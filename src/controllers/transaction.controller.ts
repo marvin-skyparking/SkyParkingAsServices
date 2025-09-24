@@ -1477,7 +1477,9 @@ export async function processInquiryTransactionEncrypt(
           tariff: update_tarif.tarif,
           vehicleType: update_tarif.vehicle_type,
           outTime: update_tarif.outTime
-            ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
+            ? moment(update_tarif.outTime)
+                .tz('Asia/Jakarta')
+                .format('YYYY-MM-DD HH:mm:ss')
             : '',
           gracePeriod: update_tarif.grace_period,
           location: 'LIPPO MALL PURI',
