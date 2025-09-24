@@ -59,12 +59,11 @@ export async function updateTarifIfExpired(transactionNo: string) {
   // Minutes elapsed since effective start
   const minutesElapsed = now.diff(effectiveStart, 'minutes');
 
-  // Number of full grace periods passed
-  const fullPeriodsPassed = Math.floor(minutesElapsed / gracePeriodMinutes);
+  // Calculate number of periods **after payment** including the first
+  const periodsPassed = Math.ceil(minutesElapsed / gracePeriodMinutes);
 
-  // Tarif starts at 5000, only add 5000 for periods **after the first**
-  const expectedTarif =
-    5000 + (fullPeriodsPassed > 1 ? (fullPeriodsPassed - 1) * 5000 : 0);
+  // Tarif = 5000 * periodsPassed
+  const expectedTarif = 5000 * (periodsPassed > 0 ? periodsPassed : 1);
 
   if (expectedTarif > ticket.tarif) {
     ticket.tarif = expectedTarif;
