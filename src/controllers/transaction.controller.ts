@@ -827,12 +827,12 @@ export async function processInquiryTransaction(
         }
       });
 
-    const inTime = moment(data_ticket.inTime);
+    const inTime = moment.tz(data_ticket.inTime, 'Asia/Jakarta');
     const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
     const gracePeriodEnd = inTime
       .clone()
-      .add(data_ticket.grace_period || 5, 'minutes');
-
+      .add(data_ticket.grace_period || 5, 'minutes')
+      .format('YYYY-MM-DD HH:mm:ss');
     let responsePayload;
 
     if (moment().isBefore(gracePeriodEnd)) {
@@ -1500,7 +1500,7 @@ export async function processInquiryTransactionEncrypt(
             : '',
           gracePeriod: update_tarif.grace_period,
           location: 'LIPPO MALL PURI',
-          paymentStatus: update_tarif.tarif === 0 ? 'PAID' : 'UNPAID'
+          paymentStatus: update_tarif.tarif === 0 ? 'UNPAID' : 'PAID'
         }
       };
     }
