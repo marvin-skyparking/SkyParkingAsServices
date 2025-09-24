@@ -1348,6 +1348,7 @@ export async function processInquiryTransactionEncrypt(
     }
 
     const data_ticket = await findTicket(transactionNo);
+
     if (!data_ticket) {
       const response = {
         responseStatus: 'Failed',
@@ -1369,6 +1370,12 @@ export async function processInquiryTransactionEncrypt(
       };
       return res.status(200).json({ data: RealencryptPayload(response) });
     }
+
+    const inTime = moment(data_ticket.inTime).tz('Asia/Jakarta');
+    const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
+    const gracePeriodEnd = inTime
+      .clone()
+      .add(data_ticket.grace_period || 5, 'minutes');
 
     if (
       data_ticket.status === 'PAID' &&
@@ -1444,12 +1451,6 @@ export async function processInquiryTransactionEncrypt(
       };
       return res.status(200).json({ data: RealencryptPayload(response) });
     }
-
-    const inTime = moment(data_ticket.inTime).tz('Asia/Jakarta');
-    const formattedInTime = inTime.format('YYYY-MM-DD HH:mm:ss');
-    const gracePeriodEnd = inTime
-      .clone()
-      .add(data_ticket.grace_period || 5, 'minutes');
 
     let responsePayload;
 
