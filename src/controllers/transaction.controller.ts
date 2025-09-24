@@ -817,7 +817,10 @@ export async function processInquiryTransaction(
               : null,
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
-          outTime: data_ticket.outTime,
+          outTime:
+            data_ticket.ticket_close && data_ticket.outTime
+              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              : '',
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
           paymentStatus: 'PAID'
@@ -844,9 +847,10 @@ export async function processInquiryTransaction(
           duration: moment().diff(moment(formattedInTime), 'minutes'),
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
-          outTime: data_ticket.outTime
-            ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
-            : '',
+          outTime:
+            data_ticket.ticket_close && data_ticket.outTime
+              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              : '',
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
           paymentStatus: 'FREE'
@@ -865,9 +869,10 @@ export async function processInquiryTransaction(
           duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
           tariff: update_tarif.tarif,
           vehicleType: update_tarif.vehicle_type,
-          outTime: update_tarif.outTime
-            ? moment(update_tarif.outTime).format('YYYY-MM-DD HH:mm:ss')
-            : '',
+          outTime:
+            data_ticket.ticket_close && data_ticket.outTime
+              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              : '',
           gracePeriod: update_tarif.grace_period,
           location: 'LIPPO MALL PURI',
           paymentStatus: update_tarif.status
@@ -1047,28 +1052,37 @@ export async function processPaymentTransaction(
       });
     }
 
-    const succes_payload = {
-      responseStatus: 'Success',
-      responseCode: '211000',
-      responseDescription: 'Transaction Success',
+    const paymentDates = new Date();
+
+    const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
+    const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
+
+    const success_payload = {
+      responseStatus: update_ticket.status === 'PAID' ? 'Success' : 'Failed',
+      responseCode: update_ticket.status === 'PAID' ? '211000' : '211001',
+      responseDescription:
+        update_ticket.status === 'PAID'
+          ? 'Transaction Success'
+          : 'Invalid Transaction',
       messageDetail:
-        update_ticket.tarif === 0
-          ? 'Tiket valid, biaya parkir Anda masih gratis.'
-          : 'Payment confirmation has been accepted and verified successfully',
+        update_ticket.status === 'PAID'
+          ? `Ticket paid successfully. To avoid additional costs, please make sure you exit before ${final_time} Not valid for flat rates.`
+          : 'Parking fee is still free, please continue to scan ticket at exit gate',
       data: {
         referenceNo: decryptedObject.referenceNo,
-        referenceTransactionNo: decryptedObject.referenceTransactionNo,
-        amount: update_ticket.tarif,
+        referenceTransactionNo: generateCustomCode(8),
+        amount: decryptedObject.amount,
         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-        paymentDate: new Date(),
+        paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
         issuerID: decryptedObject.issuerID,
         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
         transactionNo: decryptedObject.transactionNo,
         transactionStatus: 'VALID',
-        paymentStatus: update_ticket.tarif === 0 ? 'FREE' : 'PAID'
+        paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE'
       }
     };
-    return res.json(succes_payload); // Respond with the decrypted object directly
+
+    return res.json(success_payload); // Respond with the decrypted object directly
   } catch (error) {
     console.error('Error processing inquiry transaction:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
@@ -1228,9 +1242,7 @@ export async function processPaymentTransactionPOST(
       responseCode: '211000',
       responseDescription: 'Transaction Success',
       messageDetail:
-        update_ticket.tarif === 0
-          ? 'Tiket valid, biaya parkir Anda masih gratis.'
-          : 'Payment confirmation has been accepted and verified successfully',
+        'Payment confirmation has been accepted and verified successfully',
       data: {
         referenceNo: decryptedObject.referenceNo,
         referenceTransactionNo: decryptedObject.referenceTransactionNo,
