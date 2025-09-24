@@ -1432,7 +1432,9 @@ export async function processInquiryTransactionEncrypt(
         data: {
           transactionNo: data_ticket.transactionNo,
           transactionStatus: 'VALID',
-          inTime: moment(data_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+          inTime: moment(data_ticket.inTime)
+            .tz('Asia/Jakarta')
+            .format('YYYY-MM-DD HH:mm:ss'),
           duration:
             data_ticket.inTime && data_ticket.outTime
               ? Math.floor(
@@ -1443,7 +1445,9 @@ export async function processInquiryTransactionEncrypt(
               : null,
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
-          outTime: moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+          outTime: moment(data_ticket.outTime)
+            .tz('Asia/Jakarta')
+            .format('YYYY-MM-DD HH:mm:ss'),
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
           paymentStatus: 'PAID'
