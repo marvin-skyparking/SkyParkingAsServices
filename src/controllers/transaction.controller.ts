@@ -1500,7 +1500,7 @@ export async function processInquiryTransactionEncrypt(
             : '',
           gracePeriod: update_tarif.grace_period,
           location: 'LIPPO MALL PURI',
-          paymentStatus: update_tarif.tarif === 0 ? 'UNPAID' : 'PAID'
+          paymentStatus: update_tarif.tarif != 0 ? 'UNPAID' : 'PAID'
         }
       };
     }
