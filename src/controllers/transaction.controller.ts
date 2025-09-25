@@ -797,7 +797,7 @@ export async function processInquiryTransaction(
         }
       });
 
-    if (data_ticket.status === 'PAID')
+    if (data_ticket.status === 'PAID' && data_ticket.tarif === 0)
       return res.status(200).json({
         responseStatus: 'Success',
         responseCode: '211000',
@@ -806,7 +806,9 @@ export async function processInquiryTransaction(
         data: {
           transactionNo: data_ticket.transactionNo,
           transactionStatus: 'VALID',
-          inTime: data_ticket.inTime,
+          inTime: moment(data_ticket.inTime)
+            .tz('Asia/Jakarta')
+            .format('YYYY-MM-DD HH:mm:ss'),
           duration:
             data_ticket.inTime && data_ticket.outTime
               ? Math.floor(
@@ -819,7 +821,9 @@ export async function processInquiryTransaction(
           vehicleType: data_ticket.vehicle_type,
           outTime:
             data_ticket.ticket_close && data_ticket.outTime
-              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              ? moment(data_ticket.outTime)
+                  .tz('Asia/Jakarta')
+                  .format('YYYY-MM-DD HH:mm:ss')
               : '',
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
@@ -860,7 +864,9 @@ export async function processInquiryTransaction(
           vehicleType: data_ticket.vehicle_type,
           outTime:
             data_ticket.ticket_close && data_ticket.outTime
-              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              ? moment(data_ticket.outTime)
+                  .tz('Asia/Jakarta')
+                  .format('YYYY-MM-DD HH:mm:ss')
               : '',
           gracePeriod: data_ticket.grace_period,
           location: 'LIPPO MALL PURI',
@@ -882,7 +888,9 @@ export async function processInquiryTransaction(
           vehicleType: update_tarif.vehicle_type,
           outTime:
             data_ticket.ticket_close && data_ticket.outTime
-              ? moment(data_ticket.outTime).format('YYYY-MM-DD HH:mm:ss')
+              ? moment(data_ticket.outTime)
+                  .tz('Asia/Jakarta')
+                  .format('YYYY-MM-DD HH:mm:ss')
               : '',
           gracePeriod: update_tarif.grace_period,
           location: 'LIPPO MALL PURI',
@@ -901,7 +909,7 @@ export async function processInquiryTransaction(
       ProjectCategoryName: 'Parking',
       DataSend: JSON.stringify(decryptedObject), // Store request payload
       DataResponse: JSON.stringify(responsePayload), // Store response payload
-      CreatedOn: moment().toDate(),
+      CreatedOn: moment().tz('Asia/Jakarta').toDate(),
       CreatedBy: login
     });
 
@@ -1066,7 +1074,9 @@ export async function processPaymentTransaction(
     const paymentDates = new Date();
 
     const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
-    const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
+    const final_time = moment(exitLimitDate)
+      .tz('Asia/Jakarta')
+      .format('YYYY-MM-DD HH:mm:ss');
 
     const success_payload = {
       responseStatus: update_ticket.status === 'PAID' ? 'Success' : 'Failed',
@@ -1084,7 +1094,9 @@ export async function processPaymentTransaction(
         referenceTransactionNo: generateCustomCode(8),
         amount: decryptedObject.amount,
         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-        paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
+        paymentDate: moment(paymentDates)
+          .tz('Asia/Jakarta')
+          .format('YYYY-MM-DD HH:mm:ss'),
         issuerID: decryptedObject.issuerID,
         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
         transactionNo: decryptedObject.transactionNo,
@@ -1747,7 +1759,9 @@ export async function processPaymentTransactionEncrypt(
     const paymentDates = new Date();
 
     const exitLimitDate = new Date(paymentDates.getTime() + 30 * 60 * 1000); // add 30 minutes to the current time
-    const final_time = moment(exitLimitDate).format('YYYY-MM-DD HH:mm:ss');
+    const final_time = moment(exitLimitDate)
+      .tz('Asia/Jakarta')
+      .format('YYYY-MM-DD HH:mm:ss');
 
     const success_payload = {
       responseStatus: update_ticket.status === 'PAID' ? 'Success' : 'Failed',
@@ -1765,7 +1779,9 @@ export async function processPaymentTransactionEncrypt(
         referenceTransactionNo: generateCustomCode(8),
         amount: decryptedObject.amount,
         paymentReferenceNo: decryptedObject.paymentReferenceNo,
-        paymentDate: moment(paymentDates).format('YYYY-MM-DD HH:mm:ss'),
+        paymentDate: moment(paymentDates)
+          .tz('Asia/Jakarta')
+          .format('YYYY-MM-DD HH:mm:ss'),
         issuerID: decryptedObject.issuerID,
         retrievalReferenceNo: decryptedObject.retrievalReferenceNo,
         transactionNo: decryptedObject.transactionNo,
@@ -1846,7 +1862,9 @@ export async function close_ticket_not_encrypt(
         gateInCode: '007SK-1-PM-GATE1A',
         vehicleType: update_ticket.vehicle_type,
         productName: 'MOBIL REGULAR',
-        inTime: moment(update_ticket.inTime).format('YYYY-MM-DD HH:mm:ss'),
+        inTime: moment(update_ticket.inTime)
+          .tz('Asia/Jakarta')
+          .format('YYYY-MM-DD HH:mm:ss'),
         duration: moment(update_ticket.outTime).diff(
           moment(update_ticket.inTime),
           'minutes'
@@ -1855,13 +1873,17 @@ export async function close_ticket_not_encrypt(
         gracePeriod: update_ticket.grace_period,
         paymentStatus: update_ticket.status === 'PAID' ? 'PAID' : 'FREE',
         paymentReferenceNo: update_ticket.reference_no,
-        paymenDate: moment(update_ticket.paid_at).format('YYYY-MM-DD HH:mm:ss'),
+        paymenDate: moment(update_ticket.paid_at)
+          .tz('Asia/Jakarta')
+          .format('YYYY-MM-DD HH:mm:ss'),
         paymentMethod: 'IN-APP',
         issuerID: '',
         retrievalReferenceNo: '',
         referenceTransactionNo: '',
         approvalCode: '',
-        outTime: moment(update_ticket.outTime).format('YYYY-MM-DD HH:mm:ss'),
+        outTime: moment(update_ticket.outTime)
+          .tz('Asia/Jakarta')
+          .format('YYYY-MM-DD HH:mm:ss'),
         gateOutCode: '007SK-1-PK-GATE2B'
       }
     };
