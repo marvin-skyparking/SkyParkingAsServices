@@ -51,9 +51,10 @@ export async function updateTarifIfExpired(transactionNo: string) {
   const gracePeriodMinutes = ticket.grace_period || 5;
 
   // Effective start time: last payment or inTime
-  let effectiveStart = moment(ticket.inTime).tz('Asia/Jakarta');
-  if (ticket.paid_at) {
-    effectiveStart = moment(ticket.paid_at).tz('Asia/Jakarta');
+  let effectiveStart = moment(ticket.paid_at).tz('Asia/Jakarta');
+
+  if (!ticket.paid_at) {
+    effectiveStart = moment(ticket.inTime).tz('Asia/Jakarta');
   }
 
   // Minutes elapsed since effectiveStart
