@@ -843,8 +843,19 @@ export async function processInquiryTransaction(
         messageDetail: 'Ticket is valid, Parking is still free.',
         data: {
           transactionNo: data_ticket.transactionNo,
-          inTime: formattedInTime,
-          duration: moment().diff(moment(formattedInTime), 'minutes'),
+          inTime: moment(data_ticket.inTime)
+            .tz('Asia/Jakarta')
+            .format('YYYY-MM-DD HH:mm:ss'),
+          duration: data_ticket.inTime
+            ? Math.floor(
+                ((data_ticket.outTime
+                  ? new Date(data_ticket.outTime)
+                  : new Date()
+                ).getTime() -
+                  new Date(data_ticket.inTime).getTime()) /
+                  60000
+              )
+            : null,
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
           outTime:
