@@ -51,33 +51,26 @@ export async function updateTarifIfExpired(transactionNo: string) {
   const gracePeriodMinutes = ticket.grace_period || 5;
 
   // Effective start time: last payment or inTime
-  let effectiveStart = moment(ticket.paid_at).tz('Asia/Jakarta');
-
-  if (!ticket.paid_at) {
-    effectiveStart = moment(ticket.inTime).tz('Asia/Jakarta');
+  let effectiveStart = moment(ticket.inTime).tz('Asia/Jakarta');
+  if (ticket.status === 'PAID' && ticket.paid_at) {
+    effectiveStart = moment(ticket.paid_at).tz('Asia/Jakarta');
   }
 
   // Minutes elapsed since effectiveStart
   const minutesElapsed = now.diff(effectiveStart, 'minutes');
 
-  // If still within initial grace period, tarif = 5000
-  if (minutesElapsed <= gracePeriodMinutes) {
-    if (ticket.tarif < 5000) {
-      ticket.tarif = 5000;
-      await ticket.save();
-    }
-    return ticket;
+  let expectedTarif = 5000; // always start from 5000
+
+  if (minutesElapsed > gracePeriodMinutes) {
+    // Count number of full grace periods after the first
+    const additionalPeriods = Math.floor(
+      (minutesElapsed - gracePeriodMinutes) / gracePeriodMinutes
+    );
+    expectedTarif += additionalPeriods * 5000;
   }
 
-  // Number of **full periods after first grace period**
-  const fullPeriodsPassed = Math.floor(
-    (minutesElapsed - gracePeriodMinutes) / gracePeriodMinutes
-  );
-
-  // Tarif = 5000 + 5000 * number of periods after initial grace
-  const expectedTarif = 5000 + fullPeriodsPassed * 5000;
-
-  if (expectedTarif > ticket.tarif) {
+  // Update ticket tarif if it changed or is not set
+  if (!ticket.tarif || expectedTarif > ticket.tarif) {
     ticket.tarif = expectedTarif;
     await ticket.save();
   }
