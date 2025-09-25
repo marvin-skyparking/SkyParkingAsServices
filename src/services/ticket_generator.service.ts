@@ -47,30 +47,39 @@ export async function updateTarifIfExpired(transactionNo: string) {
     throw new Error('Ticket not found');
   }
 
-  const inTime = moment(ticket.inTime);
   const now = moment();
   const gracePeriodMinutes = ticket.grace_period || 5;
 
-  // Calculate minutes since inTime
-  const minutesElapsed = now.diff(inTime, 'minutes');
-  const gracePeriodsPassed = Math.floor(minutesElapsed / gracePeriodMinutes);
-  const expectedTarif = 5000 * gracePeriodMinutes;
+  let effectiveStart = moment(ticket.inTime);
 
-  // If paid, pause tarif increase for 30 minutes
+  // If ticket is paid, apply 30-minute freeze
   if (ticket.status === 'PAID' && ticket.paid_at) {
     const paidAt = moment(ticket.paid_at);
-    const resumeTime = paidAt.clone().add(30, 'minutes');
+    const freezeEnd = paidAt.clone().add(30, 'minutes');
 
-    if (now.isBefore(resumeTime)) {
-      // Still in 30-minute freeze window — return without updating
+    if (now.isBefore(freezeEnd)) {
+      // still in freeze, tarif stays 0
+      ticket.tarif = 0;
+      await ticket.save();
       return ticket;
     }
+
+    // Tarif counting starts from freezeEnd
+    effectiveStart = freezeEnd;
   }
 
-  if (expectedTarif > ticket.tarif) {
-    ticket.tarif = expectedTarif;
-    await ticket.save();
-  }
+  // Minutes elapsed since effective start
+  const minutesElapsed = now.diff(effectiveStart, 'minutes');
+
+  // Calculate number of full grace periods passed
+  const fullPeriodsPassed = Math.floor(minutesElapsed / gracePeriodMinutes);
+
+  // Tarif always starts from 5000 after freeze, then +5000 per full period
+  const newTarif = 5000 + fullPeriodsPassed * 5000;
+
+  // Directly set tarif without comparing to previous value
+  ticket.tarif = newTarif;
+  await ticket.save();
 
   return ticket;
 }
