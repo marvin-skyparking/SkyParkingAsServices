@@ -1575,11 +1575,16 @@ export async function processPaymentTransactionEncrypt(
       paymentReferenceNo,
       paymentDate,
       partnerID,
+      issuerID,
       retrievalReferenceNo,
       approvalCode,
       signature
     } = decryptedObject;
 
+    // Determine which field to use for validation
+    const validPartner = partnerID ?? issuerID;
+
+    // Check for missing required fields
     if (
       [
         login,
@@ -1591,7 +1596,7 @@ export async function processPaymentTransactionEncrypt(
         paymentStatus,
         paymentReferenceNo,
         paymentDate,
-        partnerID,
+        validPartner, // use either partnerID or issuerID
         retrievalReferenceNo,
         approvalCode,
         signature
@@ -1634,8 +1639,6 @@ export async function processPaymentTransactionEncrypt(
 
     const SecretKeys = secretKeyData.SecretKey;
 
-    const issuerID = partnerID;
-
     const expectedSignature = generatePaymentSignature(
       login,
       password,
@@ -1646,7 +1649,7 @@ export async function processPaymentTransactionEncrypt(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      issuerID,
+      validPartner,
       retrievalReferenceNo,
       approvalCode,
       SecretKeys
