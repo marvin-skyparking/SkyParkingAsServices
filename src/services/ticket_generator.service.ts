@@ -52,7 +52,7 @@ export async function updateTarifIfExpired(transactionNo: string) {
 
   // Effective start time: last payment or inTime
   let effectiveStart = moment(ticket.inTime).tz('Asia/Jakarta');
-  if (ticket.status === 'PAID' && ticket.paid_at) {
+  if (ticket.paid_at) {
     effectiveStart = moment(ticket.paid_at).tz('Asia/Jakarta');
   }
 
