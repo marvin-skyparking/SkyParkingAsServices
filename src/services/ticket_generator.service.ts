@@ -47,33 +47,27 @@ export async function updateTarifIfExpired(transactionNo: string) {
     throw new Error('Ticket not found');
   }
 
-  const now = moment().tz('Asia/Jakarta');
+  const inTime = moment(ticket.inTime);
+  const now = moment();
   const gracePeriodMinutes = ticket.grace_period || 5;
 
-  // Effective start time: last payment or inTime
-  let effectiveStart = moment(ticket.inTime).tz('Asia/Jakarta');
-  if (moment(ticket.paid_at)) {
-    effectiveStart = moment(ticket.paid_at).tz('Asia/Jakarta');
+  // Calculate minutes since inTime
+  const minutesElapsed = now.diff(inTime, 'minutes');
+  const gracePeriodsPassed = Math.floor(minutesElapsed / gracePeriodMinutes);
+  const expectedTarif = 5000 * gracePeriodMinutes;
+
+  // If paid, pause tarif increase for 30 minutes
+  if (ticket.status === 'PAID' && ticket.paid_at) {
+    const paidAt = moment(ticket.paid_at);
+    const resumeTime = paidAt.clone().add(30, 'minutes');
+
+    if (now.isBefore(resumeTime)) {
+      // Still in 30-minute freeze window — return without updating
+      return ticket;
+    }
   }
 
-  // Minutes elapsed since effectiveStart
-  const minutesElapsed = now.diff(effectiveStart, 'minutes');
-
-  console.log(effectiveStart);
-  console.log(minutesElapsed);
-
-  let expectedTarif = 5000; // always start from 5000
-
-  if (minutesElapsed > gracePeriodMinutes) {
-    // Count number of full grace periods after the first
-    const additionalPeriods = Math.floor(
-      (minutesElapsed - gracePeriodMinutes) / gracePeriodMinutes
-    );
-    expectedTarif += 5000;
-  }
-
-  // Update ticket tarif if it changed or is not set
-  if (!ticket.tarif || expectedTarif > ticket.tarif) {
+  if (expectedTarif > ticket.tarif) {
     ticket.tarif = expectedTarif;
     await ticket.save();
   }
