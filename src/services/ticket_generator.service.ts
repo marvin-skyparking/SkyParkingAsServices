@@ -59,6 +59,9 @@ export async function updateTarifIfExpired(transactionNo: string) {
   // Minutes elapsed since effectiveStart
   const minutesElapsed = now.diff(effectiveStart, 'minutes');
 
+  console.log(effectiveStart);
+  console.log(minutesElapsed);
+
   let expectedTarif = 5000; // always start from 5000
 
   if (minutesElapsed > gracePeriodMinutes) {
