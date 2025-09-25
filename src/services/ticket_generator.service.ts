@@ -69,7 +69,7 @@ export async function updateTarifIfExpired(transactionNo: string) {
     const additionalPeriods = Math.floor(
       (minutesElapsed - gracePeriodMinutes) / gracePeriodMinutes
     );
-    expectedTarif += additionalPeriods * 5000;
+    expectedTarif += 5000;
   }
 
   // Update ticket tarif if it changed or is not set
