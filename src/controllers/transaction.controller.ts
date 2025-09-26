@@ -1490,7 +1490,7 @@ export async function processInquiryTransactionEncrypt(
         data: {
           transactionNo: data_ticket.transactionNo,
           inTime: formattedInTime,
-          duration: moment().diff(moment(formattedInTime), 'minutes'),
+          duration: moment().diff(moment(inTime), 'minutes'),
           tariff: data_ticket.tarif,
           vehicleType: data_ticket.vehicle_type,
           outTime:
@@ -1513,7 +1513,7 @@ export async function processInquiryTransactionEncrypt(
         data: {
           transactionNo: update_tarif.transactionNo,
           inTime: formattedInTime,
-          duration: moment().diff(moment(inTime), 'minutes'),
+          duration: moment().diff(moment(update_tarif.inTime), 'minutes'),
           tariff: update_tarif.tarif,
           vehicleType: update_tarif.vehicle_type,
           outTime: update_tarif.outTime
