@@ -55,7 +55,10 @@ export async function updateTarifIfExpired(transactionNo: string) {
   // If ticket is paid, apply 30-minute freeze
   if (ticket.status === 'PAID' && ticket.paid_at) {
     const paidAt = moment(ticket.paid_at);
-    const freezeEnd = paidAt.clone().add(5, 'minutes');
+    // const freezeEnd = paidAt.clone().add(30, 'minutes');
+    const freezeEnd = moment(paidAt)
+      .tz('Asia/Jakarta') // convert to Jakarta timezone
+      .add(5, 'minutes');
 
     if (now.isBefore(freezeEnd)) {
       // still in freeze, tarif stays 0
