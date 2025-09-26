@@ -1404,8 +1404,10 @@ export async function processInquiryTransactionEncrypt(
       data_ticket.status === 'PAID' &&
       data_ticket.ticket_close !== true &&
       data_ticket.paid_at &&
+      // new Date().getTime() - new Date(data_ticket.paid_at).getTime() <
+      //   30 * 60 * 1000
       new Date().getTime() - new Date(data_ticket.paid_at).getTime() <
-        30 * 60 * 1000
+        5 * 60 * 1000
     ) {
       const response = {
         responseStatus: 'Success',
