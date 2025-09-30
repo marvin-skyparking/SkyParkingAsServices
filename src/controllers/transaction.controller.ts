@@ -4169,6 +4169,7 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       login,
       password
     );
+
     if (!credential) {
       const err = new Error('Invalid credential');
       newrelic.noticeError(err, { stage: 'credential', login, locationCode });
