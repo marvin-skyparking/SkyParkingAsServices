@@ -391,7 +391,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
 
     get_token = await axios.post(EnvConfig.URL_TOKEN, data_token, {
       headers,
-      timeout: 3000
+      timeout: 5000
     });
 
     if (get_token.status !== 200) {
@@ -415,7 +415,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
 
     validate_entry = await axios.post(EnvConfig.URL_AUTO_ENTRY, send_data, {
       headers: headers_auto_entry,
-      timeout: 3000
+      timeout: 5000
     });
 
     // Save log to DB
