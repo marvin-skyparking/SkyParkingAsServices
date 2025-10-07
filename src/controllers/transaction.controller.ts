@@ -3724,7 +3724,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
     } = decryptedObject;
 
     // Determine which field to use for validation
-    const validPartner = partnerID ?? issuerID;
+    const validPartner = partnerID || issuerID;
 
     // Check for missing required fields
     if (
@@ -4053,7 +4053,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       paymentStatus: decryptedObject.paymentStatus ?? '',
       paymentReferenceNo: decryptedObject.paymentReferenceNo ?? '',
       paymentDate: decryptedObject.paymentDate ?? '',
-      partnerID: decryptedObject.issuerID ?? '',
+      partnerID: validPartner ?? '',
       retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
       referenceTransactionNo: data_payment?.data.referenceTransactionNo ?? '',
       approvalCode: decryptedObject.approvalCode ?? '',
