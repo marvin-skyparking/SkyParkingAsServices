@@ -3716,14 +3716,19 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
+      partnerID,
       issuerID,
       retrievalReferenceNo,
       approvalCode,
       signature
     } = decryptedObject;
 
+    // Determine which field to use for validation
+    const validPartner = partnerID ?? issuerID;
+
+    // Check for missing required fields
     if (
-      ![
+      [
         login,
         password,
         storeID,
@@ -3733,17 +3738,18 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
         paymentStatus,
         paymentReferenceNo,
         paymentDate,
-        issuerID,
+        validPartner, // use either partnerID or issuerID
         retrievalReferenceNo,
         approvalCode,
         signature
-      ].every(Boolean)
+      ].some((field) => field === null || field === undefined)
     ) {
-      return encryptAndRespond(
-        ERROR_MESSAGES.MISSING_FIELDS,
-        'SKY_IN-APP_INTEGRATION',
-        transactionNo
-      );
+      return res.status(200).json({
+        data: RealencryptPayload({
+          ...ERROR_MESSAGES.MISSING_FIELDS,
+          data: defaultTransactionData()
+        })
+      });
     }
 
     const validate_credential = await findInquiryTransactionMappingPartner(
@@ -3768,7 +3774,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       paymentStatus,
       paymentReferenceNo,
       paymentDate,
-      issuerID,
+      validPartner,
       retrievalReferenceNo,
       approvalCode,
       validate_credential.SecretKey ?? ''
@@ -3816,7 +3822,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       decryptedObject.paymentStatus ?? '',
       decryptedObject.paymentReferenceNo ?? '',
       decryptedObject.paymentDate ?? '',
-      decryptedObject.issuerID ?? '',
+      decryptedObject.validPartner ?? '',
       decryptedObject.retrievalReferenceNo ?? '',
       find_location.SecretKey ?? ''
     );
@@ -3933,7 +3939,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       paymentStatus: decryptedObject.paymentStatus ?? '',
       paymentReferenceNo: decryptedObject.paymentReferenceNo ?? '',
       paymentDate: decryptedObject.paymentDate ?? '',
-      issuerID: decryptedObject.issuerID ?? '',
+      issuerID: decryptedObject.validPartner ?? '',
       retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
       signature: create_signature
     };
