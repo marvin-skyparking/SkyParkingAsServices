@@ -4230,7 +4230,8 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
 
     const locationRoles = await getRolesByPartnerId(location.Id);
     const postRole = locationRoles.find(
-      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+      (role) =>
+        role.role_name === 'POST' && role.access_type === 'VOUCHERINQUIRY'
     );
     if (!postRole || !postRole.url_access) {
       const err = new Error('Post role missing or no access URL');
