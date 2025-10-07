@@ -4073,6 +4073,8 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       UpdatedBy: find_location.Login ?? ''
     };
 
+    console.log(insert_data);
+
     await createPaymentTransaction(insert_data);
 
     return encryptAndRespond(
