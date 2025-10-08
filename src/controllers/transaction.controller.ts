@@ -3939,7 +3939,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       paymentStatus: decryptedObject.paymentStatus ?? '',
       paymentReferenceNo: decryptedObject.paymentReferenceNo ?? '',
       paymentDate: decryptedObject.paymentDate ?? '',
-      issuerID: decryptedObject.validPartner ?? '',
+      issuerID: validPartner ?? '',
       retrievalReferenceNo: decryptedObject.retrievalReferenceNo ?? '',
       signature: create_signature
     };
