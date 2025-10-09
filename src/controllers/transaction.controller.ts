@@ -3822,7 +3822,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       decryptedObject.paymentStatus ?? '',
       decryptedObject.paymentReferenceNo ?? '',
       decryptedObject.paymentDate ?? '',
-      decryptedObject.validPartner ?? '',
+      validPartner ?? '',
       decryptedObject.retrievalReferenceNo ?? '',
       find_location.SecretKey ?? ''
     );
