@@ -61,6 +61,7 @@ import {
 } from '../utils/snap.encryption';
 import { getSecretKeyByClientId } from '../services/partner.service';
 import { generateAccessToken } from '../utils/jwt.utils';
+import { NotFound } from '../utils/response/common.response';
 
 /**
  * Process Inquiry Transaction
@@ -4402,4 +4403,43 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       ''
     );
   }
+}
+
+export async function SEND_VALET_NUMBER_VERIFICATION(
+  req: Request,
+  res: Response
+): Promise<any> {
+  const { valetNumber, locationCode } = req.body;
+
+  const location =
+    await findInquiryTransactionMappingByLocationCode(locationCode);
+
+  if (!location) {
+    return res
+      .status(400)
+      .json({ responseCode: '404000', responseMessage: 'Location Not Found' });
+  }
+
+  const locationRoles = await getRolesByPartnerId(location.Id);
+  const postRole = locationRoles.find(
+    (role) =>
+      role.role_name === 'POST' && role.access_type === 'VERIFICATIONVALET'
+  );
+  if (!postRole || !postRole.url_access) {
+    const err = new Error('Post role missing or no access URL');
+    newrelic.noticeError(err, {
+      stage: 'post-role',
+      locationId: location.Id
+    });
+    return res.status(200).json({
+      responseCode: '401401',
+      responseMessage: 'Access Denied'
+    });
+  }
+
+  const response = await axios.post(postRole.url_access, {
+    NO_TRX: valetNumber
+  });
+
+  return res.status(400).json(response);
 }

@@ -12,7 +12,8 @@ import {
   // InquiryTransactionSnap,
   Payment_Confirmation,
   PAYMENT_CONFIRMATION_GOPAY,
-  Payment_Confirmation_QRIS
+  Payment_Confirmation_QRIS,
+  SEND_VALET_NUMBER_VERIFICATION
   // processInquiryTransaction,
   // processInquiryTransactionEncrypt,
   // processPaymentTransaction,
@@ -106,5 +107,8 @@ innAppRoute.post('/Partner/B2B/Token', B2B_TOKEN_IN_APP);
 
 innAppRoute.post('/Partner/ticket/InquiryTarif', Inquiry_Transaction_Snap);
 // innAppRoute.post('/Partner/PaymentConfrimationREG', processPaymentTransaction);
+
+//VALET TO POST
+innAppRoute.post('/Partner/ValetVerify', SEND_VALET_NUMBER_VERIFICATION);
 
 export default innAppRoute;
