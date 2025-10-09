@@ -4411,35 +4411,62 @@ export async function SEND_VALET_NUMBER_VERIFICATION(
 ): Promise<any> {
   const { valetNumber, locationCode } = req.body;
 
-  const location =
-    await findInquiryTransactionMappingByLocationCode(locationCode);
+  try {
+    const location =
+      await findInquiryTransactionMappingByLocationCode(locationCode);
 
-  if (!location) {
-    return res
-      .status(400)
-      .json({ responseCode: '404000', responseMessage: 'Location Not Found' });
-  }
+    if (!location) {
+      return res.status(400).json({
+        responseCode: '404000',
+        responseMessage: 'Location Not Found'
+      });
+    }
 
-  const locationRoles = await getRolesByPartnerId(location.Id);
-  const postRole = locationRoles.find(
-    (role) =>
-      role.role_name === 'POST' && role.access_type === 'VERIFICATIONVALET'
-  );
-  if (!postRole || !postRole.url_access) {
-    const err = new Error('Post role missing or no access URL');
-    newrelic.noticeError(err, {
-      stage: 'post-role',
-      locationId: location.Id
+    const locationRoles = await getRolesByPartnerId(location.Id);
+    const postRole = locationRoles.find(
+      (role) =>
+        role.role_name === 'POST' && role.access_type === 'VERIFICATIONVALET'
+    );
+
+    if (!postRole || !postRole.url_access) {
+      const err = new Error('Post role missing or no access URL');
+      newrelic.noticeError(err, {
+        stage: 'post-role',
+        locationId: location.Id
+      });
+      return res.status(200).json({
+        responseCode: '401401',
+        responseMessage: 'Access Denied'
+      });
+    }
+
+    // Axios request with error handling
+    const response = await axios.post(postRole.url_access, {
+      NO_TRX: valetNumber
     });
-    return res.status(200).json({
-      responseCode: '401401',
-      responseMessage: 'Access Denied'
+
+    return res.status(200).json(response.data);
+  } catch (error: any) {
+    // Log to New Relic for observability
+    newrelic.noticeError(error, {
+      stage: 'SEND_VALET_NUMBER_VERIFICATION',
+      valetNumber,
+      locationCode
+    });
+
+    // Axios errors often have response info
+    if (error.response) {
+      return res.status(error.response.status || 500).json({
+        responseCode: '500000',
+        responseMessage: 'Internal Server Error',
+        detail: error.response.data || error.message
+      });
+    }
+
+    // Network or unexpected error
+    return res.status(500).json({
+      responseCode: '500000',
+      responseMessage: error.message || 'Unexpected Error'
     });
   }
-
-  const response = await axios.post(postRole.url_access, {
-    NO_TRX: valetNumber
-  });
-
-  return res.status(200).json(response.data);
 }
