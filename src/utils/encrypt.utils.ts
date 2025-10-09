@@ -323,6 +323,40 @@ export function generateAutoEntrySignature(
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
 
+// export function generatePaymentPOSTSignature(
+//   login: string,
+//   password: string,
+//   transactionNo: string,
+//   referenceNo: string,
+//   amount: number,
+//   paymentStatus: string,
+//   paymentReferenceNo: string,
+//   paymentDate: string,
+//   issuerID: string,
+//   retrievalReferenceNo: string,
+//   SECRET_KEY: string
+// ): string {
+//   const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
+//   console.log(dataString);
+//   // Concatenating all parameters into a single string
+//   // const dataString =
+//   //   login +
+//   //   password +
+//   //   storeID +
+//   //   transactionNo +
+//   //   referenceNo +
+//   //   amount +
+//   //   paymentStatus +
+//   //   paymentReferenceNo +
+//   //   paymentDate +
+//   //   issuerID +
+//   //   retrievalReferenceNo +
+//   //   approvalCode +
+//   //   SECRET_KEY;
+
+//   // Generating MD5 hash
+//   return crypto.createHash('md5').update(dataString).digest('hex');
+// }
 export function generatePaymentPOSTSignature(
   login: string,
   password: string,
@@ -336,26 +370,27 @@ export function generatePaymentPOSTSignature(
   retrievalReferenceNo: string,
   SECRET_KEY: string
 ): string {
-  const dataString = `${login}${password}${transactionNo}${referenceNo}${amount}${paymentStatus}${paymentReferenceNo}${paymentDate}${issuerID}${retrievalReferenceNo}${SECRET_KEY}`;
-  console.log(dataString);
-  // Concatenating all parameters into a single string
-  // const dataString =
-  //   login +
-  //   password +
-  //   storeID +
-  //   transactionNo +
-  //   referenceNo +
-  //   amount +
-  //   paymentStatus +
-  //   paymentReferenceNo +
-  //   paymentDate +
-  //   issuerID +
-  //   retrievalReferenceNo +
-  //   approvalCode +
-  //   SECRET_KEY;
+  // Safely convert all fields to trimmed strings
+  const safe = (v: any) => String(v ?? '').trim();
 
-  // Generating MD5 hash
-  return crypto.createHash('md5').update(dataString).digest('hex');
+  // Concatenate in the correct order — as confirmed from API docs
+  const dataString =
+    safe(login) +
+    safe(password) +
+    safe(transactionNo) +
+    safe(referenceNo) +
+    safe(amount) + // must be "10000" (no decimal)
+    safe(paymentStatus) +
+    safe(paymentReferenceNo) +
+    safe(paymentDate) +
+    safe(issuerID) +
+    safe(retrievalReferenceNo) +
+    safe(SECRET_KEY);
+
+  console.log('Concatenated string:', JSON.stringify(dataString));
+
+  // Generate MD5 hash
+  return crypto.createHash('md5').update(dataString, 'utf8').digest('hex');
 }
 
 export function generatePaymentPOSTQRISSignature(
