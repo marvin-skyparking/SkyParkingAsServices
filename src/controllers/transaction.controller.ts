@@ -4441,5 +4441,5 @@ export async function SEND_VALET_NUMBER_VERIFICATION(
     NO_TRX: valetNumber
   });
 
-  return res.status(400).json(response);
+  return res.status(200).json(response.data);
 }
