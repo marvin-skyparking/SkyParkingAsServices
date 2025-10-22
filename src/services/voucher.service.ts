@@ -41,6 +41,7 @@ import {
 import { VoucherUsageMapping } from '../models/voucher-usage-mapping.model';
 import { Op } from 'sequelize';
 import TicketGenerator from '../models/ticket_generatore.model';
+import { VoucherInquiryTicket } from '../models/voucher_inquiry.models';
 
 export interface IVoucherService {
   inquiryTicket(params: EncryptedPayload): Promise<ServiceResponse>;
@@ -972,4 +973,52 @@ export class VoucherService implements IVoucherService {
       message: 'Voucher Usage Successfully'
     };
   }
+}
+
+// 🔹 Create new ticket
+export async function createVoucherInquiryTicket(
+  data: Partial<VoucherInquiryTicket>
+) {
+  return await VoucherInquiryTicket.create(data as any);
+}
+
+// 🔹 Get all tickets
+export async function getAllVoucherInquiryTickets() {
+  return await VoucherInquiryTicket.findAll();
+}
+
+// 🔹 Get ticket by ID
+export async function getVoucherInquiryTicketById(id: number) {
+  return await VoucherInquiryTicket.findByPk(id);
+}
+
+// 🔹 Get ticket by TransactionNo
+export async function getVoucherInquiryTicketByTransactionNo(
+  transactionNo: string
+) {
+  return await VoucherInquiryTicket.findOne({
+    where: { TransactionNo: transactionNo }
+  });
+}
+
+// 🔹 Update ticket by ID
+export async function updateVoucherInquiryTicket(
+  id: number,
+  data: Partial<VoucherInquiryTicket>
+) {
+  const [affectedCount, affectedRows] = await VoucherInquiryTicket.update(
+    data,
+    {
+      where: { Id: id },
+      returning: true
+    }
+  );
+  return { affectedCount, affectedRows };
+}
+
+// 🔹 Delete ticket by ID
+export async function deleteVoucherInquiryTicket(id: number) {
+  return await VoucherInquiryTicket.destroy({
+    where: { Id: id }
+  });
 }

@@ -62,6 +62,7 @@ import {
 import { getSecretKeyByClientId } from '../services/partner.service';
 import { generateAccessToken } from '../utils/jwt.utils';
 import { NotFound } from '../utils/response/common.response';
+import { createVoucherInquiryTicket } from '../services/voucher.service';
 
 /**
  * Process Inquiry Transaction
@@ -4122,7 +4123,7 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       newrelic.noticeError(err, { stage: 'validation', requestBody: data });
       return encryptAndRespond(
         ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
-        '87e5df62d35aae739dc3b68ccb47383a',
+        'PARTNER_KEY',
         undefined
       );
     }
@@ -4137,7 +4138,7 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       newrelic.noticeError(err, { stage: 'decryption', rawData: data });
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
-        '87e5df62d35aae739dc3b68ccb47383a'
+        'PARTNER_KEY'
       );
     }
 
@@ -4184,7 +4185,7 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       newrelic.noticeError(err, { stage: 'credential', login, locationCode });
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_CREDENTIAL,
-        '',
+        'PARTNER_KEY',
         transactionNo
       );
     }
@@ -4239,8 +4240,7 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
 
     const locationRoles = await getRolesByPartnerId(location.Id);
     const postRole = locationRoles.find(
-      (role) =>
-        role.role_name === 'POST' && role.access_type === 'VOUCHERINQUIRY'
+      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
     );
     if (!postRole || !postRole.url_access) {
       const err = new Error('Post role missing or no access URL');
@@ -4342,17 +4342,16 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       location.GibberishKey ?? ''
     );
 
-    await createInquiryTransaction({
+    await createVoucherInquiryTicket({
       CompanyName: location.CompanyName ?? '',
-      NMID: location.NMID ?? '',
-      StoreCode: transactionNo.toString().slice(-5),
+      MerchantID: credential.MPAN,
+      TenantID: credential.NMID,
+      LocationCode: transactionNo.toString().slice(-5),
       TransactionNo: transactionNo,
-      ReferenceNo: '',
-      ProjectCategoryId: 14,
-      ProjectCategoryName: 'Parking',
-      DataSend: JSON.stringify(requestPayload),
-      DataResponse: JSON.stringify(finalData),
-      DataDetailResponse: JSON.stringify(finalData?.data),
+      MerchantDataRequest: JSON.stringify(decryptedObject),
+      MerchantDataResponse: JSON.stringify(finalData),
+      POSTDataRequest: JSON.stringify(requestPayload),
+      POSTDataResponse: JSON.stringify(finalData?.data),
       CreatedOn: new Date(),
       UpdatedOn: new Date(),
       CreatedBy: location.CompanyName ?? '',
