@@ -87,5 +87,19 @@ export const ERROR_MESSAGES = {
     statusCode: '429001',
     responseDescription: 'Too many requests',
     messageDetail: 'Too many requests please try again later.'
+  },
+
+  FAILED_INSERT_DATABSE: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail: 'INTERNAL SERVER ERROR'
+  },
+
+  CONNECTION_TO_POST_TIMEOUT: {
+    responseStatus: 'Failed',
+    responseCode: '211051',
+    responseDescription: 'REQUEST TIMEOUT',
+    messageDetail: 'ESB Connection to POST TIMEOUT'
   }
 };

@@ -30,8 +30,7 @@ const sequelize = new Sequelize(
       min: 10,
       acquire: 60000,
       idle: 10000
-    },
-    timezone: '-01:00'
+    }
   }
 );
 

@@ -1,6 +1,9 @@
+import 'newrelic';
+
 import app from './app';
 import sequelize from './configs/database';
 import EnvConfig from './configs/env.config';
+
 
 const PORT = EnvConfig.PORT || 9000;
 

@@ -1,13 +1,9 @@
 exports.config = {
-  app_name: ['IN-APP'],
+app_name: ['IN-APP-LOCAL'],
   license_key: '2efbafc35c0c43b5b53b1547a7f583b3FFFFNRAL',
 
   apdex_t: 0.5, // 0.5 seconds = 500 ms threshold for “Satisfied”
                  // → Tolerating range = 0.5s–2.0s (Frustrated > 2s)
-
-  distributed_tracing: {
-    enabled: true
-  },
 
   transaction_tracer: {
     enabled: true,
@@ -15,10 +11,10 @@ exports.config = {
     stack_trace_threshold: 0.5 // capture stack traces for transactions > 500ms
   },
 
-  logging: {
-    level: 'info' // change to 'debug' for troubleshooting
-  },
-
+  logging: { level: 'info' },
+  distributed_tracing: {
+      enabled: true,
+    },
   allow_all_headers: true, // allow custom HTTP headers
 
   attributes: {

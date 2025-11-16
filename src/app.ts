@@ -1,8 +1,8 @@
+import 'newrelic';
 import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
 import indexRoutes from './routes';
 import cors from 'cors';
-import 'newrelic';
 import timeout from 'connect-timeout';
 import { haltOnTimeout } from './middleware/timeout.middleware';
 import path from 'path';

@@ -10,11 +10,11 @@ export function defaultTransactionData(
     transactionNo: transactionNo || '',
     transactionStatus,
     inTime: '',
-    duration: null,
-    tariff: null,
+    duration: 0,
+    tariff: 0,
     vehicleType: '',
     outTime: '',
-    gracePeriod: null,
+    gracePeriod: 0,
     location: '',
     paymentStatus
   };
