@@ -3429,14 +3429,375 @@ export async function CallbackSimulator(req: Request, res: Response) {
 }
 
 //GOPAY
+// export async function Inquiry_Transaction_GOPAY(
+//   req: Request,
+//   res: Response
+// ): Promise<any> {
+//   if ((req as any).timedout) return;
+
+//   const timestamp = new Date().toISOString();
+//   let transactionNo: string = 'UNKNOWN TRANSACTION';
+
+//   const encryptAndRespond = async (
+//     payload: any,
+//     key: string,
+//     transactionNo?: string
+//   ) => {
+//     if (!payload.data) payload.data = defaultTransactionData(transactionNo);
+//     const encrypted = await EncryptTotPOST(payload, key);
+//     return encrypted; // this is the string you want
+//   };
+//   try {
+//     const { data } = req.body;
+//     if (!data) {
+//       const err = new Error('MISSING ENCRYPTED DATA');
+
+//       const clientResponse = encryptAndRespond(
+//         ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+//         'SKY_IN-APP_INTEGRATION',
+//         ''
+//       );
+
+//       // Decrypt back what the client will actually receive (for logging)
+//       newrelic.noticeError(err, {
+//         stage: 'validation',
+//         timestamp,
+//         requestBody: '',
+//         responseBody: clientResponse,
+//         route: req.originalUrl,
+//         method: req.method,
+//         ip: req.ip,
+//         userAgent: req.headers['user-agent']
+//       });
+
+//       return clientResponse;
+//     }
+
+//     const decryptedObject = RealdecryptGOPAYPayload(data);
+
+//     if (!decryptedObject) {
+//       const err = new Error('INVALID ENCRYPTION DATA');
+
+//       const clientResponse = encryptAndRespond(
+//         ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+//         'SKY_IN-APP_INTEGRATION'
+//       );
+
+//       newrelic.recordCustomEvent('INVALID ENCRYPTION', {
+//         stage: 'INVALID ENCRYPTION',
+//         timestamp,
+//         requestBody: data,
+//         responseBody: JSON.stringify(ERROR_MESSAGES.INVALID_DATA_ENCRYPTION),
+//         route: req.originalUrl,
+//         method: req.method,
+//         ip: req.ip,
+//         userAgent: req.headers['user-agent']
+//       });
+//       newrelic.addCustomAttribute('transactionNo', '');
+//       newrelic.addCustomAttribute('route', req.originalUrl);
+//       return clientResponse;
+//     }
+
+//     const { login, password, storeID, signature } = decryptedObject;
+
+//     transactionNo = decryptedObject.transactionNo || transactionNo;
+
+//     if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
+//       const err = new Error('MISSING REQUIRED FIELDS');
+
+//       const clientResponse = encryptAndRespond(
+//         ERROR_MESSAGES.MISSING_FIELDS,
+//         'SKY_IN-APP_INTEGRATION',
+//         transactionNo
+//       );
+
+//       newrelic.recordCustomEvent(err, {
+//         stage: 'MISSING REQUIRED FIELDS',
+//         timestamp,
+//         transactionNo: transactionNo,
+//         requestBody: data,
+//         responseBody: JSON.stringify(ERROR_MESSAGES.MISSING_FIELDS),
+//         route: req.originalUrl,
+//         method: req.method,
+//         ip: req.ip,
+//         userAgent: req.headers['user-agent']
+//       });
+//       newrelic.addCustomAttribute('transactionNo', transactionNo);
+//       newrelic.addCustomAttribute('route', req.originalUrl);
+//       return clientResponse;
+//     }
+
+//     const credential = await findInquiryTransactionMappingPartner(
+//       login,
+//       password
+//     );
+//     if (!credential) {
+//       const err = new Error('PARTNER INVALID CREDENTIALS');
+
+//       const clientResponse = encryptAndRespond(
+//         ERROR_MESSAGES.INVALID_CREDENTIAL,
+//         'SKY_IN-APP_INTEGRATION',
+//         transactionNo
+//       );
+//       newrelic.recordCustomEvent(err, {
+//         stage: 'PARTNER INVALID CREDENTIALS',
+//         timestamp,
+//         transactionNo: transactionNo,
+//         requestBody: data,
+//         responseBody: JSON.stringify(ERROR_MESSAGES.INVALID_CREDENTIAL),
+//         route: req.originalUrl,
+//         method: req.method,
+//         ip: req.ip,
+//         userAgent: req.headers['user-agent']
+//       });
+//       newrelic.addCustomAttribute('transactionNo', transactionNo);
+//       newrelic.addCustomAttribute('route', req.originalUrl);
+//       return clientResponse;
+//     }
+
+//     const expectedSig = generateSignature(
+//       login,
+//       password,
+//       storeID,
+//       transactionNo,
+//       credential.SecretKey ?? ''
+//     );
+//     if (signature.toLowerCase() !== expectedSig.toLowerCase()) {
+//       const err = new Error('PARTNER INVALID SIGNATURE');
+
+//       const clientResponse = encryptAndRespond(
+//         ERROR_MESSAGES.INVALID_SIGNATURE,
+//         credential.GibberishKey ?? '',
+//         transactionNo
+//       );
+
+//       newrelic.recordCustomEvent(err, {
+//         stage: 'PARTNER INVALID SIGNATURE',
+//         timestamp,
+//         transactionNo: transactionNo,
+//         requestBody: data,
+//         responseBody: JSON.stringify(ERROR_MESSAGES.INVALID_SIGNATURE),
+//         route: req.originalUrl,
+//         method: req.method,
+//         ip: req.ip,
+//         userAgent: req.headers['user-agent']
+//       });
+//       newrelic.addCustomAttribute('transactionNo', transactionNo);
+//       newrelic.addCustomAttribute('route', req.originalUrl);
+//       return clientResponse;
+//     }
+
+//     const location = await findInquiryTransactionMappingByNMID(storeID);
+//     if (!location) {
+//       const err = new Error('INVALID PARKING LOCATION');
+//       newrelic.noticeError(err, { stage: 'location-check', storeID });
+//       return encryptAndRespond(
+//         ERROR_MESSAGES.INVALID_LOCATION,
+//         credential.GibberishKey ?? '',
+//         transactionNo
+//       );
+//     }
+
+//     const roles = await getRolesByPartnerId(credential.Id);
+//     const hasInquiryAccess = roles.some(
+//       (role) => role.access_type === 'INQUIRY'
+//     );
+//     if (!hasInquiryAccess) {
+//       const err = new Error('Access denied for partner');
+//       newrelic.noticeError(err, {
+//         stage: 'role-check',
+//         partnerId: credential.Id
+//       });
+//       return encryptAndRespond(
+//         ACCESS_ERROR_MESSAGES.ACCESS_DENIED,
+//         credential.GibberishKey ?? '',
+//         transactionNo
+//       );
+//     }
+
+//     const locationRoles = await getRolesByPartnerId(location.Id);
+//     const postRole = locationRoles.find(
+//       (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+//     );
+//     if (!postRole || !postRole.url_access) {
+//       const err = new Error('Post role missing or no access URL');
+//       newrelic.noticeError(err, {
+//         stage: 'post-role',
+//         locationId: location.Id
+//       });
+//       return res.status(200).json({
+//         responseCode: '401401',
+//         responseMessage: 'Access Denied'
+//       });
+//     }
+
+//     // ✅ remote request
+//     const signatureData = {
+//       login: location.Login ?? '',
+//       password: location.Password ?? '',
+//       storeID: location.NMID ?? '',
+//       transactionNo
+//     };
+
+//     const remoteSignature = generateSignature(
+//       signatureData.login,
+//       signatureData.password,
+//       signatureData.storeID,
+//       transactionNo,
+//       location.SecretKey ?? ''
+//     );
+
+//     const requestPayload = { ...signatureData, signature: remoteSignature };
+
+//     const encryptedRequest = await EncryptTotPOST(
+//       requestPayload,
+//       location.GibberishKey ?? ''
+//     );
+
+//     const apiResponse = await axios.post(
+//       postRole.url_access,
+//       {
+//         data: encryptedRequest
+//       },
+//       { timeout: 5000 }
+//     );
+
+//     let encryptedData: string | undefined;
+
+//     if (typeof apiResponse.data === 'string') {
+//       try {
+//         const cleanString = apiResponse.data.replace(
+//           /[\u0000-\u001F\u007F-\u009F]/g,
+//           ''
+//         );
+//         const parsed = JSON.parse(cleanString);
+//         encryptedData = parsed?.data;
+//       } catch (err) {
+//         newrelic.noticeError(err as Error, { stage: 'response-parse' });
+//         console.error('Failed to parse string response as JSON:', err);
+//       }
+//     } else if (typeof apiResponse.data === 'object') {
+//       encryptedData = apiResponse.data?.data;
+//     }
+
+//     if (!encryptedData) {
+//       const err = new Error('Encrypted data not found in API response');
+//       newrelic.noticeError(err, {
+//         stage: 'api-response',
+//         rawResponse: apiResponse.data
+//       });
+//       throw err;
+//     }
+
+//     const finalData = await DecryptTotPOST(
+//       encryptedData,
+//       location.GibberishKey ?? ''
+//     );
+
+//     const inquiry_data_insert = await createInquiryTransaction({
+//       CompanyName: location.CompanyName ?? '',
+//       NMID: location.NMID ?? '',
+//       StoreCode: transactionNo.toString().slice(-5),
+//       TransactionNo: transactionNo,
+//       ReferenceNo: '',
+//       ProjectCategoryId: 14,
+//       ProjectCategoryName: 'Parking',
+//       DataSend: JSON.stringify(requestPayload),
+//       DataResponse: JSON.stringify(finalData),
+//       DataDetailResponse: JSON.stringify(finalData?.data),
+//       CreatedOn: new Date(),
+//       UpdatedOn: new Date(),
+//       CreatedBy: location.CompanyName ?? '',
+//       UpdatedBy: location.CompanyName ?? ''
+//     });
+
+//     if (!inquiry_data_insert) {
+//       const clientResponse = encryptAndRespond(
+//         ERROR_MESSAGES.FAILED_INSERT_DATABSE,
+//         credential.GibberishKey ?? '',
+//         transactionNo
+//       );
+//       newrelic.recordCustomEvent('INQUIRY FAILED INSERT DB', {
+//         stage: 'INQUIRY FAILED INSERT DB',
+//         timestamp,
+//         requestBody: data,
+//         responseBody: JSON.stringify(ERROR_MESSAGES.FAILED_INSERT_DATABSE),
+//         route: req.originalUrl,
+//         method: req.method,
+//         ip: req.ip,
+//         userAgent: req.headers['user-agent']
+//       });
+//       newrelic.addCustomAttribute('transactionNo', transactionNo);
+//       newrelic.addCustomAttribute('route', req.originalUrl);
+//       return clientResponse;
+//     }
+
+//     const displayMessage =
+//       finalData?.messageDetail ===
+//         'Inquiry Tariff has been accepted and verified successfully.' ||
+//       finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+//         ? 'Ticket is valid but not yet paid'
+//         : finalData?.messageDetail;
+
+//     const responsePayload = {
+//       responseStatus: finalData?.responseStatus,
+//       responseCode:
+//         finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+//       responseDescription: finalData?.responseDescription,
+//       messageDetail: displayMessage,
+//       data: {
+//         transactionNo: finalData?.data.transactionNo,
+//         transactionStatus: finalData?.data.transactionStatus,
+//         inTime: finalData?.data.inTime,
+//         duration: Number(finalData?.data.duration),
+//         tariff: Number(finalData?.data.tariff),
+//         vehicleType: finalData?.data.vehicleType,
+//         outTime: finalData?.data.outTime,
+//         gracePeriod: Number(finalData?.data.gracePeriod),
+//         location: finalData?.data.location,
+//         paymentStatus: finalData?.data.paymentStatus
+//       }
+//     };
+
+//     const clientResponse = await encryptAndRespond(
+//       responsePayload,
+//       credential.GibberishKey ?? '',
+//       transactionNo
+//     );
+
+//     newrelic.recordCustomEvent('INQUIRY SUCCESS', {
+//       stage: 'INQUIRY SUCCESS',
+//       timestamp,
+//       requestBody: data,
+//       responseBody: clientResponse,
+//       route: req.originalUrl,
+//       method: req.method,
+//       ip: req.ip,
+//       userAgent: req.headers['user-agent']
+//     });
+//     newrelic.addCustomAttribute('transactionNo', transactionNo);
+//     newrelic.addCustomAttribute('route', req.originalUrl);
+//     return clientResponse;
+//   } catch (error: any) {
+//     const txNo = transactionNo || 'UNKNOWN_TX';
+//     const request_merchant_encrypt = JSON.stringify(req.body);
+
+//     return handleApiError(
+//       error,
+//       req,
+//       res,
+//       txNo,
+//       request_merchant_encrypt,
+//       'INQUIRY_HANDLER_TIMEOT'
+//     );
+//   }
+// }
+
 export async function Inquiry_Transaction_GOPAY(
   req: Request,
   res: Response
 ): Promise<any> {
   if ((req as any).timedout) return;
-
-  const timestamp = new Date().toISOString();
-  let transactionNo: string = 'UNKNOWN TRANSACTION';
 
   const encryptAndRespond = async (
     payload: any,
@@ -3445,86 +3806,52 @@ export async function Inquiry_Transaction_GOPAY(
   ) => {
     if (!payload.data) payload.data = defaultTransactionData(transactionNo);
     const encrypted = await EncryptTotPOST(payload, key);
-    return encrypted; // this is the string you want
+    return res.status(200).json({ data: encrypted });
   };
+
   try {
     const { data } = req.body;
     if (!data) {
-      const err = new Error('MISSING ENCRYPTED DATA');
-
-      const clientResponse = encryptAndRespond(
+      const err = new Error('Missing encrypted data');
+      Sentry.captureException(err, {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
+      });
+      newrelic.noticeError(err, { stage: 'validation', requestBody: data });
+      return encryptAndRespond(
         ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
         'SKY_IN-APP_INTEGRATION',
-        ''
+        undefined
       );
-
-      // Decrypt back what the client will actually receive (for logging)
-      newrelic.noticeError(err, {
-        stage: 'validation',
-        timestamp,
-        requestBody: '',
-        responseBody: clientResponse,
-        route: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-
-      return clientResponse;
     }
 
     const decryptedObject = RealdecryptGOPAYPayload(data);
 
     if (!decryptedObject) {
       const err = new Error('INVALID ENCRYPTION DATA');
-
-      const clientResponse = encryptAndRespond(
+      Sentry.captureException(err, {
+        extra: { requestBody: data, headers: req.headers, ip: req.ip }
+      });
+      newrelic.noticeError(err, { stage: 'decryption', rawData: data });
+      return encryptAndRespond(
         ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
         'SKY_IN-APP_INTEGRATION'
       );
-
-      newrelic.recordCustomEvent('INVALID ENCRYPTION', {
-        stage: 'INVALID ENCRYPTION',
-        timestamp,
-        requestBody: data,
-        responseBody: JSON.stringify(ERROR_MESSAGES.INVALID_DATA_ENCRYPTION),
-        route: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-      newrelic.addCustomAttribute('transactionNo', '');
-      newrelic.addCustomAttribute('route', req.originalUrl);
-      return clientResponse;
     }
 
-    const { login, password, storeID, signature } = decryptedObject;
-
-    transactionNo = decryptedObject.transactionNo || transactionNo;
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
 
     if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
-      const err = new Error('MISSING REQUIRED FIELDS');
-
-      const clientResponse = encryptAndRespond(
+      const err = new Error('Missing required fields');
+      newrelic.noticeError(err, {
+        stage: 'field-validation',
+        payload: decryptedObject
+      });
+      return encryptAndRespond(
         ERROR_MESSAGES.MISSING_FIELDS,
         'SKY_IN-APP_INTEGRATION',
         transactionNo
       );
-
-      newrelic.recordCustomEvent(err, {
-        stage: 'MISSING REQUIRED FIELDS',
-        timestamp,
-        transactionNo: transactionNo,
-        requestBody: data,
-        responseBody: JSON.stringify(ERROR_MESSAGES.MISSING_FIELDS),
-        route: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-      newrelic.addCustomAttribute('transactionNo', transactionNo);
-      newrelic.addCustomAttribute('route', req.originalUrl);
-      return clientResponse;
     }
 
     const credential = await findInquiryTransactionMappingPartner(
@@ -3532,27 +3859,13 @@ export async function Inquiry_Transaction_GOPAY(
       password
     );
     if (!credential) {
-      const err = new Error('PARTNER INVALID CREDENTIALS');
-
-      const clientResponse = encryptAndRespond(
+      const err = new Error('Invalid credential');
+      newrelic.noticeError(err, { stage: 'credential', login, storeID });
+      return encryptAndRespond(
         ERROR_MESSAGES.INVALID_CREDENTIAL,
         'SKY_IN-APP_INTEGRATION',
         transactionNo
       );
-      newrelic.recordCustomEvent(err, {
-        stage: 'PARTNER INVALID CREDENTIALS',
-        timestamp,
-        transactionNo: transactionNo,
-        requestBody: data,
-        responseBody: JSON.stringify(ERROR_MESSAGES.INVALID_CREDENTIAL),
-        route: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-      newrelic.addCustomAttribute('transactionNo', transactionNo);
-      newrelic.addCustomAttribute('route', req.originalUrl);
-      return clientResponse;
     }
 
     const expectedSig = generateSignature(
@@ -3563,33 +3876,18 @@ export async function Inquiry_Transaction_GOPAY(
       credential.SecretKey ?? ''
     );
     if (signature.toLowerCase() !== expectedSig.toLowerCase()) {
-      const err = new Error('PARTNER INVALID SIGNATURE');
-
-      const clientResponse = encryptAndRespond(
+      const err = new Error('Invalid signature');
+      newrelic.noticeError(err, { stage: 'signature-check', transactionNo });
+      return encryptAndRespond(
         ERROR_MESSAGES.INVALID_SIGNATURE,
         credential.GibberishKey ?? '',
         transactionNo
       );
-
-      newrelic.recordCustomEvent(err, {
-        stage: 'PARTNER INVALID SIGNATURE',
-        timestamp,
-        transactionNo: transactionNo,
-        requestBody: data,
-        responseBody: JSON.stringify(ERROR_MESSAGES.INVALID_SIGNATURE),
-        route: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-      newrelic.addCustomAttribute('transactionNo', transactionNo);
-      newrelic.addCustomAttribute('route', req.originalUrl);
-      return clientResponse;
     }
 
     const location = await findInquiryTransactionMappingByNMID(storeID);
     if (!location) {
-      const err = new Error('INVALID PARKING LOCATION');
+      const err = new Error('Invalid location');
       newrelic.noticeError(err, { stage: 'location-check', storeID });
       return encryptAndRespond(
         ERROR_MESSAGES.INVALID_LOCATION,
@@ -3654,13 +3952,38 @@ export async function Inquiry_Transaction_GOPAY(
       location.GibberishKey ?? ''
     );
 
-    const apiResponse = await axios.post(
-      postRole.url_access,
-      {
-        data: encryptedRequest
-      },
-      { timeout: 5000 }
-    );
+    let apiResponse;
+    try {
+      apiResponse = await axios.post(
+        postRole.url_access,
+        { data: encryptedRequest },
+        { timeout: 5000 } // ⏱ set timeout
+      );
+    } catch (err: any) {
+      newrelic.noticeError(err, {
+        stage: 'remote-request',
+        url: postRole.url_access,
+        transactionNo,
+        locationId: location.Id,
+        type: err.code === 'ECONNABORTED' ? 'timeout' : 'http-error'
+      });
+
+      console.error('Remote API call failed:', err.message);
+
+      return encryptAndRespond(
+        {
+          responseStatus: 'Failed',
+          responseCode: '211002',
+          responseDescription:
+            err.code === 'ECONNABORTED'
+              ? 'Request to POST timed out'
+              : 'Error calling POST service',
+          messageDetail: err.message
+        },
+        credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     let encryptedData: string | undefined;
 
@@ -3712,24 +4035,11 @@ export async function Inquiry_Transaction_GOPAY(
     });
 
     if (!inquiry_data_insert) {
-      const clientResponse = encryptAndRespond(
+      return encryptAndRespond(
         ERROR_MESSAGES.FAILED_INSERT_DATABSE,
         credential.GibberishKey ?? '',
         transactionNo
       );
-      newrelic.recordCustomEvent('INQUIRY FAILED INSERT DB', {
-        stage: 'INQUIRY FAILED INSERT DB',
-        timestamp,
-        requestBody: data,
-        responseBody: JSON.stringify(ERROR_MESSAGES.FAILED_INSERT_DATABSE),
-        route: req.originalUrl,
-        method: req.method,
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-      newrelic.addCustomAttribute('transactionNo', transactionNo);
-      newrelic.addCustomAttribute('route', req.originalUrl);
-      return clientResponse;
     }
 
     const displayMessage =
@@ -3759,40 +4069,24 @@ export async function Inquiry_Transaction_GOPAY(
       }
     };
 
-    const clientResponse = await encryptAndRespond(
+    return encryptAndRespond(
       responsePayload,
       credential.GibberishKey ?? '',
       transactionNo
     );
-
-    newrelic.recordCustomEvent('INQUIRY SUCCESS', {
-      stage: 'INQUIRY SUCCESS',
-      timestamp,
-      requestBody: data,
-      responseBody: clientResponse,
-      route: req.originalUrl,
-      method: req.method,
-      ip: req.ip,
-      userAgent: req.headers['user-agent']
-    });
-    newrelic.addCustomAttribute('transactionNo', transactionNo);
-    newrelic.addCustomAttribute('route', req.originalUrl);
-    return clientResponse;
   } catch (error: any) {
-    const txNo = transactionNo || 'UNKNOWN_TX';
-    const request_merchant_encrypt = JSON.stringify(req.body);
-
-    return handleApiError(
-      error,
-      req,
-      res,
-      txNo,
-      request_merchant_encrypt,
-      'INQUIRY_HANDLER_TIMEOT'
+    console.error('Error processing inquiry:', error);
+    newrelic.noticeError(error, { stage: 'catch-block' });
+    return encryptAndRespond(
+      {
+        responseCode: '500500',
+        responseMessage: 'General Server Error'
+      },
+      'SKY_IN-APP_INTEGRATION',
+      ''
     );
   }
 }
-
 //Partrner Pay Confirmation
 export async function PAYMENT_CONFIRMATION_GOPAY(
   req: Request,
@@ -3801,7 +4095,6 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
   if ((req as any).timedout) return;
 
   const timestamp = new Date().toISOString();
-  let transactionNo: string = 'UNKNOWN TRANSACTION';
 
   const encryptAndRespond = async (
     payload: any,
@@ -3869,6 +4162,7 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       login,
       password,
       storeID,
+      transactionNo,
       referenceNo,
       amount,
       paymentStatus,
@@ -3881,7 +4175,6 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       signature
     } = decryptedObject;
 
-    transactionNo = decryptedObject.transactionNo || transactionNo;
     // Determine which field to use for validation
     const validPartner = partnerID || issuerID;
 
@@ -4268,16 +4561,15 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       transactionNo
     );
   } catch (error: any) {
-    const txNo = transactionNo || 'UNKNOWN_TX';
-    const request_merchant_encrypt = JSON.stringify(req.body);
-
-    return handleApiError(
-      error,
-      req,
-      res,
-      txNo,
-      request_merchant_encrypt,
-      'PAYMENT_HANDLER_TIMEOT'
+    console.error('Error processing inquiry:', error);
+    newrelic.noticeError(error, { stage: 'catch-block' });
+    return encryptAndRespond(
+      {
+        responseCode: '500500',
+        responseMessage: 'General Server Error'
+      },
+      'SKY_IN-APP_INTEGRATION',
+      ''
     );
   }
 }

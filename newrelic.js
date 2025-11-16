@@ -1,5 +1,5 @@
 exports.config = {
-app_name: ['IN-APP-LOCAL'],
+app_name: ['IN-APP'],
   license_key: '2efbafc35c0c43b5b53b1547a7f583b3FFFFNRAL',
 
   apdex_t: 0.5, // 0.5 seconds = 500 ms threshold for “Satisfied”
