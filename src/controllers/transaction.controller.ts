@@ -4978,10 +4978,13 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
         transactionNo: finalData?.data.transactionNo,
         transactionStatus: finalData?.data.transactionStatus,
         inTime: finalData?.data.inTime,
+        gateInCode: finalData?.data.gateInCode,
         duration: Number(finalData?.data.duration),
         tariff: Number(finalData?.data.tariff),
         vehicleType: finalData?.data.vehicleType,
+        vehiclePlateNo: finalData?.data.vehiclePlateNo,
         outTime: finalData?.data.outTime,
+        gateOutCode: finalData?.data.gateOutCode,
         gracePeriod: Number(finalData?.data.gracePeriod),
         location: finalData?.data.location,
         paymentStatus: finalData?.data.paymentStatus
