@@ -9,6 +9,6 @@ export const SUCCESS_MESSAGE = {
     responseStatus: 'Success',
     responseCode: '211000',
     responseDescription: 'Transaction Success',
-    messageDetail: 'Ticket is valid and has been paid'
+    messageDetail: 'TICKET ALREADY PAID'
   }
 };

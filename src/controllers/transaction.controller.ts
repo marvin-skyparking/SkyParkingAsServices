@@ -15,6 +15,7 @@ import {
   generateSignatureVoucherTicket,
   RealdecryptGOPAYPayload,
   RealdecryptPayload,
+  RealdecryptPayloadVoucherLMI,
   RealencryptPayload
 } from '../utils/encrypt.utils';
 import {
@@ -65,6 +66,7 @@ import { generateAccessToken } from '../utils/jwt.utils';
 import { NotFound } from '../utils/response/common.response';
 import { createVoucherInquiryTicket } from '../services/voucher.service';
 import { handleApiError } from '../utils/helper/handle_api_error';
+import { logNewRelicEvent } from '../utils/newrelichelper';
 
 /**
  * Process Inquiry Transaction
@@ -4325,9 +4327,32 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
       });
     }
 
-    const response = await axios.post(inquiryAccess.url_access, {
-      data: encrypted_data
-    });
+    // const response = await axios.post(inquiryAccess.url_access, {
+    //   data: encrypted_data
+    // });
+
+    let response;
+    try {
+      response = await axios.post(
+        inquiryAccess.url_access,
+        { data: encrypted_data },
+        { timeout: 5000 } // ⏱ set timeout
+      );
+    } catch (err: any) {
+      return encryptAndRespond(
+        {
+          responseStatus: 'Failed',
+          responseCode: '211002',
+          responseDescription:
+            err.code === 'ECONNABORTED'
+              ? 'Request to POST timed out'
+              : 'Error calling POST service',
+          messageDetail: err.message
+        },
+        validate_credential.GibberishKey ?? '',
+        transactionNo
+      );
+    }
 
     let encryptedData: string | undefined;
 
@@ -4574,6 +4599,104 @@ export async function PAYMENT_CONFIRMATION_GOPAY(
   }
 }
 
+export async function INQUIRY_GOPAY(req: Request, res: Response): Promise<any> {
+  //GLOBAL CONFIGRATION
+  if ((req as any).timedout) return;
+  const timestamp = new Date().toISOString();
+  let transactionNo: string = 'UNKNOWN TRANSACTION';
+
+  //Response Encryption Function
+  const EncryptedResponse = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) payload.data = defaultTransactionData(transactionNo);
+    const encrypted = await EncryptTotPOST(payload, key);
+    return encrypted; // this is the string you want
+  };
+  try {
+    const { data } = req.body;
+
+    if (!data) {
+      const clientResponse = await EncryptedResponse(
+        ERROR_MESSAGES.MISSING_ENCRYPTED_DATA,
+        'SKY_IN-APP_INTEGRATION',
+        ''
+      );
+
+      logNewRelicEvent('MISSING ENCRYPTED DATA', req, {
+        stage: 'INVALID ENCRYPTION',
+        requestBody: data,
+        responseBody: clientResponse
+      });
+      return res.status(200).json({ data: clientResponse });
+    }
+
+    const decryptedObject = RealdecryptGOPAYPayload(data);
+
+    if (!decryptedObject) {
+      const clientResponse = await EncryptedResponse(
+        ERROR_MESSAGES.INVALID_DATA_ENCRYPTION,
+        'SKY_IN-APP_INTEGRATION'
+      );
+
+      logNewRelicEvent('INVALID ENCRYPTION', req, {
+        stage: 'INVALID ENCRYPTION',
+        requestBody: data,
+        responseBody: clientResponse
+      });
+
+      return res.status(200).json({ data: clientResponse });
+    }
+
+    const { login, password, storeID, transactionNo, signature } =
+      decryptedObject;
+
+    if (![login, password, storeID, transactionNo, signature].every(Boolean)) {
+      const clientResponse = await EncryptedResponse(
+        ERROR_MESSAGES.MISSING_FIELDS,
+        'SKY_IN-APP_INTEGRATION',
+        transactionNo
+      );
+
+      logNewRelicEvent('MISSING REQUIRED FIELDS', req, {
+        stage: 'MISSING REQUIRED FIELDS',
+        requestBody: data,
+        responseBody: clientResponse
+      });
+
+      return res.status(200).json({ data: clientResponse });
+    }
+
+    const credential = await findInquiryTransactionMappingPartner(
+      login,
+      password
+    );
+
+    if (!credential) {
+      const err = new Error('Invalid credential');
+      newrelic.noticeError(err, { stage: 'credential', login, storeID });
+      return EncryptedResponse(
+        ERROR_MESSAGES.INVALID_CREDENTIAL,
+        'SKY_IN-APP_INTEGRATION',
+        transactionNo
+      );
+    }
+  } catch (error: any) {
+    console.error('Error processing inquiry:', error);
+    newrelic.noticeError(error, { stage: 'catch-block' });
+    return EncryptedResponse(
+      {
+        responseCode: '500500',
+        responseMessage: 'General Server Error'
+      },
+      'SKY_IN-APP_INTEGRATION',
+      ''
+    );
+  }
+}
+
 export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
   req: Request,
   res: Response
@@ -4605,7 +4728,7 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       );
     }
 
-    const decryptedObject = RealdecryptPayload(data);
+    const decryptedObject = RealdecryptPayloadVoucherLMI(data);
 
     if (!decryptedObject) {
       const err = new Error('INVALID ENCRYPTION DATA');

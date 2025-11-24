@@ -4,6 +4,7 @@ import {
   B2B_TOKEN_IN_APP,
   CallbackSimulator,
   Check_Inquiry_QRIS,
+  INQUIRY_GOPAY,
   // close_ticket,
   // close_ticket_not_encrypt,
   Inquiry_Transaction,
@@ -60,6 +61,12 @@ innAppRoute.post(
   '/Partner/GOPAY/InquiryTransaction',
   haltOnTimeout,
   Inquiry_Transaction_GOPAY
+);
+
+innAppRoute.post(
+  '/Partner/GOPAYS/InquiryTransaction',
+  haltOnTimeout,
+  INQUIRY_GOPAY
 );
 innAppRoute.post(
   '/Partner/GOPAY/PaymentConfirmation',
