@@ -263,11 +263,11 @@ export const decryptPayload = (
 export const generateSignature = (
   login: string,
   password: string,
-  storeID: string,
+  locationCode: string,
   transactionNo: string,
   secretKey: string
 ): string => {
-  const rawString = `${login}${password}${storeID}${transactionNo}${secretKey}`;
+  const rawString = `${login}${password}${locationCode}${transactionNo}${secretKey}`;
   return crypto.createHash('md5').update(rawString).digest('hex');
 };
 

@@ -4840,7 +4840,8 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
 
     const locationRoles = await getRolesByPartnerId(location.Id);
     const postRole = locationRoles.find(
-      (role) => role.role_name === 'POST' && role.access_type === 'INQUIRY'
+      (role) =>
+        role.role_name === 'POST' && role.access_type === 'TICKETINQUIRY'
     );
     if (!postRole || !postRole.url_access) {
       const err = new Error('Post role missing or no access URL');
@@ -4858,14 +4859,14 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
     const signatureData = {
       login: location.Login ?? '',
       password: location.Password ?? '',
-      storeID: location.NMID ?? '',
+      locationCode: location.StoreCode ?? '',
       transactionNo
     };
 
     const remoteSignature = generateSignature(
       signatureData.login,
       signatureData.password,
-      signatureData.storeID,
+      signatureData.locationCode,
       transactionNo,
       location.SecretKey ?? ''
     );
@@ -4936,6 +4937,8 @@ export async function VOUCHER_INQUIRY_TICKET_LIPPO_MALLS(
       });
       throw err;
     }
+
+    console.log('Encrypted Data from API Response:', encryptedData);
 
     const finalData = await DecryptTotPOST(
       encryptedData,
