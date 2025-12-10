@@ -5,21 +5,13 @@ import {
   CallbackSimulator,
   Check_Inquiry_QRIS,
   INQUIRY_GOPAY,
-  // close_ticket,
-  // close_ticket_not_encrypt,
   Inquiry_Transaction,
   Inquiry_Transaction_GOPAY,
   Inquiry_Transaction_Snap,
-  // InquiryTransactionSnap,
   Payment_Confirmation,
   PAYMENT_CONFIRMATION_GOPAY,
   Payment_Confirmation_QRIS,
   SEND_VALET_NUMBER_VERIFICATION
-  // processInquiryTransaction,
-  // processInquiryTransactionEncrypt,
-  // processPaymentTransaction,
-  // processPaymentTransactionEncrypt,
-  // processPaymentTransactionPOST
 } from '../controllers/transaction.controller';
 import {
   createTicketHandler,
@@ -35,16 +27,7 @@ import { auto_entry } from '../controllers/auto_entry.controller';
 
 const innAppRoute = express.Router();
 
-//Real IN APP
-// innAppRoute.post('/Partner/InquiryTariffREG', processInquiryTransactionEncrypt);
-// innAppRoute.post(
-//   '/Partner/PaymentConfirmationREG',
-//   processPaymentTransactionEncrypt
-// );
-
-// innAppRoute.post('/Partner/CloseTicket', haltOnTimeout, close_ticket);
-
-// POST TEST
+// NOBU BANK ROUTES
 innAppRoute.post(
   '/Partner/InquiryTariffREG',
   haltOnTimeout,
@@ -74,9 +57,9 @@ innAppRoute.post(
   PAYMENT_CONFIRMATION_GOPAY
 );
 
-innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
+// innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
-innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
+// innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
 
 // innAppRoute.post('/Partner/CheckInquiryQRIS', Check_Inquiry_QRIS);
 
@@ -87,8 +70,8 @@ innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
 // );
 
 //Simulator
-innAppRoute.post('/Signature-Inquiry', sigantureKey);
-innAppRoute.post('/Signature-Payment', getPaymentSignature);
+// innAppRoute.post('/Signature-Inquiry', sigantureKey);
+// innAppRoute.post('/Signature-Payment', getPaymentSignature);
 // innAppRoute.post('/GenerateTicket', createTicketHandler);
 // innAppRoute.post(
 //   '/POST/Simulator/InquiryTariffREG/',
@@ -109,7 +92,7 @@ innAppRoute.post('/Signature-Payment', getPaymentSignature);
 
 // innAppRoute.post('/POST/Simulator/Close-Ticket/', close_ticket_not_encrypt);
 
-//Version 2
+//Version 2 - CANCELED
 innAppRoute.post('/Partner/B2B/Token', B2B_TOKEN_IN_APP);
 
 innAppRoute.post('/Partner/ticket/InquiryTarif', Inquiry_Transaction_Snap);

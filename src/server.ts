@@ -5,7 +5,7 @@ import sequelize from './configs/database';
 import EnvConfig from './configs/env.config';
 
 
-const PORT = EnvConfig.PORT || 9000;
+const PORT = Number(EnvConfig.PORT) || 9000;
 
 const startServer = async () => {
   try {
@@ -16,9 +16,10 @@ const startServer = async () => {
     console.log('Database synchronized.');
 
     // Start server
-    app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
-    });
+    app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server is running on http://0.0.0.0:${PORT}`);
+});
+
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }
