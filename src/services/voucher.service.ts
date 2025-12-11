@@ -638,6 +638,8 @@ export class VoucherService implements IVoucherService {
         gibberishKey
       );
 
+      console.log('Request To Merchant', encryptedPayload);
+
       const result = await cb.fire<EncryptedPayload>({
         method: 'POST',
         url: endpoint,
