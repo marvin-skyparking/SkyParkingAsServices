@@ -14,6 +14,7 @@ import CircuitBreaker from '../utils/circuit-breaker';
 import {
   Decryption,
   Encryption,
+  generateSignatureVoucherUsage,
   getTodayDate,
   md5,
   secretKey
@@ -775,20 +776,20 @@ export class VoucherService implements IVoucherService {
         };
       }
 
-      const merchantSignature = md5(
-        (partner?.Login ?? '') +
-          (partner?.Password ?? '') +
-          partner?.MPAN +
-          decryptedPayload.locationCode +
-          decryptedPayload.transactionNo +
-          decryptedPayload.licensePlateNo +
-          decryptedPayload.inTime +
-          decryptedPayload.gateInCode +
-          decryptedPayload.vehicleType +
-          decryptedPayload.totalTariff +
-          decryptedPayload.outTime +
-          decryptedPayload.gateOutCode +
-          partner?.SecretKey
+      const merchantSignature = generateSignatureVoucherUsage(
+        partner?.Login ?? '',
+        partner?.Password ?? '',
+        partner?.MPAN ?? '', // merchantID
+        decryptedPayload.locationCode ?? '',
+        decryptedPayload.transactionNo ?? '',
+        decryptedPayload.licensePlateNo ?? '',
+        decryptedPayload.inTime ?? '',
+        decryptedPayload.gateInCode ?? '',
+        decryptedPayload.vehicleType ?? '',
+        decryptedPayload.totalTariff ?? 0, // totalTariff
+        decryptedPayload.outTime ?? '',
+        decryptedPayload.gateOutCode ?? '',
+        partner?.SecretKey ?? ''
       );
 
       const merchantDataRequest: MerchantUsageRequest = {
@@ -803,7 +804,7 @@ export class VoucherService implements IVoucherService {
         vehicleType: decryptedPayload.vehicleType,
         totalTariff: decryptedPayload.totalTariff,
         outTime: decryptedPayload.outTime,
-        gateOutCode: decryptedPayload.gateInCode,
+        gateOutCode: decryptedPayload.gateOutCode,
         signature: merchantSignature
       };
 

@@ -56,8 +56,28 @@ export const Decryption = async <T>(
 };
 
 export function md5(value: string): string {
-  return crypto.createHash('md5').update(value, 'utf8').digest('hex');
+  return crypto.createHash('md5').update(value).digest('hex');
 }
+
+export const generateSignatureVoucherUsage = (
+  login: string,
+  password: string,
+  merchantID: string,
+  locationCode: string,
+  transactionNo: string,
+  licensePlateNo: string,
+  inTime: string,
+  gateInCode: string,
+  vehicleType: string,
+  totalTariff: number,
+  outTime: string,
+  gateOutCode: string,
+  secretKey: string
+): string => {
+  const rawString = `${login}${password}${merchantID}${locationCode}${transactionNo}${licensePlateNo}${inTime}${gateInCode}${vehicleType}${totalTariff}${outTime}${gateOutCode}${secretKey}`;
+  console.log('Raw Signature Voucher Usage:', rawString);
+  return crypto.createHash('md5').update(rawString).digest('hex');
+};
 
 export function encodeBase64(value: string): string {
   return Buffer.from(value, 'utf-8').toString('base64');
