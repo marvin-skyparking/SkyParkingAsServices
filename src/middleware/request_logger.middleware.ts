@@ -30,25 +30,32 @@ export const requestLogger = (
     const duration = Date.now() - start;
 
     let no_ticket: string | null = null;
+    let location: string | null = null;
+
+    const monitoredRoutes = [
+      '/v1/parking/Partner/InquiryTariffREG',
+      '/v1/parking/Partner/PaymentConfirmationREG',
+      '/v1/parking/Partner/GOPAY/InquiryTransaction',
+      '/v1/parking/Partner/GOPAY/PaymentConfirmation'
+    ];
 
     if (monitoredRoutes.includes(req.originalUrl)) {
       try {
         let decryptedObject: any;
 
         if (req.originalUrl.includes('/GOPAY/')) {
-          // Use GOPAY decryption
-          decryptedObject = RealdecryptGOPAYPayload(req.body);
+          decryptedObject = RealdecryptGOPAYPayload(req.body.data);
         } else {
-          // Use regular decryption
-          decryptedObject = RealdecryptPayload(req.body);
+          decryptedObject = RealdecryptPayload(req.body.data);
         }
 
-        no_ticket = decryptedObject?.transactionNo ?? null;
+        // ✅ Access transactionNo inside data
+        no_ticket = decryptedObject?.data?.transactionNo ?? null;
+        location = decryptedObject?.data?.location ?? null;
       } catch (err) {
         console.error('Failed to decrypt payload:', err);
       }
     }
-
     const logLine = {
       time: new Date().toISOString(),
       method: req.method,
@@ -57,6 +64,7 @@ export const requestLogger = (
       duration_ms: duration,
       ip: req.ip,
       no_ticket,
+      location,
       request_body: JSON.stringify(req.body),
       response_body:
         typeof responseBody === 'string'

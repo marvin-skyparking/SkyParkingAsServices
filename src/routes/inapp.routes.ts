@@ -2,6 +2,7 @@ import express from 'express';
 import timeout from 'connect-timeout';
 import {
   B2B_TOKEN_IN_APP,
+  decryptPayloadSimulator,
   CallbackSimulator,
   Check_Inquiry_QRIS,
   INQUIRY_GOPAY,
@@ -57,6 +58,7 @@ innAppRoute.post(
   PAYMENT_CONFIRMATION_GOPAY
 );
 
+innAppRoute.post('/Partner/DecryptSimulator', decryptPayloadSimulator);
 // innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
 // innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
