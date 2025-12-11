@@ -783,7 +783,7 @@ export class VoucherService implements IVoucherService {
           decryptedPayload.inTime +
           decryptedPayload.gateInCode +
           decryptedPayload.vehicleType +
-          String(decryptedPayload.totalTariff) +
+          decryptedPayload.totalTariff +
           decryptedPayload.outTime +
           decryptedPayload.gateOutCode +
           partner?.SecretKey

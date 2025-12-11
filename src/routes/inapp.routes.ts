@@ -12,7 +12,8 @@ import {
   Payment_Confirmation,
   PAYMENT_CONFIRMATION_GOPAY,
   Payment_Confirmation_QRIS,
-  SEND_VALET_NUMBER_VERIFICATION
+  SEND_VALET_NUMBER_VERIFICATION,
+  encryptPayloadSimulator
 } from '../controllers/transaction.controller';
 import {
   createTicketHandler,
@@ -59,6 +60,7 @@ innAppRoute.post(
 );
 
 innAppRoute.post('/Partner/DecryptSimulator', decryptPayloadSimulator);
+innAppRoute.post('/Partner/EncryptSimulator', encryptPayloadSimulator);
 // innAppRoute.post('/Membership/StylesCheckMembership', auto_entry);
 
 // innAppRoute.post('/Simulator/Callback', haltOnTimeout, CallbackSimulator);
