@@ -766,13 +766,13 @@ export async function processInquiryTransaction(
         data: defaultTransactionData(transactionNo)
       });
 
-    // const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
-    //   (role) => role.access_type === 'INQUIRY'
-    // );
-    // if (!hasAccess)
-    //   return res
-    //     .status(401)
-    //     .json({ responseCode: '401401', responseMessage: 'Access Denied' });
+    const hasAccess = (await getRolesByPartnerId(validate_credential.Id)).some(
+      (role) => role.access_type === 'INQUIRY'
+    );
+    if (!hasAccess)
+      return res
+        .status(401)
+        .json({ responseCode: '401401', responseMessage: 'ACCESS_DENIED' });
 
     const data_ticket = await findTicket(transactionNo);
 
