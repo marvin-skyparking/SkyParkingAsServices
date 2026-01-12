@@ -37,5 +37,6 @@ if (EnvConfig.NODE_ENV === 'production') {
   EnvConfig.PAYMENT_APP = EnvConfig.PAYMENT_APP;
   EnvConfig.URL_TOKEN = EnvConfig.URL_TOKEN;
   EnvConfig.URL_AUTO_ENTRY = EnvConfig.URL_AUTO_ENTRY;
+  EnvConfig.URL_VOUCHER_USAGE_LMI = EnvConfig.URL_VOUCHER_USAGE_LMI;
 }
 export default EnvConfig;

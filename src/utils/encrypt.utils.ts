@@ -483,3 +483,23 @@ export function generatePaymentPOSTQRISSignature(
   // Generating MD5 hash
   return crypto.createHash('md5').update(dataString).digest('hex');
 }
+
+export const generateSignatureLMI = (
+  login: string,
+  password: string,
+  merchantID: string,
+  locationCode: string,
+  transactionNo: string,
+  licensePlateNo: string,
+  inTime: string,
+  gateInCode: string,
+  vehicleType: string,
+  totalTariff: string,
+  outTime: string,
+  gateOutCode: string,
+  secretKey: string
+): string => {
+  const rawString = `${login}${password}${merchantID}${locationCode}${transactionNo}${licensePlateNo}${inTime}${gateInCode}${vehicleType}${totalTariff}${outTime}${gateOutCode}${secretKey}`;
+
+  return crypto.createHash('md5').update(rawString).digest('hex');
+};

@@ -11,6 +11,7 @@ import {
   generatePaymentPOSTSignature,
   generatePaymentSignature,
   generateSignature,
+  generateSignatureLMI,
   generateSignatureVoucherTicket,
   RealdecryptGOPAYPayload,
   RealdecryptPayload,
@@ -71,6 +72,7 @@ import {
 } from '../services/voucher.service';
 import { handleApiError } from '../utils/helper/handle_api_error';
 import { logNewRelicEvent } from '../utils/newrelichelper';
+import EnvConfig from '../configs/env.config';
 
 /**
  * Process Inquiry Transaction
@@ -5141,95 +5143,95 @@ export async function SEND_VALET_NUMBER_VERIFICATION(
   }
 }
 
-// export async function SendVoucherToLMI(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const {
-//       login,
-//       password,
-//       merchantID,
-//       locationCode,
-//       transactionNo,
-//       licensePlateNo,
-//       inTime,
-//       gateInCode,
-//       vehicleType,
-//       totalTariff,
-//       outTime,
-//       gateOutCode
-//     } = req.body;
+export async function SendVoucherToLMI(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const {
+      login,
+      password,
+      merchantID,
+      locationCode,
+      transactionNo,
+      licensePlateNo,
+      inTime,
+      gateInCode,
+      vehicleType,
+      totalTariff,
+      outTime,
+      gateOutCode
+    } = req.body;
 
-//     const secretKey = 'SECRET_KEY';
-//     const partner_key = 'PARTNER_KEY';
+    const secretKey = 'SECRET_KEY';
+    const partner_key = 'PARTNER_KEY';
 
-//     // 1. Generate signature
-//     const remoteSignature = generateSignatureLMI(
-//       login,
-//       password,
-//       merchantID,
-//       locationCode,
-//       transactionNo,
-//       licensePlateNo,
-//       inTime,
-//       gateInCode,
-//       vehicleType,
-//       totalTariff,
-//       outTime,
-//       gateOutCode,
-//       secretKey
-//     );
+    // 1. Generate signature
+    const remoteSignature = generateSignatureLMI(
+      login,
+      password,
+      merchantID,
+      locationCode,
+      transactionNo,
+      licensePlateNo,
+      inTime,
+      gateInCode,
+      vehicleType,
+      totalTariff,
+      outTime,
+      gateOutCode,
+      secretKey
+    );
 
-//     // 2. Combine data + signature
-//     const data = {
-//       ...req.body,
-//       signature: remoteSignature
-//     };
+    // 2. Combine data + signature
+    const data = {
+      ...req.body,
+      signature: remoteSignature
+    };
 
-//     //Find Location
-//     const location = await findLocationStoreCodeData(locationCode);
+    //Find Location
+    const location = await findLocationStoreCodeData(locationCode);
 
-//     if (!location) {
-//       return res.status(404).json({
-//         message: 'Location Invalid'
-//       });
-//     }
+    if (!location) {
+      return res.status(404).json({
+        message: 'Location Invalid'
+      });
+    }
 
-//     // 3. Encrypt and send
-//     const encryptdata = EncryptTotPOST(data, partner_key);
+    // 3. Encrypt and send
+    const encryptdata = EncryptTotPOST(data, partner_key);
 
-//     const send_to_LMI = await axios.post(EnvConfig.URL_VOUCHER_USAGE_LMI, {
-//       data: encryptdata
-//     });
+    const send_to_LMI = await axios.post(EnvConfig.URL_VOUCHER_USAGE_LMI, {
+      data: encryptdata
+    });
 
-//     console.log(send_to_LMI.data.data);
-//     // 4. Decrypt response
-//     const decrypt_response = DecryptTotPOST(send_to_LMI.data.data, partner_key);
+    console.log(send_to_LMI.data.data);
+    // 4. Decrypt response
+    const decrypt_response = DecryptTotPOST(send_to_LMI.data.data, partner_key);
 
-//     // 5. Insert into database
-//     await createVoucherUsage({
-//       CompanyName: location.CompanyName, // optional: adjust as needed
-//       MerchantID: merchantID,
-//       LocationCode: locationCode,
-//       TransactionNo: transactionNo,
-//       LicensePlateNo: licensePlateNo,
-//       InTime: new Date(inTime),
-//       GateInCode: gateInCode,
-//       VehicleType: vehicleType,
-//       TotalTariff: totalTariff,
-//       OutTime: new Date(outTime),
-//       GateOutCode: gateOutCode,
-//       MerchantDataRequest: JSON.stringify(data),
-//       MerchantDataResponse: JSON.stringify(decrypt_response),
-//       CreatedBy: login,
-//       CreatedOn: new Date()
-//     });
+    // 5. Insert into database
+    await createVoucherUsage({
+      CompanyName: location.CompanyName, // optional: adjust as needed
+      MerchantID: merchantID,
+      LocationCode: locationCode,
+      TransactionNo: transactionNo,
+      LicensePlateNo: licensePlateNo,
+      InTime: new Date(inTime),
+      GateInCode: gateInCode,
+      VehicleType: vehicleType,
+      TotalTariff: totalTariff,
+      OutTime: new Date(outTime),
+      GateOutCode: gateOutCode,
+      MerchantDataRequest: JSON.stringify(data),
+      MerchantDataResponse: JSON.stringify(decrypt_response),
+      CreatedBy: login,
+      CreatedOn: new Date()
+    });
 
-//     // 6. Return API response
-//     return res.status(200).json(decrypt_response);
-//   } catch (err) {
-//     console.error('Voucher usage error:', err);
-//     return res.status(500).json({ error: 'Internal Server Error' });
-//   }
-// }
+    // 6. Return API response
+    return res.status(200).json(decrypt_response);
+  } catch (err) {
+    console.error('Voucher usage error:', err);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
