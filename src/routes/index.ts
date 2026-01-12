@@ -7,6 +7,7 @@ import voucherRoute from './voucher.routes';
 
 const router = express.Router();
 
+router.use('/connection', healthRoute);
 router.use('/realtime', lotRoute);
 router.use('/parking', innAppRoute);
 router.use('/vouchers', voucherRoute);
