@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { VoucherController } from '../controllers/voucher2.controller';
-import { VOUCHER_INQUIRY_TICKET_LIPPO_MALLS } from '../controllers/transaction.controller';
+import {
+  SendVoucherToLMI,
+  VOUCHER_INQUIRY_TICKET_LIPPO_MALLS
+} from '../controllers/transaction.controller';
 
 const router = Router();
 
@@ -19,5 +22,6 @@ router.post(
   VoucherController.voucherUsageNotification
 );
 router.post('/simulator-usage', VoucherController.SimulatorVoucherUsage);
+router.post('/manualsendLMI', SendVoucherToLMI);
 
 export default router;
