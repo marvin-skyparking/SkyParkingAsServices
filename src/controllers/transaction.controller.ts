@@ -21,7 +21,8 @@ import {
 import {
   findInquiryTransactionMappingByLocationCode,
   findInquiryTransactionMappingByNMID,
-  findInquiryTransactionMappingPartner
+  findInquiryTransactionMappingPartner,
+  findLocationStoreCodeData
 } from '../services/inquiry_transaction_mapping.service';
 import {
   close_ticket_update,
@@ -64,7 +65,10 @@ import {
 import { getSecretKeyByClientId } from '../services/partner.service';
 import { generateAccessToken } from '../utils/jwt.utils';
 import { NotFound } from '../utils/response/common.response';
-import { createVoucherInquiryTicket } from '../services/voucher.service';
+import {
+  createVoucherInquiryTicket,
+  createVoucherUsage
+} from '../services/voucher.service';
 import { handleApiError } from '../utils/helper/handle_api_error';
 import { logNewRelicEvent } from '../utils/newrelichelper';
 

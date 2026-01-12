@@ -1025,3 +1025,34 @@ export async function deleteVoucherInquiryTicket(id: number) {
     where: { Id: id }
   });
 }
+
+export async function createVoucherUsage(dataInsert: VoucherUsageAttributes) {
+  try {
+    const voucherUsage = await VoucherUsage.create({
+      CompanyName: dataInsert.CompanyName,
+      MerchantID: dataInsert.MerchantID,
+      LocationCode: dataInsert.LocationCode,
+      TransactionNo: dataInsert.TransactionNo,
+      LicensePlateNo: dataInsert.LicensePlateNo,
+      InTime: dataInsert.InTime,
+      GateInCode: dataInsert.GateInCode,
+      VehicleType: dataInsert.VehicleType,
+      TotalTariff: dataInsert.TotalTariff,
+      OutTime: dataInsert.OutTime,
+      GateOutCode: dataInsert.GateOutCode,
+      MerchantDataRequest: dataInsert.MerchantDataRequest,
+      MerchantDataResponse: dataInsert.MerchantDataResponse,
+      POSTDataRequest: dataInsert.POSTDataRequest,
+      POSTDataResponse: dataInsert.POSTDataResponse,
+      CreatedBy: dataInsert.CreatedBy,
+      CreatedOn: dataInsert.CreatedOn ?? new Date(),
+      UpdatedBy: dataInsert.UpdatedBy,
+      UpdatedOn: dataInsert.UpdatedOn ?? new Date()
+    });
+
+    return voucherUsage;
+  } catch (error) {
+    console.error('Error inserting VoucherUsage:', error);
+    throw error;
+  }
+}
