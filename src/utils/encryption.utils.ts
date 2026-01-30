@@ -89,9 +89,14 @@ export function decodeBase64(encoded: string): string {
 
 export const getTodayDate = (): string => {
   const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
+  const local = new Date(
+    now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })
+  );
+
+  const yyyy = local.getFullYear();
+  const mm = String(local.getMonth() + 1).padStart(2, '0');
+  const dd = String(local.getDate()).padStart(2, '0');
+
   return `${yyyy}${mm}${dd}`;
 };
 
