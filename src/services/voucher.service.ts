@@ -15,7 +15,7 @@ import {
   Decryption,
   Encryption,
   generateSignatureVoucherUsage,
-  getTodayDate,
+  // getTodayDate,
   md5,
   secretKey
 } from '../utils/encryption.utils';
@@ -536,7 +536,8 @@ export class VoucherService implements IVoucherService {
 
       console.log('before sending post: ', postRole);
 
-      const giberishKey = `${getTodayDate()}${partner?.GibberishKey ?? ''}`;
+      const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+      const giberishKey = `${utcDate}${partner?.GibberishKey ?? ''}`;
 
       console.log('giberish key: ', giberishKey);
 

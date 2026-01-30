@@ -87,17 +87,19 @@ export function decodeBase64(encoded: string): string {
   return Buffer.from(encoded, 'base64').toString('utf-8');
 }
 
-export const getTodayDate = (): string => {
-  const now = new Date();
-  const local = new Date(
-    now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })
-  );
+// export const getTodayDate = (): string => {
+//   const now = new Date();
+//   const local = new Date(
+//     now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })
+//   );
 
-  const yyyy = local.getFullYear();
-  const mm = String(local.getMonth() + 1).padStart(2, '0');
-  const dd = String(local.getDate()).padStart(2, '0');
+//   const yyyy = local.getFullYear();
+//   const mm = String(local.getMonth() + 1).padStart(2, '0');
+//   const dd = String(local.getDate()).padStart(2, '0');
 
-  return `${yyyy}${mm}${dd}`;
-};
+//   return `${yyyy}${mm}${dd}`;
+// };
 
-export const secretKey = `${getTodayDate()}PARTNER_KEY`;
+const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+
+export const secretKey = `${utcDate}PARTNER_KEY`;
