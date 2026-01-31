@@ -457,16 +457,16 @@ export class VoucherService implements IVoucherService {
         ]
       });
 
-      if (existingTransactions.length > 0) {
-        return {
-          data: await this.encryptedErrorResponse(
-            secret,
-            `[Redemption Error] Voucher already used`
-          ),
-          statusCode: 400,
-          message: `[Redemption Error] Voucher already used`
-        };
-      }
+      // if (existingTransactions.length > 0) {
+      //   return {
+      //     data: await this.encryptedErrorResponse(
+      //       secret,
+      //       `[Redemption Error] Voucher already used`
+      //     ),
+      //     statusCode: 400,
+      //     message: `[Redemption Error] Voucher already used`
+      //   };
+      // }
 
       // Check if any existing transaction is already redeemed
       // for (const transaction of existingTransactions) {
