@@ -11,6 +11,7 @@ import {
   generateSignature,
   generateSignatureLMI,
   RealdecryptPayload,
+  RealdecryptPayloadSimulator,
   RealencryptPayload
 } from '../utils/encrypt.utils';
 import {
@@ -2363,33 +2364,33 @@ export async function SendVoucherToLMI(
   }
 }
 
-// export async function decryptPayloadSimulator(
-//   req: Request,
-//   res: Response
-// ): Promise<any> {
-//   try {
-//     const { data, partner_key } = req.body;
-//     if (!data) {
-//       return res.status(400).json({
-//         responseStatus: 'FAILED',
-//         responseCode: '400400',
-//         responseMessage: 'Bad Parameters, data is required'
-//       });
-//     }
-//     const decryptedObject = RealdecryptPayloadSimulator(data, partner_key);
+export async function decryptPayloadSimulator(
+  req: Request,
+  res: Response
+): Promise<any> {
+  try {
+    const { data, partner_key } = req.body;
+    if (!data) {
+      return res.status(400).json({
+        responseStatus: 'FAILED',
+        responseCode: '400400',
+        responseMessage: 'Bad Parameters, data is required'
+      });
+    }
+    const decryptedObject = RealdecryptPayloadSimulator(data, partner_key);
 
-//     return res.status(200).json({
-//       responseStatus: 'SUCCESS',
-//       responseCode: '211000',
-//       responseMessage: 'Success Decrypt Data',
-//       data: decryptedObject
-//     });
-//   } catch (error) {
-//     console.error('Error decrypting payload:', error);
-//     return res.status(500).json({
-//       responseStatus: 'FAILED',
-//       responseCode: '500500',
-//       responseMessage: 'Internal Server Error'
-//     });
-//   }
-// }
+    return res.status(200).json({
+      responseStatus: 'SUCCESS',
+      responseCode: '211000',
+      responseMessage: 'Success Decrypt Data',
+      data: decryptedObject
+    });
+  } catch (error) {
+    console.error('Error decrypting payload:', error);
+    return res.status(500).json({
+      responseStatus: 'FAILED',
+      responseCode: '500500',
+      responseMessage: 'Internal Server Error'
+    });
+  }
+}

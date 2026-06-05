@@ -3,6 +3,7 @@ import timeout from 'connect-timeout';
 import {
   // close_ticket,
   close_ticket_not_encrypt,
+  decryptPayloadSimulator,
   // Inquiry_Transaction,
   // Inquiry_Transaction_Snap,
   // InquiryTransactionSnap,
@@ -79,6 +80,7 @@ innAppRoute.post(
 );
 
 innAppRoute.post('/POST/Simulator/Close-Ticket/', close_ticket_not_encrypt);
+innAppRoute.post('/Partner/DecryptSimulator', decryptPayloadSimulator);
 
 //Version 2
 // innAppRoute.post(

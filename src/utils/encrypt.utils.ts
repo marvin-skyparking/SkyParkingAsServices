@@ -376,3 +376,30 @@ export const generateSignatureLMI = (
 
   return crypto.createHash('md5').update(rawString).digest('hex');
 };
+
+export const RealdecryptPayloadSimulator = (
+  encryptedData: string,
+  partner_key: string
+): Record<string, any> | null => {
+  try {
+    // Get the current UTC date in YYYYMMDD format
+    const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+
+    // Append UTC date to the PARTNER_KEY
+    // const decryptionKey = utcDate + partner_key;
+
+    // Proceed with AES decryption using the decryption key with UTC date
+    const bytes = CryptoJS.AES.decrypt(encryptedData, partner_key);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
+    // If decryption fails (empty result), throw an error
+    if (!decrypted) throw new Error('Decryption failed: Empty result');
+
+    // Parse the decrypted string into a JSON object
+    return JSON.parse(decrypted);
+  } catch (error: any) {
+    // Log and return null if an error occurs
+    console.error('Decryption Error:', error.message);
+    return null;
+  }
+};
