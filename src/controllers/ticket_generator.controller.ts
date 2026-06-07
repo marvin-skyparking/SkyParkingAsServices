@@ -6,6 +6,7 @@ import {
 } from '../services/ticket_generator.service';
 import {
   encryptPayload,
+  encryptPayloadPOST,
   generatePaymentSignature,
   generateSignature
 } from '../utils/encrypt.utils';
@@ -126,6 +127,50 @@ export async function sigantureKey(req: Request, res: Response): Promise<any> {
   };
 
   const encrypted_data = encryptPayload(data);
+
+  return res.status(200).json({
+    responseCode: '200200',
+    responseMessage: 'Success',
+    signature: signature,
+    data: encrypted_data
+  });
+}
+
+export async function signatureKeyPOST(
+  req: Request,
+  res: Response
+): Promise<any> {
+  const { login, password, storeID, transactionNo } = req.body;
+
+  const secretKey = await findInquiryTransactionMappingPartner(login, password);
+
+  if (!secretKey || !secretKey.SecretKey) {
+    return res.status(401).json({
+      responseCode: '401402',
+      responseMessage: 'Invalid Credential'
+    });
+  }
+
+  // Ensure SecretKey is always a string
+  const signature = generateSignature(
+    login,
+    password,
+    storeID,
+    transactionNo,
+    secretKey.SecretKey || ''
+  );
+
+  const GibberishKey = secretKey.GibberishKey ?? '';
+
+  const data = {
+    login,
+    password,
+    storeID,
+    transactionNo,
+    signature
+  };
+
+  const encrypted_data = encryptPayloadPOST(data, GibberishKey || '');
 
   return res.status(200).json({
     responseCode: '200200',

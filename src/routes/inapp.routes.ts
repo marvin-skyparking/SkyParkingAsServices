@@ -18,7 +18,8 @@ import {
 import {
   createTicketHandler,
   getPaymentSignature,
-  sigantureKey
+  sigantureKey,
+  signatureKeyPOST
 } from '../controllers/ticket_generator.controller';
 import { haltOnTimeout } from '../middleware/timeout.middleware';
 import {
@@ -60,6 +61,7 @@ innAppRoute.post(
 
 //Simulator
 innAppRoute.post('/Signature-Inquiry', sigantureKey);
+innAppRoute.post('/Signature-Inquiry-POST', signatureKeyPOST);
 innAppRoute.post('/Signature-Payment', getPaymentSignature);
 innAppRoute.post('/GenerateTicket', createTicketHandler);
 innAppRoute.post(

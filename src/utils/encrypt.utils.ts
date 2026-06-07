@@ -30,6 +30,32 @@ export const encryptPayload = (data: Record<string, any>): string => {
   }
 };
 
+export const encryptPayloadPOST = (
+  data: Record<string, any>,
+  partner_key: string
+): string => {
+  try {
+    const jsonString = JSON.stringify(data);
+
+    const utcDate = new Date().toISOString().split('T')[0].replace(/-/g, ''); // YYYYMMDD format
+
+    // Append UTC date to the PARTNER_KEY
+    const encryptionKey = utcDate + partner_key;
+
+    // Ensure secretKey is properly encoded
+    // Encrypt the data using the encryption key with UTC date
+    const encrypted = CryptoJS.AES.encrypt(
+      CryptoJS.enc.Utf8.parse(jsonString),
+      encryptionKey
+    ).toString();
+
+    return encrypted;
+  } catch (error: any) {
+    console.error('Encryption Error:', error.message);
+    throw new Error('Encryption failed');
+  }
+};
+
 export const RealencryptPayload = (data: Record<string, any>): string => {
   try {
     const jsonString = JSON.stringify(data);
