@@ -13,7 +13,9 @@ import {
   PAYMENT_CONFIRMATION_GOPAY,
   Payment_Confirmation_QRIS,
   SEND_VALET_NUMBER_VERIFICATION,
-  encryptPayloadSimulator
+  encryptPayloadSimulator,
+  INQUIRY_TICKET,
+  INQUIRY_TICKET_SIMPLIFIED
 } from '../controllers/transaction.controller';
 import {
   createTicketHandler,
@@ -26,6 +28,7 @@ import {
   verifyClientAuthAccess
 } from '../middleware/verify_auth.middleware';
 import { auto_entry } from '../controllers/auto_entry.controller';
+import { verifyJWT } from '../utils/jwt.utils';
 
 const innAppRoute = express.Router();
 
@@ -57,6 +60,20 @@ innAppRoute.post(
   '/Partner/GOPAY/PaymentConfirmation',
   haltOnTimeout,
   PAYMENT_CONFIRMATION_GOPAY
+);
+
+innAppRoute.post(
+  '/Partner/VOUCHER/InquiryTransaction',
+  haltOnTimeout,
+  verifyJWT,
+  INQUIRY_TICKET
+);
+
+innAppRoute.post(
+  '/Partner/VOUCHER/InquiryTariff',
+  haltOnTimeout,
+  verifyJWT,
+  INQUIRY_TICKET_SIMPLIFIED
 );
 
 innAppRoute.post('/Partner/DecryptSimulator', decryptPayloadSimulator);

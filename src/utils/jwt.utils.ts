@@ -1,5 +1,5 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
-
+import { Request, Response, NextFunction } from 'express';
 import envConfig from '../configs/env.config';
 import loggerUtils from './logger.utils';
 
@@ -49,6 +49,50 @@ export function generateAccessToken(
   } as SignOptions); // Use SignOptions for type safety
 }
 
+export async function verifyJWT(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({
+        responseCode: '401001',
+        responseMessage: 'Authorization header is required'
+      });
+    }
+
+    if (!authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        responseCode: '401002',
+        responseMessage: 'Invalid Authorization format'
+      });
+    }
+
+    const token = authHeader.substring(7);
+
+    console.log('JWT_SECRET:', envConfig.JWT_SECRET);
+    console.log('TOKEN:', token);
+
+    const decoded = jwt.verify(token, envConfig.JWT_SECRET);
+
+    console.log('DECODED:', decoded);
+
+    (req as any).user = decoded;
+
+    return next();
+  } catch (err: any) {
+    console.error(err);
+
+    return res.status(401).json({
+      responseCode: '401003',
+      responseMessage: err.message,
+      errorName: err.name
+    });
+  }
+}
 export default {
   generate: generate,
   validateToken: validateToken

@@ -451,6 +451,14 @@ export async function Inquiry_Transaction(
       );
     }
 
+    if (credential.nobu === true) {
+      const err = new Error('Payment Disabled for this partner');
+      newrelic.noticeError(err, { stage: 'Disable', rawData: data });
+      return encryptAndRespond(
+        ERROR_MESSAGES.PAYMENT_DISABLED,
+        '87e5df62d35aae739dc3b68ccb47383a'
+      );
+    }
     const expectedSig = generateSignature(
       login,
       password,
@@ -1186,6 +1194,14 @@ export async function Payment_Confirmation(
       );
     }
 
+    if (validate_credential.nobu === true) {
+      const err = new Error('Payment Disabled for this partner');
+      newrelic.noticeError(err, { stage: 'Disable', rawData: data });
+      return encryptAndRespond(
+        ERROR_MESSAGES.PAYMENT_DISABLED,
+        '87e5df62d35aae739dc3b68ccb47383a'
+      );
+    }
     const expectedSignature = generatePaymentSignature(
       login,
       password,
@@ -5233,5 +5249,505 @@ export async function SendVoucherToLMI(
   } catch (err) {
     console.error('Voucher usage error:', err);
     return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+
+// NOTE:
+// This is a refactored version of your INQUIRY_TICKET controller.
+// Replace the imports/types with the ones from your project.
+
+export async function INQUIRY_TICKET(
+  req: Request,
+  res: Response
+): Promise<any> {
+  if ((req as any).timedout) return;
+
+  const encryptAndRespond = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) {
+      payload.data = defaultTransactionData(transactionNo);
+    }
+
+    const encrypted = await EncryptTotPOST(payload, key);
+    return res.status(200).json({ data: encrypted });
+  };
+
+  try {
+    const jwtUser = (req as any).user;
+
+    if (!jwtUser?.Id) {
+      return res.status(401).json({
+        responseCode: '401004',
+        responseMessage: 'Invalid JWT payload'
+      });
+    }
+
+    if (jwtUser.Id !== 'VOUCHER_CONTROLLER') {
+      return res.status(403).json({
+        responseCode: '403001',
+        responseMessage: 'Client ID does not match token'
+      });
+    }
+
+    const { P1, P2 } = req.body;
+
+    const location = await findInquiryTransactionMappingByNMID(P1);
+
+    if (!location) {
+      newrelic.noticeError(new Error('Invalid location'), {
+        stage: 'location-check',
+        nmid: P1
+      });
+
+      return res.status(404).json({
+        responseCode: '404000',
+        responseMessage: 'INVALID NMID LOCATION'
+      });
+    }
+
+    if (
+      !location.Login ||
+      !location.Password ||
+      !location.SecretKey ||
+      !location.GibberishKey ||
+      !location.NMID
+    ) {
+      return res.status(500).json({
+        responseCode: '500101',
+        responseMessage: 'PARTNER CONFIGURATION INCOMPLETE'
+      });
+    }
+
+    const roles = await getRolesByPartnerId(location.Id);
+
+    const hasInquiryAccess = roles.some((r) => r.access_type === 'INQUIRY');
+
+    if (!hasInquiryAccess) {
+      newrelic.noticeError(new Error('Access denied'), {
+        stage: 'role-check',
+        partnerId: location.Id
+      });
+
+      return res.status(401).json({
+        responseCode: '401000',
+        responseMessage: 'ACCESS DENIED FOR PARTNER'
+      });
+    }
+
+    const postRole = roles.find(
+      (r) => r.role_name === 'POST' && r.access_type === 'INQUIRY'
+    );
+
+    if (!postRole?.url_access) {
+      newrelic.noticeError(new Error('POST role missing'), {
+        stage: 'post-role',
+        partnerId: location.Id
+      });
+
+      return res.status(401).json({
+        responseCode: '401401',
+        responseMessage: 'ACCESS DENIED'
+      });
+    }
+
+    const signatureData = {
+      login: location.Login,
+      password: location.Password,
+      storeID: location.NMID,
+      transactionNo: P2
+    };
+
+    const signature = generateSignature(
+      signatureData.login,
+      signatureData.password,
+      signatureData.storeID,
+      P2,
+      location.SecretKey
+    );
+
+    console.log(signatureData);
+
+    const requestPayload = {
+      ...signatureData,
+      signature
+    };
+
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      location.GibberishKey
+    );
+
+    let apiResponse;
+
+    try {
+      apiResponse = await axios.post(
+        postRole.url_access,
+        { data: encryptedRequest },
+        { timeout: 5000 }
+      );
+    } catch (err: any) {
+      newrelic.noticeError(err, {
+        stage: 'remote-request',
+        url: postRole.url_access
+      });
+
+      return res.status(504).json({
+        responseCode: '500200',
+        responseMessage: 'REMOTE SERVER TIMEOUT'
+      });
+    }
+
+    let encryptedData: string | undefined;
+
+    if (typeof apiResponse.data === 'string') {
+      try {
+        const parsed = JSON.parse(
+          apiResponse.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        );
+        encryptedData = parsed.data;
+      } catch (e) {
+        newrelic.noticeError(e as Error);
+      }
+    } else {
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      return res.status(500).json({
+        responseCode: '500500',
+        responseMessage: 'INVALID API RESPONSE'
+      });
+    }
+
+    const finalData = await DecryptTotPOST(
+      encryptedData,
+      location.GibberishKey
+    );
+
+    const logPayload = {
+      ...requestPayload,
+      password: '******',
+      signature: '******'
+    };
+
+    const inserted = await createInquiryTransaction({
+      CompanyName: location.CompanyName ?? '',
+      NMID: location.NMID,
+      StoreCode: String(P2).slice(-5),
+      TransactionNo: P2,
+      ReferenceNo: '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(logPayload),
+      DataResponse: JSON.stringify(finalData),
+      DataDetailResponse: JSON.stringify(finalData?.data),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
+      CreatedBy: location.CompanyName ?? '',
+      UpdatedBy: location.CompanyName ?? ''
+    });
+
+    if (!inserted) {
+      return res.status(500).json({
+        responseCode: '500501',
+        responseMessage: 'FAILED TO INSERT DATABASE'
+      });
+    }
+
+    const displayMessage =
+      finalData?.messageDetail ===
+        'Inquiry Tariff has been accepted and verified successfully.' ||
+      finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
+
+    const responsePayload = {
+      responseStatus: finalData?.responseStatus,
+      responseCode:
+        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: finalData?.responseDescription,
+      messageDetail: displayMessage,
+      data: {
+        transactionNo: finalData?.data?.transactionNo,
+        transactionStatus: finalData?.data?.transactionStatus,
+        inTime: finalData?.data?.inTime,
+        duration: Number(finalData?.data?.duration ?? 0),
+        tariff: Number(finalData?.data?.tariff ?? 0),
+        vehicleType: finalData?.data?.vehicleType,
+        outTime: finalData?.data?.outTime,
+        gracePeriod: Number(finalData?.data?.gracePeriod ?? 0),
+        location: finalData?.data?.location,
+        paymentStatus: finalData?.data?.paymentStatus
+      }
+    };
+
+    return res.status(200).json(responsePayload);
+  } catch (error: any) {
+    console.error(error);
+
+    newrelic.noticeError(error, {
+      stage: 'catch-block'
+    });
+
+    return res.status(500).json({
+      responseCode: '500500',
+      responseMessage: 'GENERAL ERROR'
+    });
+  }
+}
+
+export async function INQUIRY_TICKET_SIMPLIFIED(
+  req: Request,
+  res: Response
+): Promise<any> {
+  if ((req as any).timedout) return;
+
+  const encryptAndRespond = async (
+    payload: any,
+    key: string,
+    transactionNo?: string
+  ) => {
+    if (!payload.data) {
+      payload.data = defaultTransactionData(transactionNo);
+    }
+
+    const encrypted = await EncryptTotPOST(payload, key);
+    return res.status(200).json({ data: encrypted });
+  };
+
+  try {
+    const jwtUser = (req as any).user;
+
+    if (!jwtUser?.Id) {
+      return res.status(401).json({
+        responseCode: '401004',
+        responseMessage: 'Invalid JWT payload'
+      });
+    }
+
+    if (jwtUser.Id !== 'VOUCHER_CONTROLLER') {
+      return res.status(403).json({
+        responseCode: '403001',
+        responseMessage: 'Client ID does not match token'
+      });
+    }
+
+    const { transactionNo } = req.body;
+
+    if (!transactionNo) {
+      return res.status(400).json({
+        responseCode: '400400',
+        responseMessage: 'transactionNo required'
+      });
+    }
+
+    const storeCode = transactionNo.slice(-5);
+
+    const location =
+      await findInquiryTransactionMappingByLocationCode(storeCode);
+
+    if (!location) {
+      newrelic.noticeError(new Error('Invalid location'), {
+        stage: 'location-check',
+        nlocation: storeCode
+      });
+
+      return res.status(404).json({
+        responseCode: '404000',
+        responseMessage: 'INVALID storeCode LOCATION'
+      });
+    }
+
+    if (
+      !location.Login ||
+      !location.Password ||
+      !location.SecretKey ||
+      !location.GibberishKey ||
+      !location.NMID
+    ) {
+      return res.status(500).json({
+        responseCode: '500101',
+        responseMessage: 'PARTNER CONFIGURATION INCOMPLETE'
+      });
+    }
+
+    const roles = await getRolesByPartnerId(location.Id);
+
+    const hasInquiryAccess = roles.some((r) => r.access_type === 'INQUIRY');
+
+    if (!hasInquiryAccess) {
+      newrelic.noticeError(new Error('Access denied'), {
+        stage: 'role-check',
+        partnerId: location.Id
+      });
+
+      return res.status(401).json({
+        responseCode: '401000',
+        responseMessage: 'ACCESS DENIED FOR PARTNER'
+      });
+    }
+
+    const postRole = roles.find(
+      (r) => r.role_name === 'POST' && r.access_type === 'INQUIRY'
+    );
+
+    if (!postRole?.url_access) {
+      newrelic.noticeError(new Error('POST role missing'), {
+        stage: 'post-role',
+        partnerId: location.Id
+      });
+
+      return res.status(401).json({
+        responseCode: '401401',
+        responseMessage: 'ACCESS DENIED'
+      });
+    }
+
+    const signatureData = {
+      login: location.Login,
+      password: location.Password,
+      storeID: location.NMID,
+      transactionNo: transactionNo
+    };
+
+    const signature = generateSignature(
+      signatureData.login,
+      signatureData.password,
+      signatureData.storeID,
+      transactionNo,
+      location.SecretKey
+    );
+
+    console.log(signatureData);
+
+    const requestPayload = {
+      ...signatureData,
+      signature
+    };
+
+    const encryptedRequest = await EncryptTotPOST(
+      requestPayload,
+      location.GibberishKey
+    );
+
+    let apiResponse;
+
+    try {
+      apiResponse = await axios.post(
+        postRole.url_access,
+        { data: encryptedRequest },
+        { timeout: 5000 }
+      );
+    } catch (err: any) {
+      newrelic.noticeError(err, {
+        stage: 'remote-request',
+        url: postRole.url_access
+      });
+
+      return res.status(504).json({
+        responseCode: '500200',
+        responseMessage: 'REMOTE SERVER TIMEOUT'
+      });
+    }
+
+    let encryptedData: string | undefined;
+
+    if (typeof apiResponse.data === 'string') {
+      try {
+        const parsed = JSON.parse(
+          apiResponse.data.replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+        );
+        encryptedData = parsed.data;
+      } catch (e) {
+        newrelic.noticeError(e as Error);
+      }
+    } else {
+      encryptedData = apiResponse.data?.data;
+    }
+
+    if (!encryptedData) {
+      return res.status(500).json({
+        responseCode: '500500',
+        responseMessage: 'INVALID API RESPONSE'
+      });
+    }
+
+    const finalData = await DecryptTotPOST(
+      encryptedData,
+      location.GibberishKey
+    );
+
+    const logPayload = {
+      ...requestPayload,
+      password: '******',
+      signature: '******'
+    };
+
+    const inserted = await createInquiryTransaction({
+      CompanyName: location.CompanyName ?? '',
+      NMID: location.NMID,
+      StoreCode: String(transactionNo).slice(-5),
+      TransactionNo: transactionNo,
+      ReferenceNo: '',
+      ProjectCategoryId: 14,
+      ProjectCategoryName: 'Parking',
+      DataSend: JSON.stringify(logPayload),
+      DataResponse: JSON.stringify(finalData),
+      DataDetailResponse: JSON.stringify(finalData?.data),
+      CreatedOn: new Date(),
+      UpdatedOn: new Date(),
+      CreatedBy: location.CompanyName ?? '',
+      UpdatedBy: location.CompanyName ?? ''
+    });
+
+    if (!inserted) {
+      return res.status(500).json({
+        responseCode: '500501',
+        responseMessage: 'FAILED TO INSERT DATABASE'
+      });
+    }
+
+    const displayMessage =
+      finalData?.messageDetail ===
+        'Inquiry Tariff has been accepted and verified successfully.' ||
+      finalData?.messageDetail === 'Ticket is VALID but not yet paid'
+        ? 'Ticket is valid but not yet paid'
+        : finalData?.messageDetail;
+
+    const responsePayload = {
+      responseStatus: finalData?.responseStatus,
+      responseCode:
+        finalData?.responseStatus === 'Failed' ? '211001' : '211000',
+      responseDescription: finalData?.responseDescription,
+      messageDetail: displayMessage,
+      data: {
+        transactionNo: finalData?.data?.transactionNo,
+        transactionStatus: finalData?.data?.transactionStatus,
+        inTime: finalData?.data?.inTime,
+        duration: Number(finalData?.data?.duration ?? 0),
+        tariff: Number(finalData?.data?.tariff ?? 0),
+        vehicleType: finalData?.data?.vehicleType,
+        outTime: finalData?.data?.outTime,
+        gracePeriod: Number(finalData?.data?.gracePeriod ?? 0),
+        location: finalData?.data?.location,
+        paymentStatus: finalData?.data?.paymentStatus
+      }
+    };
+
+    return res.status(200).json(responsePayload);
+  } catch (error: any) {
+    console.error(error);
+
+    newrelic.noticeError(error, {
+      stage: 'catch-block'
+    });
+
+    return res.status(500).json({
+      responseCode: '500500',
+      responseMessage: 'GENERAL ERROR'
+    });
   }
 }

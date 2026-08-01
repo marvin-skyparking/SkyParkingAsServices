@@ -15,6 +15,8 @@ interface PartnerMappingAttributes {
   ProjectCategoryId?: number;
   GibberishKey?: string;
   RecordStatus?: number;
+  nobu?: boolean;
+  gopay?: boolean;
   CreatedBy?: string;
   CreatedDate?: Date;
   UpdatedBy?: string;
@@ -44,6 +46,8 @@ class PartnerMapping
   public ProjectCategoryId?: number;
   public GibberishKey?: string;
   public RecordStatus?: number;
+  public nobu?: boolean;
+  public gopay?: boolean;
   public CreatedBy?: string;
   public CreatedDate?: Date;
   public UpdatedBy?: string;
@@ -103,6 +107,14 @@ PartnerMapping.init(
     },
     RecordStatus: {
       type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true
+    },
+    nobu: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true
+    },
+    gopay: {
+      type: DataTypes.BOOLEAN,
       allowNull: true
     },
     CreatedBy: {

@@ -11,6 +11,13 @@ export const ERROR_MESSAGES = {
     responseDescription: 'Invalid Transaction',
     messageDetail: 'Invalid Data Encryption'
   },
+
+  PAYMENT_DISABLED: {
+    responseStatus: 'Failed',
+    responseCode: '211001',
+    responseDescription: 'Invalid Transaction',
+    messageDetail: 'Payment Disabled for this partner'
+  },
   INVALID_SIGNATURE: {
     responseStatus: 'Failed',
     responseCode: '211080',
