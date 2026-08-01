@@ -451,7 +451,7 @@ export async function Inquiry_Transaction(
       );
     }
 
-    if (credential.nobu === true) {
+    if (credential.nobu === 1) {
       const err = new Error('Payment Disabled for this partner');
       newrelic.noticeError(err, { stage: 'Disable', rawData: data });
       return encryptAndRespond(
@@ -459,6 +459,7 @@ export async function Inquiry_Transaction(
         '87e5df62d35aae739dc3b68ccb47383a'
       );
     }
+
     const expectedSig = generateSignature(
       login,
       password,
@@ -1194,7 +1195,7 @@ export async function Payment_Confirmation(
       );
     }
 
-    if (validate_credential.nobu === true) {
+    if (validate_credential.nobu === 1) {
       const err = new Error('Payment Disabled for this partner');
       newrelic.noticeError(err, { stage: 'Disable', rawData: data });
       return encryptAndRespond(
