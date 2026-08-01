@@ -451,15 +451,6 @@ export async function Inquiry_Transaction(
       );
     }
 
-    if (credential.nobu === 1) {
-      const err = new Error('Payment Disabled for this partner');
-      newrelic.noticeError(err, { stage: 'Disable', rawData: data });
-      return encryptAndRespond(
-        ERROR_MESSAGES.PAYMENT_DISABLED,
-        '87e5df62d35aae739dc3b68ccb47383a'
-      );
-    }
-
     const expectedSig = generateSignature(
       login,
       password,
@@ -488,6 +479,14 @@ export async function Inquiry_Transaction(
       );
     }
 
+    if (location.nobu === 1) {
+      const err = new Error('Payment Disabled for this partner');
+      newrelic.noticeError(err, { stage: 'Disable', rawData: data });
+      return encryptAndRespond(
+        ERROR_MESSAGES.PAYMENT_DISABLED,
+        '87e5df62d35aae739dc3b68ccb47383a'
+      );
+    }
     const roles = await getRolesByPartnerId(credential.Id);
     const hasInquiryAccess = roles.some(
       (role) => role.access_type === 'INQUIRY'
@@ -1195,14 +1194,6 @@ export async function Payment_Confirmation(
       );
     }
 
-    if (validate_credential.nobu === 1) {
-      const err = new Error('Payment Disabled for this partner');
-      newrelic.noticeError(err, { stage: 'Disable', rawData: data });
-      return encryptAndRespond(
-        ERROR_MESSAGES.PAYMENT_DISABLED,
-        '87e5df62d35aae739dc3b68ccb47383a'
-      );
-    }
     const expectedSignature = generatePaymentSignature(
       login,
       password,
@@ -1239,6 +1230,15 @@ export async function Payment_Confirmation(
         ERROR_MESSAGES.INVALID_LOCATION,
         validate_credential.GibberishKey ?? '',
         transactionNo
+      );
+    }
+
+    if (find_location.nobu === 1) {
+      const err = new Error('Payment Disabled for this partner');
+      newrelic.noticeError(err, { stage: 'Disable', rawData: data });
+      return encryptAndRespond(
+        ERROR_MESSAGES.PAYMENT_DISABLED,
+        '87e5df62d35aae739dc3b68ccb47383a'
       );
     }
 
