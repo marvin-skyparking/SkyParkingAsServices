@@ -383,24 +383,24 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
 
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
 
-    const data_token = qs.stringify({
-      grant_type: ACCESS_CREDENTIAL.grant_type,
-      username: ACCESS_CREDENTIAL.username,
-      password: ACCESS_CREDENTIAL.password
-    });
+    // const data_token = qs.stringify({
+    //   grant_type: ACCESS_CREDENTIAL.grant_type,
+    //   username: ACCESS_CREDENTIAL.username,
+    //   password: ACCESS_CREDENTIAL.password
+    // });
 
-    get_token = await axios.post(EnvConfig.URL_TOKEN, data_token, {
-      headers,
-      timeout: 5000
-    });
+    // get_token = await axios.post(EnvConfig.URL_TOKEN, data_token, {
+    //   headers,
+    //   timeout: 5000
+    // });
 
-    if (get_token.status !== 200) {
-      return encryptAndRespondAutoEntry(
-        ERROR_ON_LIPPO_MALLS.FAILED_TO_GET_TOKEN,
-        locationData.GibberishKey || '',
-        transactionNo
-      );
-    }
+    // if (get_token.status !== 200) {
+    //   return encryptAndRespondAutoEntry(
+    //     ERROR_ON_LIPPO_MALLS.FAILED_TO_GET_TOKEN,
+    //     locationData.GibberishKey || '',
+    //     transactionNo
+    //   );
+    // }
 
     send_data = {
       LicenseNumber: licensePlateNo,
@@ -410,7 +410,7 @@ export async function auto_entry(req: Request, res: Response): Promise<any> {
 
     const headers_auto_entry = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${get_token.data.access_token}`
+      Authorization: `Bearer ${EnvConfig.TOKEN_LMI}`
     };
 
     validate_entry = await axios.post(EnvConfig.URL_AUTO_ENTRY, send_data, {

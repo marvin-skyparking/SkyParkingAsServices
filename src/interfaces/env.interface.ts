@@ -18,4 +18,5 @@ export interface IEnvInterface {
   PAYMENT_APP: string;
   URL_TOKEN: string;
   URL_AUTO_ENTRY: string;
+  TOKEN_LMI: string;
 }
